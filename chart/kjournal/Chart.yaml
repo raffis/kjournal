@@ -1,0 +1,18 @@
+apiVersion: v1
+name: kjournal
+version: 0.0.1
+appVersion: v0.0.1
+description: A Helm chart for kjournal
+home: https://github.com/raffis/kjournal
+keywords:
+  - logs
+  - audit
+  - kubernetes
+  - kube-apiserver
+  - longterm-logs
+  - journal
+sources:
+  - https://github.com/raffis/kjournal
+maintainers:
+  - name: raffis
+    email: raffael.sahli@gmail.com

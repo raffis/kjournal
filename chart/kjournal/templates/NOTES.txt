@@ -1,0 +1,26 @@
+kkkkkkkk             jjjj                                                                                           lllllll 
+k::::::k            j::::j                                                                                          l:::::l 
+k::::::k             jjjj                                                                                           l:::::l 
+k::::::k                                                                                                            l:::::l 
+ k:::::k    kkkkkkkjjjjjjj   ooooooooooo   uuuuuu    uuuuuu rrrrr   rrrrrrrrr   nnnn  nnnnnnnn      aaaaaaaaaaaaa    l::::l 
+ k:::::k   k:::::k j:::::j oo:::::::::::oo u::::u    u::::u r::::rrr:::::::::r  n:::nn::::::::nn    a::::::::::::a   l::::l 
+ k:::::k  k:::::k   j::::jo:::::::::::::::ou::::u    u::::u r:::::::::::::::::r n::::::::::::::nn   aaaaaaaaa:::::a  l::::l 
+ k:::::k k:::::k    j::::jo:::::ooooo:::::ou::::u    u::::u rr::::::rrrrr::::::rnn:::::::::::::::n           a::::a  l::::l 
+ k::::::k:::::k     j::::jo::::o     o::::ou::::u    u::::u  r:::::r     r:::::r  n:::::nnnn:::::n    aaaaaaa:::::a  l::::l 
+ k:::::::::::k      j::::jo::::o     o::::ou::::u    u::::u  r:::::r     rrrrrrr  n::::n    n::::n  aa::::::::::::a  l::::l 
+ k:::::::::::k      j::::jo::::o     o::::ou::::u    u::::u  r:::::r              n::::n    n::::n a::::aaaa::::::a  l::::l 
+ k::::::k:::::k     j::::jo::::o     o::::ou:::::uuuu:::::u  r:::::r              n::::n    n::::na::::a    a:::::a  l::::l 
+k::::::k k:::::k    j::::jo:::::ooooo:::::ou:::::::::::::::uur:::::r              n::::n    n::::na::::a    a:::::a l::::::l
+k::::::k  k:::::k   j::::jo:::::::::::::::o u:::::::::::::::ur:::::r              n::::n    n::::na:::::aaaa::::::a l::::::l
+k::::::k   k:::::k  j::::j oo:::::::::::oo   uu::::::::uu:::ur:::::r              n::::n    n::::n a::::::::::aa:::al::::::l
+kkkkkkkk    kkkkkkk j::::j   ooooooooooo       uuuuuuuu  uuuurrrrrrr              nnnnnn    nnnnnn  aaaaaaaaaa  aaaallllllll
+                    j::::j                                                                                                  
+          jjjj      j::::j                                                                                                  
+         j::::jj   j:::::j                                                                                                  
+         j::::::jjj::::::j                                                                                                  
+          jj::::::::::::j                                                                                                   
+            jjj::::::jjj                                                                                                    
+               jjjjjj                                                                                                       
+
+               
+{{ template "kjournal.fullname" .  }} has been deployed.

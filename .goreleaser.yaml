@@ -1,0 +1,143 @@
+project_name: kjournal
+
+builds:
+  - id: "cli"
+    dir: cli
+    main: ./cmd/kjournal/
+    binary: kjournal-cli
+    goos:
+      - linux
+      - darwin
+      - windows    
+  - id: "apiserver"
+    main: ./cmd
+    binary: kjournal-apiserver
+    goos:
+      - linux
+    goarch:
+      - amd64
+      - arm
+      - arm64      
+
+release:
+  extra_files:
+    - glob: deploy/release/*.yaml
+
+checksum:
+  extra_files:
+    - glob: deploy/release/*.yaml
+
+source:
+  enabled: true
+  name_template: "{{ .ProjectName }}_{{ .Version }}_source_code"
+
+sboms:
+  - id: source
+    artifacts: source
+    documents:
+      - "{{ .ProjectName }}_{{ .Version }}_sbom.spdx.json"
+
+dockers:
+- image_templates: ["ghcr.io/raffis/{{ .ProjectName }}-cli:{{ .Version }}-amd64"]
+  dockerfile: cli/Dockerfile
+  use: buildx
+  build_flag_templates:
+  - --platform=linux/amd64
+  - --label=org.opencontainers.image.title={{ .ProjectName }}-cli
+  - --label=org.opencontainers.image.description={{ .ProjectName }}-cli
+  - --label=org.opencontainers.image.url=https://github.com/raffis/{{ .ProjectName }}-cli
+  - --label=org.opencontainers.image.source=https://github.com/raffis/{{ .ProjectName }}-cli
+  - --label=org.opencontainers.image.version={{ .Version }}
+  - --label=org.opencontainers.image.created={{ time "2006-01-02T15:04:05Z07:00" }}
+  - --label=org.opencontainers.image.revision={{ .FullCommit }}
+  - --label=org.opencontainers.image.licenses=MIT
+- image_templates: ["ghcr.io/raffis/{{ .ProjectName }}-cli:{{ .Version }}-arm64v8"]
+  goarch: arm64
+  dockerfile: cli/Dockerfile
+  use: buildx
+  build_flag_templates:
+  - --platform=linux/arm64/v8
+  - --label=org.opencontainers.image.title={{ .ProjectName }}-cli
+  - --label=org.opencontainers.image.description={{ .ProjectName }}-cli
+  - --label=org.opencontainers.image.url=https://github.com/raffis/{{ .ProjectName }}-cli
+  - --label=org.opencontainers.image.source=https://github.com/raffis/{{ .ProjectName }}-cli
+  - --label=org.opencontainers.image.version={{ .Version }}
+  - --label=org.opencontainers.image.created={{ time "2006-01-02T15:04:05Z07:00" }}
+  - --label=org.opencontainers.image.revision={{ .FullCommit }}
+  - --label=org.opencontainers.image.licenses=MIT
+- image_templates: ["ghcr.io/raffis/{{ .ProjectName }}-apiserver:{{ .Version }}-amd64"]
+  dockerfile: Dockerfile
+  use: buildx
+  build_flag_templates:
+  - --platform=linux/amd64
+  - --label=org.opencontainers.image.title={{ .ProjectName }}-apiserver
+  - --label=org.opencontainers.image.description={{ .ProjectName }}
+  - --label=org.opencontainers.image.url=https://github.com/raffis/{{ .ProjectName }}-apiserver
+  - --label=org.opencontainers.image.source=https://github.com/raffis/{{ .ProjectName }}-apiserver
+  - --label=org.opencontainers.image.version={{ .Version }}
+  - --label=org.opencontainers.image.created={{ time "2006-01-02T15:04:05Z07:00" }}
+  - --label=org.opencontainers.image.revision={{ .FullCommit }}
+  - --label=org.opencontainers.image.licenses=MIT
+- image_templates: ["ghcr.io/raffis/{{ .ProjectName }}-apiserver:{{ .Version }}-arm64v8"]
+  goarch: arm64
+  dockerfile: Dockerfile
+  use: buildx
+  build_flag_templates:
+  - --platform=linux/arm64/v8
+  - --label=org.opencontainers.image.title={{ .ProjectName }}-apiserver
+  - --label=org.opencontainers.image.description={{ .ProjectName }}
+  - --label=org.opencontainers.image.url=https://github.com/raffis/{{ .ProjectName }}-apiserver
+  - --label=org.opencontainers.image.source=https://github.com/raffis/{{ .ProjectName }}-apiserver
+  - --label=org.opencontainers.image.version={{ .Version }}
+  - --label=org.opencontainers.image.created={{ time "2006-01-02T15:04:05Z07:00" }}
+  - --label=org.opencontainers.image.revision={{ .FullCommit }}
+  - --label=org.opencontainers.image.licenses=MIT
+docker_manifests:
+- name_template: ghcr.io/raffis/{{ .ProjectName }}-cli:{{ .Version }}
+  image_templates:
+  - ghcr.io/raffis/{{ .ProjectName }}-cli:{{ .Version }}-amd64
+  - ghcr.io/raffis/{{ .ProjectName }}-cli:{{ .Version }}-arm64v8
+- name_template: ghcr.io/raffis/{{ .ProjectName }}-cli:latest
+  image_templates:
+  - ghcr.io/raffis/{{ .ProjectName }}-cli:{{ .Version }}-amd64
+  - ghcr.io/raffis/{{ .ProjectName }}-cli:{{ .Version }}-arm64v8
+- name_template: ghcr.io/raffis/{{ .ProjectName }}-apiserver:{{ .Version }}
+  image_templates:
+  - ghcr.io/raffis/{{ .ProjectName }}-apiserver:{{ .Version }}-amd64
+  - ghcr.io/raffis/{{ .ProjectName }}-apiserver:{{ .Version }}-arm64v8
+- name_template: ghcr.io/raffis/{{ .ProjectName }}-apiserver:latest
+  image_templates:
+  - ghcr.io/raffis/{{ .ProjectName }}-apiserver:{{ .Version }}-amd64
+  - ghcr.io/raffis/{{ .ProjectName }}-apiserver:{{ .Version }}-arm64v8
+
+brews:
+  - tap:
+      owner: raffis
+      name: kjournal-cli
+    folder: Formulas
+    test: |
+      system "#{bin}/kjournal help"      
+
+krews:
+ - index:
+     owner: raffis
+     name: kjournal
+     branch: master
+
+
+
+# signs the checksum file
+# all files (including the sboms) are included in the checksum
+# https://goreleaser.com/customization/sign
+#signs:
+#- cmd: cosign
+#  env:
+#  - COSIGN_EXPERIMENTAL=1
+#  certificate: "${artifact}.pem"
+#  args:
+#  - sign-blob
+#  - "--output-certificate=${certificate}"
+#  - "--output-signature=${signature}"
+#  - "${artifact}"
+#  artifacts: checksum
+#  output: true

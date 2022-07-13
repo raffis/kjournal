@@ -1,0 +1,76 @@
+{{- if .Values.certManager.enabled -}}
+---
+# Create a selfsigned Issuer, in order to create a root CA certificate for
+# signing webhook serving certificates
+apiVersion: cert-manager.io/v1
+kind: Issuer
+metadata:
+  name: {{ template "kjournal.fullname" . }}-self-signed-issuer
+  namespace: {{ include "kjournal.namespace" . }}
+  {{- if .Values.customAnnotations }}
+  annotations:
+  {{- toYaml .Values.customAnnotations | nindent 4 }}
+  {{- end }}
+  labels:
+    {{- include "kjournal.labels" . | indent 4 }}
+spec:
+  selfSigned: {}
+---
+# Generate a CA Certificate used to sign certificates for the webhook
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: {{ template "kjournal.fullname" . }}-root-cert
+  namespace: {{ include "kjournal.namespace" . }}
+  {{- if .Values.customAnnotations }}
+  annotations:
+  {{- toYaml .Values.customAnnotations | nindent 4 }}
+  {{- end }}
+  labels:
+    {{- include "kjournal.labels" . | indent 4 }}
+spec:
+  secretName: {{ template "kjournal.fullname" . }}-root-cert
+  duration: {{ .Values.certManager.caCertDuration }}
+  issuerRef:
+    name: {{ template "kjournal.fullname" . }}-self-signed-issuer
+  commonName: "ca.webhook.kjournal"
+  isCA: true
+---
+# Create an Issuer that uses the above generated CA certificate to issue certs
+apiVersion: cert-manager.io/v1
+kind: Issuer
+metadata:
+  name: {{ template "kjournal.fullname" . }}-root-issuer
+  namespace: {{ include "kjournal.namespace" . }}
+  {{- if .Values.customAnnotations }}
+  annotations:
+  {{- toYaml .Values.customAnnotations | nindent 4 }}
+  {{- end }}
+  labels:
+    {{- include "kjournal.labels" . | indent 4 }}
+spec:
+  ca:
+    secretName: {{ template "kjournal.fullname" . }}-root-cert
+---
+# Finally, generate a serving certificate for the apiservices to use
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: {{ template "kjournal.fullname" . }}-cert
+  namespace: {{ include "kjournal.namespace" . }}
+  {{- if .Values.customAnnotations }}
+  annotations:
+  {{- toYaml .Values.customAnnotations | nindent 4 }}
+  {{- end }}
+  labels:
+    {{- include "kjournal.labels" . | indent 4 }}
+spec:
+  secretName: {{ template "kjournal.fullname" . }}
+  duration: {{ .Values.certManager.certDuration }}
+  issuerRef:
+    name: {{ template "kjournal.fullname" . }}-root-issuer
+  dnsNames:
+  - {{ template "kjournal.fullname" . }}
+  - {{ template "kjournal.fullname" . }}.{{ include "kjournal.namespace" . }}
+  - {{ template "kjournal.fullname" . }}.{{ include "kjournal.namespace" . }}.svc
+{{- end -}}

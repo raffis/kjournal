@@ -1,0 +1,18 @@
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  {{- if .Values.customAnnotations }}
+  annotations:
+  {{- toYaml .Values.customAnnotations | nindent 4 }}
+  {{- end }}
+  labels:
+    {{- include "kjournal.labels" . | indent 4 }}
+  name: {{ template "kjournal.name" . }}-container-apiserver
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: {{ template "kjournal.name" . }}-container
+subjects:
+- kind: ServiceAccount
+  name: {{ template "kjournal.serviceAccountName" . }}
+  namespace: {{ include "kjournal.namespace" . | quote }}

@@ -1,0 +1,80 @@
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: kjournal-apiserver
+  namespace: logging
+  labels:
+    api: kjournal
+    apiserver: "true"
+spec:
+  selector:
+    matchLabels:
+      api: kjournal
+      apiserver: "true"
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        api: kjournal
+        apiserver: "true"
+    spec:
+      containers:
+      - name: apiserver
+        image: kjournal-apiserver:latest
+        imagePullPolicy: Never
+        volumeMounts:
+        - name: apiserver-certs
+          mountPath: /apiserver.local.config/certificates
+          readOnly: true
+        command:
+        - "./apiserver"
+        args:
+        - "--tls-cert-file=/apiserver.local.config/certificates/tls.crt"
+        - "--tls-private-key-file=/apiserver.local.config/certificates/tls.key"
+        - "--audit-log-path=-"
+        - "--feature-gates=APIPriorityAndFairness=false"
+        - "--audit-log-maxage=0"
+        - "--audit-log-maxbackup=0"
+        - --secure-port=8443
+        resources:
+          requests:
+            cpu: "300m"
+            memory: 20Mi
+          limits:
+            cpu: "1"
+            memory: 200Mi
+      volumes:
+      - name: apiserver-certs
+        secret:
+          secretName: kjournal
+---
+apiVersion: v1
+kind: Secret
+type: kubernetes.io/tls
+metadata:
+  name: kjournal
+  namespace: logging
+  labels:
+    api: kjournal
+    apiserver: "true"
+data:
+  tls.crt: LS0tLS1CRUdJTiBDRVJUSUZJQ0FURS0tLS0tCk1JSURqekNDQW5lZ0F3SUJBZ0lJSVhGTkZSNUJPSmN3RFFZSktvWklodmNOQVFFTEJRQXdhREVMTUFrR0ExVUUKQmhNQ2RXNHhDekFKQmdOVkJBZ01Bbk4wTVFvd0NBWURWUVFIREFGc01Rb3dDQVlEVlFRS0RBRnZNUXN3Q1FZRApWUVFMREFKdmRURW5NQ1VHQTFVRUF3d2VhMnB2ZFhKdVlXd3RZMlZ5ZEdsbWFXTmhkR1V0WVhWMGFHOXlhWFI1Ck1CNFhEVEl5TURjd056RTFNekV4TTFvWERUTXlNRGN3TkRFMU16RXhNMW93SHpFZE1Cc0dBMVVFQXhNVWEycHYKZFhKdVlXd3ViRzluWjJsdVp5NXpkbU13Z2dFaU1BMEdDU3FHU0liM0RRRUJBUVVBQTRJQkR3QXdnZ0VLQW9JQgpBUUN3Z0NoKy84eVlUbndDVW83NTlncTlWY1RrcTlsdnhJUFJCZUI0MWVaNG4yRGNuTTNZenVZSnhYd2gxdzhqClJWSXhLSVpTdW1seFR6SW05ZktaNUFOYW4zZE0zMDlJeXJ3YWp0Mldnc01vbTJxeGxjOXJvMEt2dmVzdi9VSWsKTnhYMkd5NEJHKzRrekpmVzVOWnZVK0VndEpLdXRlZkduNmdqUDROWDltRzZqZGNSUVFvUy9FSFpJcE5yb3dmVgppRElITlJaYW5IeTBTL0VjeGx4NnpsL3Zxcm4yY1ZEZ3BSNG9UN0RMSTJFYWx0YVpaNk8zT2I5WGR3Kzh4c1VBCmxtSVhna290S3ZNNmp0NFl6NFlaZUJ2cjRhR2JPNEQ0UitrQ2J0bjNmODF0NTNkaGtPQStwYkI1dlJXaFVyek8KTlp3bytqOXplMWtZeWszYzR6a00vcFFYQWdNQkFBR2pnWVV3Z1lJd0RnWURWUjBQQVFIL0JBUURBZ1dnTUIwRwpBMVVkSlFRV01CUUdDQ3NHQVFVRkJ3TUJCZ2dyQmdFRkJRY0RBakFmQmdOVkhTTUVHREFXZ0JRdUVrQXIzNi83ClhCWTQrS2w0WTZqSUNDZEZKREF3QmdOVkhSRUVLVEFuZ2dsc2IyTmhiR2h2YzNTQ0ZHdHFiM1Z5Ym1Gc0xteHYKWjJkcGJtY3VjM1pqaHdSL0FBQUJNQTBHQ1NxR1NJYjNEUUVCQ3dVQUE0SUJBUUFNUXFCQjQ3bEhHcjUxQUJ1bAoxbkJhRldqUUxtRWdGZ0VldHJLSFRMQ3JEemNFWEVlZnpWdlZ3NnpnUTFYY2lHakFaZkRNbmt5TlEwZEorNDRSCmxGQ1lUQ2hYK04ybmhFQnpYNEJGOTFIeWhxWWZweWdxYm03NDg5OFd6Y29FeVM5S0xhUkplaG1ialRyb2hTRUsKL3plWXk0M3hnR01RaGtnTzUxYlFTdHkreHBiT0UrNWk0RFZyUDF3WEF1dUx2dWx3eTFTb1BOUkYyYUZmUSt2SgpXd0JXUlh4akJKL1g4Uy9jOWs1Z2hXWVRlRXd5cENqM09ZQno4RDRTazZrMEYxam5XOEF2aUdDSEdrRnR2RHVyCis5aXNUamdOUnkydWQ2QXVuOGl5UVJwMnFrRnpXQUI2UnRtNGRLemtYTVBmVGZxbUR0ZFRnRG1EZHJPZldXUWUKb0FBdQotLS0tLUVORCBDRVJUSUZJQ0FURS0tLS0tCg==
+  tls.key: LS0tLS1CRUdJTiBSU0EgUFJJVkFURSBLRVktLS0tLQpNSUlFcEFJQkFBS0NBUUVBc0lBb2Z2L01tRTU4QWxLTytmWUt2VlhFNUt2WmI4U0QwUVhnZU5YbWVKOWczSnpOCjJNN21DY1Y4SWRjUEkwVlNNU2lHVXJwcGNVOHlKdlh5bWVRRFdwOTNUTjlQU01xOEdvN2Rsb0xES0p0cXNaWFAKYTZOQ3I3M3JMLzFDSkRjVjloc3VBUnZ1Sk15WDF1VFdiMVBoSUxTU3JyWG54cCtvSXorRFYvWmh1bzNYRVVFSwpFdnhCMlNLVGE2TUgxWWd5QnpVV1dweDh0RXZ4SE1aY2VzNWY3NnE1OW5GUTRLVWVLRSt3eXlOaEdwYldtV2VqCnR6bS9WM2NQdk1iRkFKWmlGNEpLTFNyek9vN2VHTStHR1hnYjYrR2htenVBK0VmcEFtN1o5My9OYmVkM1laRGcKUHFXd2ViMFZvVks4empXY0tQby9jM3RaR01wTjNPTTVEUDZVRndJREFRQUJBb0lCQUZmTE45bU1OZUhnMEZCNwpib0VwZ01nVEhNQStOd2NnY2cwTDVrOVUzckpMWE92LzEyaXI2Y01jaDVWeG15Y0pPVXdZZzFBdFIzdkVVQWNQCk9lQ1FpWmFQVWRGY0Z0ejNjeittcHRSU01POUc5M2hrTTJ1d0p1Q3lFSVdyYlRZRWJKa2hoZTJwVGZqaUIva3QKbFBpRmVhdENCdUIrdlU2UVpoczZZWVBrbTFJbW5Yb09tcjcvVllQOW1JOUZOckVleU5YaUc2S1dmWVZDb3FZTQpaclFYekpSUDQycGRTYjNuaml3WUVIYUV6ZUVPcWZBU1BvdEZtOTM0SWI4Wk1YNVJYRHdmV1NreGF0eHJzMU8yCm9qRjROVXh0ZEgyMTlvVlRybGdqbWpWUGZjU3Nwa3M5dEZ5T0ZrbEk1UWRubjhubHV6cGtoMElTRUFqVXMreHgKNnF4V0tIa0NnWUVBNStERy95VS83SDNieHJKdFNMYWJMZmVIbE5TL01vOHJXVDNJdUE2cVM2UXRPWWxnZnI4RApIQzN5ZEVqeTBqbFhBZGR0WnE4bHNoMXZteFJCY1hJZEI3blZJbzY4N3EzUDk3WkRBTytQSlpMdlJvRnR5VzljCkR0NUFrSnhxOUt3MW1MSUhHYnE4b1ZVMjBkMk05SVJUV1JycHlqN1o4SEd1WW91UElVWGI3QnNDZ1lFQXd0eWIKSlFiOWhHUzdEeDhreU0wSjhsajBYZ3VocHpCNVF4KzdCUFNiUUV0Y1pVS3hlQVpIVEE3ZjE5WWEwV0ZUMlRKZQpROTRTU0oxSWdSeUFsQnFzd1NCakVUdktvTGRCNTl1cWd2TEhYblVpRUVDbUdNSzF2MTB2cUhqV3ZKZ3VPTzdwCmM2SDExbFRGbXNRSzFSRzNEOFFaU1kvUEp0WnM2c0JJNk1hU1A3VUNnWUVBdlpyQ2ZaMmk4S2xWamRzV200K2QKd20rV2NPK3B6QmpmMUdBK0Fhc1VPemZyTnhJTFVuaTBmVlZnM1E5Tlp2TTJIeTVkcWNwc0k0SUlZYUdsaGJOTwo0Nk5rRVpid0RLY1oyQzgwQ003YW1WblZ5Q3hMYnB4ZGhWYmRLcUtNbnJjMk9EN1NxWXBWZGdLdENkeUV4dWh4CkV2cDcwMEdqaWdZYkZ6K1E4UjhqbnFNQ2dZQWdMNklzcm9mbmUxL3VjbjEzOFc0b0tvdEtrVzlGRjF1Z083aC8KYkF2TXhlWGdEL0VTV3k4aG4vOVhQbFUxcW5iWUZGcS9xUW1xRnRpb0F0WTJJR1hTakkvd2c4akhYUjIwdDNMbApxRVpJRXQ3cWdsTXRHZFE5WkozL25ONFRUcXVyMmNLVHgvZThURXBMY3dBN0MyOEtXcUMycHR0WGxlbHRxUThoCjY5S3lWUUtCZ1FDR2g1UlJqTlNyNHUyOFEwZHlrMG9XTUVjN2FCTGZwWWZJVmpXaG04bllwWHB5aUFGTjBQNlEKOUxNR0o5TEFqcjVPK1VubTQzdlNkRmZZTm4zUy9xaGtXcGR0cEhZdkhZSGVMYlVqY3hxZEw2ejIwblFoNk1nWgp0UERIUCsxaDV3QzQ0WlJrUDhQMjRBNlBHd0RmQnhLeklvR2c1TXc0MmVnR2RMQWpJUUlGSUE9PQotLS0tLUVORCBSU0EgUFJJVkFURSBLRVktLS0tLQo=
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: kjournal
+  namespace: logging
+  labels:
+    api: kjournal
+    apiserver: "true"
+spec:
+  ports:
+  - port: 443
+    protocol: TCP
+    targetPort: 8443
+  selector:
+    api: kjournal
+    apiserver: "true"

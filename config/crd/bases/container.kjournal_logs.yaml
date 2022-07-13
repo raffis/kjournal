@@ -1,0 +1,65 @@
+---
+apiVersion: apiextensions.k8s.io/v1
+kind: CustomResourceDefinition
+metadata:
+  annotations:
+    controller-gen.kubebuilder.io/version: v0.8.0
+  creationTimestamp: null
+  name: logs.container.kjournal
+spec:
+  group: container.kjournal
+  names:
+    kind: Log
+    listKind: LogList
+    plural: logs
+    singular: log
+  scope: Namespaced
+  versions:
+  - name: v1beta1
+    schema:
+      openAPIV3Schema:
+        description: Log
+        properties:
+          apiVersion:
+            description: 'APIVersion defines the versioned schema of this representation
+              of an object. Servers should convert recognized schemas to the latest
+              internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources'
+            type: string
+          container:
+            type: string
+          env:
+            description: RawMessage is a raw encoded JSON value. It implements Marshaler
+              and Unmarshaler and can be used to delay JSON decoding or precompute
+              a JSON encoding.
+            format: byte
+            type: string
+          kind:
+            description: 'Kind is a string value representing the REST resource this
+              object represents. Servers may infer this from the endpoint the client
+              submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds'
+            type: string
+          metadata:
+            type: object
+          pod:
+            type: string
+          unstructured:
+            description: RawMessage is a raw encoded JSON value. It implements Marshaler
+              and Unmarshaler and can be used to delay JSON decoding or precompute
+              a JSON encoding.
+            format: byte
+            type: string
+        required:
+        - container
+        - env
+        - metadata
+        - pod
+        - unstructured
+        type: object
+    served: true
+    storage: true
+status:
+  acceptedNames:
+    kind: ""
+    plural: ""
+  conditions: []
+  storedVersions: []

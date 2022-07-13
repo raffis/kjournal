@@ -1,0 +1,23 @@
+{{- if .Values.podDisruptionBudget.enabled }}
+apiVersion: {{ include "kjournal.pdb.apiVersion" . }}
+kind: PodDisruptionBudget
+metadata:
+  name: {{ template "kjournal.fullname" . }}
+  namespace: {{ include "kjournal.namespace" . }}
+  {{- if .Values.customAnnotations }}
+  annotations:
+  {{- toYaml .Values.customAnnotations | nindent 4 }}
+  {{- end }}
+  labels:
+    {{- include "kjournal.labels" . | indent 4 }}
+spec:
+  {{- if .Values.podDisruptionBudget.minAvailable }}
+  minAvailable: {{ .Values.podDisruptionBudget.minAvailable }}
+  {{- end  }}
+  {{- if .Values.podDisruptionBudget.maxUnavailable }}
+  maxUnavailable: {{ .Values.podDisruptionBudget.maxUnavailable }}
+  {{- end  }}
+  selector:
+    matchLabels:
+      {{- include "kjournal.selectorLabels" . | indent 6 }}
+{{- end }}
