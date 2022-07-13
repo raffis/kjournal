@@ -14,4 +14,4 @@ jobs:
         with:
           python-version: 3.x
       - run: make mkdocs
-      - run: mkdocs gh-deploy --force
+      - run: mkdocs gh-deploy
