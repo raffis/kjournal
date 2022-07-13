@@ -130,6 +130,16 @@ GEN_CRD_API_REFERENCE_DOCS = $(GOBIN)/gen-crd-api-reference-docs
 gen-crd-api-reference-docs: ## Download gen-crd-api-reference-docs locally if necessary
 	$(call go-install-tool,$(GEN_CRD_API_REFERENCE_DOCS),github.com/ahmetb/gen-crd-api-reference-docs@3f29e6853552dcf08a8e846b1225f275ed0f3e3b)
 
+.PHONY: gen-docs
+gen-docs: gen-crd-api-reference-docs mkdocs
+	mkdocs build
+
+.PHONY: mkdocs
+mkdocs:
+	pip install mkdocs
+	pip install mkdocs-minify-plugin
+	pip install mkdocs-material
+
 # go-install-tool will 'go install' any package $2 and install it to $1.
 define go-install-tool
 @[ -f $(1) ] || { \
