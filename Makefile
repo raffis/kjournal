@@ -132,6 +132,8 @@ gen-crd-api-reference-docs: ## Download gen-crd-api-reference-docs locally if ne
 
 .PHONY: gen-docs
 gen-docs: gen-crd-api-reference-docs mkdocs
+	cp README.md docs/index.md
+	cp CONTRIBUTING.md docs/contributing.md
 	mkdocs build
 
 .PHONY: mkdocs

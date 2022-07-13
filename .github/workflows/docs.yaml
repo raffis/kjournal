@@ -14,5 +14,7 @@ jobs:
         with:
           python-version: 3.x
       - run: make mkdocs
-      - run: git pull origin gh-pages
+      - run: |
+          git config pull.rebase true
+          git pull origin gh-pages
       - run: mkdocs gh-deploy
