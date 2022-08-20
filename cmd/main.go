@@ -81,6 +81,18 @@ func main() {
 	rootCmd.Use = "kjournal-apiserver"
 	rootCmd.Short = "Launches the kjournal kubernetes apiserver"
 
+	// TODO: workaorund for removing etcd related flags. Apparantly WithoutEtcd() does not work.
+	rootCmd.Flags().MarkHidden("etcd-cafile")
+	rootCmd.Flags().MarkHidden("etcd-certfile")
+	rootCmd.Flags().MarkHidden("etcd-compaction-interval")
+	rootCmd.Flags().MarkHidden("etcd-count-metric-poll-period")
+	rootCmd.Flags().MarkHidden("etcd-db-metric-poll-interval")
+	rootCmd.Flags().MarkHidden("etcd-healthcheck-timeout")
+	rootCmd.Flags().MarkHidden("etcd-keyfile")
+	rootCmd.Flags().MarkHidden("etcd-prefix")
+	rootCmd.Flags().MarkHidden("etcd-servers")
+	rootCmd.Flags().MarkHidden("etcd-servers-overrides")
+
 	cmd.AddCommand(cmdMan)
 	cmd.AddCommand(cmdRef)
 
