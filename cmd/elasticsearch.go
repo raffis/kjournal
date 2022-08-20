@@ -105,8 +105,8 @@ func elasticsearchFlags(cmd *cobra.Command) {
 	cmd.Flags().StringVar(&elasticsearchStorageArgs.auditTimestampField, "es-audit-timestamp-field", "@timestamp", "The index field which is used as timestamop field for the audit documents")
 	cmd.Flags().StringVar(&elasticsearchStorageArgs.containerIndex, "es-container-index", "", "The index pattern where the kubernetes container logs are stored. (For example: `logstash-*`). You may specify multiple ones comma separated")
 	cmd.Flags().StringVar(&elasticsearchStorageArgs.containerTimestampField, "es-container-timestamp-field", "@timestamp", "The index field which is used as timestamop field for the audit documents")
-	cmd.Flags().StringVar(&elasticsearchStorageArgs.containerNamespaceField, "es-container-namespace-field", "kubernetes.namespace_name.keyword", "The field which holds the kubernetes namespace. This field must not be indexed using any analyers! Usually a .keyword field is wanted here")
-	cmd.Flags().DurationVar(&elasticsearchStorageArgs.refreshRate, "es-refresh-rate", 500*time.Millisecond, "The refresh rate to poll from elasticsearch while checking for new documents during watch requests")
+	cmd.Flags().StringVar(&elasticsearchStorageArgs.containerNamespaceField, "es-container-namespace-field", "kubernetes.namespace_name.keyword", "The field which holds the kubernetes namespace. This field must not be indexed using any analyzers! Usually a .keyword field is wanted here")
+	cmd.Flags().DurationVar(&elasticsearchStorageArgs.refreshRate, "es-refresh-rate", 500*time.Millisecond, "The refresh rate to poll from elasticsearch while checking for new documents during watch requests.")
 }
 
 func newElasticsearchLogStorageProvider(obj resource.Object) builderrest.ResourceHandlerProvider {

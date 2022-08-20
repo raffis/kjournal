@@ -53,18 +53,23 @@ nav:
   - Storage:
     - server/storage/elasticsearch.md
     - server/storage/other.md
+  - Command Line Usage:
+      - server/cmdref/kjournal-apiserver.md
 - CLI:
   - cli/install.md
   - Command Line Usage:
       - cli/cmdref/kjournal.md
       - cli/cmdref/kjournal_audit.md
+      - cli/cmdref/kjournal_clusteraudit.md
       - cli/cmdref/kjournal_diary.md
       - cli/cmdref/kjournal_version.md
+- Tutorials:
+  - tutorials/kind.md
 - API:
   - api/container.v1beta1.md
   - api/audit.v1.md
 - Community:
-  - CONTRIBUTING.md
+  - contributing.md
 
 markdown_extensions:
   - admonition

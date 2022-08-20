@@ -1,5 +1,6 @@
 kind: Cluster
 apiVersion: kind.x-k8s.io/v1alpha4
+name: kjournal
 nodes:
 - role: control-plane
   kubeadmConfigPatches:
@@ -24,6 +25,6 @@ nodes:
             pathType: DirectoryOrCreate
   # mount the local file on the control plane
   extraMounts:
-  - hostPath: ./audit-policy.yaml
+  - hostPath: config/kind/audit-policy.yaml
     containerPath: /etc/kubernetes/policies/audit-policy.yaml
     readOnly: true

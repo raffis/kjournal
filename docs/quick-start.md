@@ -59,7 +59,7 @@ kjournal diary -n mynamespace mypod- --since 7d
 
 ## Filter
 Logs can be filtered server-side. This works for all kjournal commands.
-You can use the flag `--field-selector` which supports the schema as `kubectl get`. 
+You can use the flag `--field-selector` which supports the same operators as `kubectl get` does. 
 Howver on top of that kjournal also supports other operators including `>`,`<` or `in()`.
 
 ```sh
