@@ -45,7 +45,7 @@ an elasticsearch cluster.
 [OUTPUT]
     Name            es
     Match           kube.*
-    Host            logging-es-http.logging
+    Host            elasticsearch-master
     Port            9200
     Time_Key        @es_ts
     Logstash_Format On
@@ -56,7 +56,7 @@ an elasticsearch cluster.
 [OUTPUT]
     Name            es
     Match           audit.*
-    Host            logging-es-http.logging
+    Host            elasticsearch-master
     Port            9200
     Logstash_Format On
     Replace_Dots    On
@@ -68,7 +68,6 @@ an elasticsearch cluster.
     Daemon Off
     Log_Level info
     Parsers_File parsers.conf
-    Parsers_File custom_parsers.conf
     HTTP_Server On
     HTTP_Listen 0.0.0.0
     HTTP_Port 2020

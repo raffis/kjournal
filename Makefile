@@ -67,20 +67,50 @@ kind-test: docker-build
 ##@ Build
 
 .PHONY: build
-build: generate fmt vet ## Build manager binary.
-	go build -o bin/manager main.go
+build: generate fmt vet ## Build apiserver binary.
+	go build -o bin/apiserver cmd/*
 
 .PHONY: run
-run: manifests generate fmt vet ## Run a controller from your host.
-	go run ./main.go
+run: manifests generate fmt vet ## Run apiserver from your host.
+	go run cmd/*
 
 .PHONY: docker-build
-docker-build: test ## Build docker image with the manager.
+docker-build: test ## Build docker image with the apiserver.
 	docker build -t ${IMG} .
 
 .PHONY: docker-push
-docker-push: ## Push docker image with the manager.
+docker-push: ## Push docker image with the apiserver.
 	docker push ${IMG}
+
+api-docs: gen-crd-api-reference-docs  ## Generate API reference documentation
+	$(GEN_CRD_API_REFERENCE_DOCS) -api-dir=./pkg/apis/audit/v1 -config=./hack/api-docs/config.json -template-dir=./hack/api-docs/template -out-file=./docs/api/audit.v1.md
+	$(GEN_CRD_API_REFERENCE_DOCS) -api-dir=./pkg/apis/container/v1beta1 -config=./hack/api-docs/config.json -template-dir=./hack/api-docs/template -out-file=./docs/api/container.v1beta1.md
+
+# Find or download gen-crd-api-reference-docs
+GEN_CRD_API_REFERENCE_DOCS = $(GOBIN)/gen-crd-api-reference-docs
+.PHONY: gen-crd-api-reference-docs
+gen-crd-api-reference-docs: ## Download gen-crd-api-reference-docs locally if necessary
+	$(call go-install-tool,$(GEN_CRD_API_REFERENCE_DOCS),github.com/ahmetb/gen-crd-api-reference-docs@3f29e6853552dcf08a8e846b1225f275ed0f3e3b)
+
+.PHONY: apiserver-cmdref
+apiserver-cmdref: build  ## Build apiserver command line reference
+	./bin/apiserver cmdref -d docs/server/cmdref
+
+.PHONY: gen-docs
+gen-docs: api-docs apiserver-cmdref mkdocs  ## Build docs using mkdocs
+	cp README.md docs/index.md
+	cp CONTRIBUTING.md docs/contributing.md
+	mkdocs build
+
+.PHONY: mkdocs
+mkdocs: ## Install mkdocs
+	pip install mkdocs
+	pip install mkdocs-minify-plugin
+	pip install mkdocs-material
+
+.PHONY: mkdocs-serve
+mkdocs-serve: mkdocs ## Serve docs locally using mkdocs
+	mkdocs serve
 
 ##@ Deployment
 
@@ -120,27 +150,6 @@ ENVTEST = $(shell pwd)/bin/setup-envtest
 envtest: ## Download envtest-setup locally if necessary.
 	$(call go-install-tool,$(ENVTEST),sigs.k8s.io/controller-runtime/tools/setup-envtest@latest)
 
-api-docs: gen-crd-api-reference-docs  ## Generate API reference documentation
-	$(GEN_CRD_API_REFERENCE_DOCS) -api-dir=./pkg/apis/audit/v1 -config=./hack/api-docs/config.json -template-dir=./hack/api-docs/template -out-file=./docs/api/audit.v1.md
-	$(GEN_CRD_API_REFERENCE_DOCS) -api-dir=./pkg/apis/container/v1beta1 -config=./hack/api-docs/config.json -template-dir=./hack/api-docs/template -out-file=./docs/api/container.v1beta1.md
-
-# Find or download gen-crd-api-reference-docs
-GEN_CRD_API_REFERENCE_DOCS = $(GOBIN)/gen-crd-api-reference-docs
-.PHONY: gen-crd-api-reference-docs
-gen-crd-api-reference-docs: ## Download gen-crd-api-reference-docs locally if necessary
-	$(call go-install-tool,$(GEN_CRD_API_REFERENCE_DOCS),github.com/ahmetb/gen-crd-api-reference-docs@3f29e6853552dcf08a8e846b1225f275ed0f3e3b)
-
-.PHONY: gen-docs
-gen-docs: gen-crd-api-reference-docs mkdocs
-	cp README.md docs/index.md
-	cp CONTRIBUTING.md docs/contributing.md
-	mkdocs build
-
-.PHONY: mkdocs
-mkdocs:
-	pip install mkdocs
-	pip install mkdocs-minify-plugin
-	pip install mkdocs-material
 
 # go-install-tool will 'go install' any package $2 and install it to $1.
 define go-install-tool

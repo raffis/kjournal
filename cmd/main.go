@@ -25,6 +25,7 @@ import (
 	// +kubebuilder:scaffold:resource-imports
 	logv1beta1adapter "github.com/raffis/kjournal/internal/container/v1beta1"
 	auditv1 "github.com/raffis/kjournal/pkg/apis/audit/v1"
+	"github.com/spf13/cobra"
 )
 
 type apiServerFlags struct {
@@ -37,6 +38,10 @@ type httpWrap struct {
 
 var (
 	apiServerArgs apiServerFlags
+)
+
+var (
+	rootCmd *cobra.Command
 )
 
 func (m *httpWrap) ServeHTTP(w http.ResponseWriter, r *http.Request) {
@@ -72,6 +77,12 @@ func main() {
 
 	cmd.Flags().StringVar(&apiServerArgs.storageBackend, "log-storage-backend", "elasticsearch", "Storage backend, currently only elasticsearch is supported")
 	elasticsearchFlags(cmd)
+	rootCmd = cmd
+	rootCmd.Use = "kjournal-apiserver"
+	rootCmd.Short = "Launches the kjournal kubernetes apiserver"
+
+	cmd.AddCommand(cmdMan)
+	cmd.AddCommand(cmdRef)
 
 	err = cmd.Execute()
 	if err != nil {
