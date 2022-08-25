@@ -23,8 +23,8 @@ import (
 	"sigs.k8s.io/apiserver-runtime/pkg/builder"
 
 	// +kubebuilder:scaffold:resource-imports
-	logv1beta1adapter "github.com/raffis/kjournal/internal/container/v1beta1"
-	auditv1 "github.com/raffis/kjournal/pkg/apis/audit/v1"
+
+	corev1alpha1 "github.com/raffis/kjournal/pkg/apis/core/v1alpha1"
 	"github.com/spf13/cobra"
 )
 
@@ -56,9 +56,10 @@ func (m *httpWrap) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 func main() {
 	cmd, err := builder.APIServer.
 		// +kubebuilder:scaffold:resource-register
-		WithResourceAndHandler(&logv1beta1adapter.Log{}, newElasticsearchLogStorageProvider(&logv1beta1adapter.Log{})).
-		WithResourceAndHandler(&auditv1.Event{}, newElasticsearchAuditStorageProvider(&auditv1.Event{})).
-		WithResourceAndHandler(&auditv1.ClusterEvent{}, newElasticsearchAuditStorageProvider(&auditv1.ClusterEvent{})).
+		WithResourceAndHandler(&corev1alpha1.Bucket{}, newBucketConfigStorageProvider(&corev1alpha1.Bucket{})).
+		//WithResourceAndHandler(&corev1alpha1.Log{}, newStorageProvider(&corev1alpha1.Log{})).
+		WithResourceAndHandler(&corev1alpha1.ContainerLog{}, newStorageProvider(&logv1beta1.ContainerLog{})).
+		WithResourceAndHandler(&corev1alpha1.AuditEvent{}, newStorageProvider(&logv1beta1.AuditEvent{})).
 		WithLocalDebugExtension().
 		WithoutEtcd().
 		WithServerFns(func(server *builder.GenericAPIServer) *builder.GenericAPIServer {

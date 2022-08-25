@@ -34,6 +34,7 @@ import (
 
 	// +kubebuilder:scaffold:resource-imports
 	elasticsearch "github.com/elastic/go-elasticsearch/v8"
+	"github.com/raffis/kjournal/pkg/config"
 	"github.com/raffis/kjournal/pkg/storage"
 	"github.com/spf13/cobra"
 )
@@ -135,7 +136,7 @@ func newElasticsearchAuditStorageProvider(obj resource.Object) builderrest.Resou
 	}
 }
 
-func newElasticsearchStorageProvider(obj resource.Object, scheme *runtime.Scheme, getter generic.RESTOptionsGetter, opts storage.ElasticsearchOptions) (rest.Storage, error) {
+func newElasticsearchStorageProvider(obj resource.Object, scheme *runtime.Scheme, getter generic.RESTOptionsGetter, bucket config.Bucket) (rest.Storage, error) {
 	gr := obj.GetGroupVersionResource().GroupResource()
 	codec, _, err := srvstorage.NewStorageCodec(srvstorage.StorageCodecConfig{
 		StorageMediaType:  runtime.ContentTypeJSON,
@@ -158,7 +159,7 @@ func newElasticsearchStorageProvider(obj resource.Object, scheme *runtime.Scheme
 		gr,
 		codec,
 		client,
-		opts,
+		bucket,
 		obj.NamespaceScoped(),
 		obj.New,
 		obj.NewList,
