@@ -1,0 +1,41 @@
+apiVersion: kjournal.config/v1beta1
+backends: 
+- name: elasticsearch
+  type: elasticsearch
+  elasticsearch:
+      url: https://localhost:8080
+      cacert: true
+      dd: d
+
+bindings:
+  container: conainer
+  audit: audit
+  event: event
+
+buckets:
+- name: container
+  backend:
+    name: elasticsearch
+    elasticsearch:
+        index: logstash-*
+  filter:
+    kubernetes.pod_name: ${podName}
+    kubernetes.container_name: ${containerName}
+    kubernetes.namespace: ${namespace}
+
+- name: audit
+  backend:
+    name: elasticsearch
+    elasticsearch:
+        index: k8saudit-*
+
+- name: event
+  backend:
+    name: elasticsearch
+    elasticsearch:
+        index: event-*
+
+- name: syslog
+  backend:
+    elasticsearch:
+        index: syslog-*

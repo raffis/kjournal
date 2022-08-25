@@ -14,11 +14,10 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package v1beta1
+package v1alpha1
 
 import (
 	"context"
-	"encoding/json"
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -32,21 +31,9 @@ import (
 
 // Log
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
-type Log struct {
-	metav1.TypeMeta `json:",inline"`
-	// ObjectMeta is only included to fullfil metav1.Object interface,
-	// it will be omitted from any json de and encoding. It is required for storage.ConvertToTable()
-	metav1.ObjectMeta `json:"-"`
-	Metadata          LogMetadata     `json:"metadata"`
-	Container         string          `json:"container"`
-	Pod               string          `json:"pod"`
-	Unstructured      json.RawMessage `json:"unstructured"`
-	Env               json.RawMessage `json:"env"`
-}
 
-type LogMetadata struct {
-	Namespace         string      `json:"namespace"`
-	CreationTimestamp metav1.Time `json:"creationTimestamp"`
+type Log struct {
+	Namespace string `json:"namespace"`
 }
 
 // LogList

@@ -22,5 +22,5 @@ limitations under the License.
 // +k8s:deepcopy-gen=package,register
 // +k8s:conversion-gen=github.com/raffis/kjournal/pkg/apis/container
 // +k8s:defaulter-gen=TypeMeta
-// +groupName=container.kjournal
-package v1beta1 // import "github.com/raffis/kjournal/pkg/apis/container/v1beta1"
+// +groupName=core.kjournal
+package v1alpha1 // import "github.com/raffis/kjournal/pkg/apis/container/v1beta1"

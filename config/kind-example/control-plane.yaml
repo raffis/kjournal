@@ -25,6 +25,6 @@ nodes:
             pathType: DirectoryOrCreate
   # mount the local file on the control plane
   extraMounts:
-  - hostPath: config/kind/audit-policy.yaml
+  - hostPath: config/kind-example/audit-policy.yaml
     containerPath: /etc/kubernetes/policies/audit-policy.yaml
     readOnly: true
