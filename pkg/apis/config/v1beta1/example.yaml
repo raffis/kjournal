@@ -18,10 +18,11 @@ buckets:
     name: elasticsearch
     elasticsearch:
         index: logstash-*
-  filter:
-    kubernetes.pod_name: ${podName}
-    kubernetes.container_name: ${containerName}
-    kubernetes.namespace: ${namespace}
+  fieldMap:
+    metadata.namespace: kubernetes.namespace
+    metadata.creationTimestamp: @es_ts
+    pod: kubernetes.pod_name
+    container: kubernetes.container_name
 
 - name: audit
   backend:

@@ -15,19 +15,19 @@ var (
 )
 
 type BackendRegistry interface {
-	AddBackend(backend Backend) error
-	GetBackend(name string) (Backend, error)
+	AddBackend(backend *Backend) error
+	GetBackend(name string) (*Backend, error)
 }
 
 type backendRegistry struct {
-	store []Backend
+	store []*Backend
 }
 
 func NewBackendRegistry() BackendRegistry {
 	return &backendRegistry{}
 }
 
-func (r *backendRegistry) AddBackend(backend Backend) error {
+func (r *backendRegistry) AddBackend(backend *Backend) error {
 	for _, v := range r.store {
 		if v.Name == backend.Name {
 			return fmt.Errorf("%w: can not add backend %s", ErrBackendAlreadyExists, backend.Name)
@@ -35,19 +35,19 @@ func (r *backendRegistry) AddBackend(backend Backend) error {
 	}
 
 	if errs := validation.NameIsDNSSubdomain(backend.Name, false); len(errs) > 0 {
-		return fmt.Errorf("%w: can not add backend %s (%s)", ErrBackendNameInvalid, strings.Join(errs, ";"))
+		return fmt.Errorf("%w: can not add backend %s (%s)", ErrBackendNameInvalid, backend.Name, strings.Join(errs, ";"))
 	}
 
 	r.store = append(r.store, backend)
 	return nil
 }
 
-func (r *backendRegistry) GetBackend(name string) (Backend, error) {
+func (r *backendRegistry) GetBackend(name string) (*Backend, error) {
 	for _, v := range r.store {
-		if v.Name == backend.Name {
+		if v.Name == name {
 			return v, nil
 		}
 	}
 
-	return nil, fmt.Errorf("%w: name %s not found", ErrBackendNotFound, backend.Name)
+	return nil, fmt.Errorf("%w: name %s not found", ErrBackendNotFound, name)
 }

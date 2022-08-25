@@ -91,7 +91,7 @@ func (in *AuditEventList) GetListMeta() *metav1.ListMeta {
 }
 
 // ConvertToTable implements the TableConvertor interface for REST.
-func (in *AuditEvent) ConvertToTable(ctx context.Context, tableOptions runtime.Object) (*metav1.Table, error) {
+/*func (in *AuditEvent) ConvertToTable(ctx context.Context, tableOptions runtime.Object) (*metav1.Table, error) {
 	table := &metav1.Table{
 		ColumnDefinitions: eventTableColums,
 		TypeMeta:          in.TypeMeta,
@@ -128,3 +128,4 @@ func (in *AuditEventList) ConvertToTable(ctx context.Context, tableOptions runti
 	table.Rows = rows
 	return table, nil
 }
+*/

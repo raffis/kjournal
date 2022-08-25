@@ -18,11 +18,10 @@ type BackendElasticsearch struct {
 }
 
 type Bucket struct {
-	Type           string        `json:"type"`
-	Name           string        `json:"name"`
-	Backend        BucketBackend `json:"backend"`
-	TimestampField string
-	NamespaceField string
+	Type     string        `json:"type"`
+	Name     string        `json:"name"`
+	Backend  BucketBackend `json:"backend"`
+	FieldMap map[string]string
 }
 
 type BucketBackend struct {

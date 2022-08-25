@@ -4,50 +4,51 @@ import (
 	"encoding/json"
 	"time"
 
-	"github.com/raffis/kjournal/pkg/apis/container/v1beta1"
+	"github.com/raffis/kjournal/pkg/apis/core/v1alpha1"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 )
 
-type Log struct {
-	v1beta1.Log
-	Unstructured map[string]interface{} `json:"unstructured"`
-	Env          map[string]interface{} `json:"env"`
+type ContainerLog struct {
+	v1alpha1.ContainerLog
+	Payload map[string]interface{} `json:"payload"`
+	//Env          map[string]interface{} `json:"env"`
+	fieldMap map[string]string
 }
 
-func (in *Log) UnmarshalJSON(bs []byte) (err error) {
-	if err = json.Unmarshal(bs, &in.Unstructured); err != nil {
+func (in *ContainerLog) UnmarshalJSON(bs []byte) (err error) {
+	if err = json.Unmarshal(bs, &in.Payload); err != nil {
 		return err
 	}
 
-	if v, ok := in.Unstructured["kubernetes"]; ok {
+	/*if v, ok := in.Payload["kubernetes"]; ok {
 		in.Env = v.(map[string]interface{})
-		delete(in.Unstructured, "kubernetes")
-	}
+		delete(in.Payload, "kubernetes")
+	}*/
 
-	if v, ok := in.Unstructured["@es_ts"]; ok {
+	if v, ok := in.Payload["@es_ts"]; ok {
 		ts, err := time.Parse(time.RFC3339, v.(string))
 		if err != nil {
 			return err
 		}
 
-		in.Metadata.CreationTimestamp = v1.Time{Time: ts}
-		delete(in.Unstructured, "@es_ts")
+		in.CreationTimestamp = v1.Time{Time: ts}
+		delete(in.Payload, "@es_ts")
 	}
 
-	if v, ok := in.Env["pod_name"]; ok {
+	if v, ok := in.Payload["pod_name"]; ok {
 		in.Pod = v.(string)
-		delete(in.Env, "pod_name")
+		delete(in.Payload, "pod_name")
 	}
 
-	if v, ok := in.Env["container_name"]; ok {
+	if v, ok := in.Payload["container_name"]; ok {
 		in.Container = v.(string)
-		delete(in.Env, "container_name")
+		delete(in.Payload, "container_name")
 	}
 
-	if v, ok := in.Env["namespace_name"]; ok {
-		in.Metadata.Namespace = v.(string)
-		delete(in.Env, "namespace_name")
+	if v, ok := in.Payload["namespace_name"]; ok {
+		in.Namespace = v.(string)
+		delete(in.Payload, "namespace_name")
 	}
 
 	in.TypeMeta.Kind = "Log"
@@ -56,15 +57,20 @@ func (in *Log) UnmarshalJSON(bs []byte) (err error) {
 	return nil
 }
 
-func (in *Log) New() runtime.Object {
-	return &Log{}
+func (in *ContainerLog) WithFieldMap(fieldMap map[string]string) *ContainerLog {
+	in.fieldMap = fieldMap
+	return in
 }
 
-func (in *Log) NewList() runtime.Object {
-	return &LogList{}
+func (in *ContainerLog) New() runtime.Object {
+	return &ContainerLog{}
 }
 
-type LogList struct {
-	v1beta1.LogList
-	Items []Log `json:"items"`
+func (in *ContainerLog) NewList() runtime.Object {
+	return &ContainerLogList{}
+}
+
+type ContainerLogList struct {
+	v1alpha1.ContainerLogList
+	Items []ContainerLog `json:"items"`
 }

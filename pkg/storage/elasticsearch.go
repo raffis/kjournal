@@ -247,7 +247,7 @@ func (f *elasticsearchREST) fetch(
 	}
 
 	if _, ok := query["pit"]; !ok {
-		req = append(req, f.es.Search.WithIndex(f.bucket.Index))
+		req = append(req, f.es.Search.WithIndex(f.bucket.Backend.Elasticsearch.Index))
 	}
 
 	if options.Limit != 0 {
@@ -284,17 +284,26 @@ func (f *elasticsearchREST) fetch(
 	return esResults, err
 }
 
+func (f *elasticsearchREST) getFieldMap(field, fallback string) string {
+	if val, ok := f.bucket.FieldMap[field]; ok {
+		return val
+	}
+
+	return fallback
+}
+
 func (f *elasticsearchREST) buildQuery(
 	ctx context.Context,
 	options *metainternalversion.ListOptions,
 ) (map[string]interface{}, error) {
+	timestampField := f.getFieldMap("metadata.creationTimestamp", "@es_timestamp")
 	query := map[string]interface{}{
 		"_source": map[string]interface{}{
 			"excludes": []interface{}{"kind"},
 		},
 		"sort": []map[string]interface{}{
 			{
-				f.bucket.TimestampField: "asc",
+				timestampField: "asc",
 			},
 		},
 		"query": map[string]interface{}{
@@ -323,15 +332,8 @@ func (f *elasticsearchREST) buildQuery(
 		q := query["query"].(map[string]interface{})["bool"].(map[string]interface{})[operator[0]].([]map[string]interface{})
 		field := req.Key()
 
-		switch field {
-		case "pod":
-			field = "kubernetes.pod_name"
-		case "container":
-			field = "kubernetes.container_name"
-		case "requestReceivedTimestamp":
-			field = f.bucket.TimestampField
-		case "creationTimestamp":
-			field = f.bucket.TimestampField
+		if val, ok := f.bucket.FieldMap[field]; ok {
+			field = val
 		}
 
 		var match map[string]interface{}
@@ -371,7 +373,7 @@ func (f *elasticsearchREST) buildQuery(
 		q = append(q, match)
 		query["query"].(map[string]interface{})["bool"].(map[string]interface{})[operator[0]] = q
 
-		if !skipTimestampFilter && field == f.bucket.TimestampField {
+		if !skipTimestampFilter && field == timestampField {
 			skipTimestampFilter = true
 		}
 	}
@@ -380,7 +382,7 @@ func (f *elasticsearchREST) buildQuery(
 		q := query["query"].(map[string]interface{})["bool"].(map[string]interface{})["must"].([]map[string]interface{})
 		match := map[string]interface{}{
 			"range": map[string]interface{}{
-				f.bucket.TimestampField: map[string]interface{}{
+				timestampField: map[string]interface{}{
 					"gte": "now-5h",
 				},
 			},
@@ -390,24 +392,13 @@ func (f *elasticsearchREST) buildQuery(
 
 	}
 
-	/*if f.groupResource.Resource == "events" {
-		q := query["query"].(map[string]interface{})["bool"].(map[string]interface{})["must"].([]map[string]interface{})
-		match := map[string]interface{}{
-			"match": map[string]interface{}{
-				"kind.keyword": "Event",
-			},
-		}
-		q = append(q, match)
-		query["query"].(map[string]interface{})["bool"].(map[string]interface{})["must"] = q
-	}*/
-
 	// If resource is namespaced objectRef.namespace will always be set to the current calling context namespace
 	if f.isNamespaced {
 		ns, _ := request.NamespaceFrom(ctx)
 		q := query["query"].(map[string]interface{})["bool"].(map[string]interface{})["must"].([]map[string]interface{})
 		match := map[string]interface{}{
 			"match_phrase": map[string]interface{}{
-				f.bucket.NamespaceField: ns,
+				f.getFieldMap("metadata.namespace", "metadata.namespace"): ns,
 			},
 		}
 		q = append(q, match)
@@ -458,7 +449,7 @@ func (w *streamer) errorAndAbort(err error) {
 
 func (w *streamer) Start(ctx context.Context, options *metainternalversion.ListOptions) {
 	if w.usePIT {
-		res, err := w.f.es.OpenPointInTime([]string{w.f.bucket.Index}, "5m")
+		res, err := w.f.es.OpenPointInTime([]string{w.f.bucket.Backend.Elasticsearch.Index}, "5m")
 		if err != nil {
 			w.errorAndAbort(err)
 			return

@@ -53,13 +53,13 @@ func newBucketConfigStorageProvider(obj resource.Object) builderrest.ResourceHan
 		}
 
 		buckets = config.NewBucketRegistry()
-		err := buckets.AddBucket(cfg.Buckets[0])
+		err := buckets.AddBucket(&cfg.Buckets[0])
 		if err != nil {
 			return nil, err
 		}
 
 		backends = config.NewBackendRegistry()
-		err = backends.AddBackend(cfg.Backends[0])
+		err = backends.AddBackend(&cfg.Backends[0])
 		if err != nil {
 			return nil, err
 		}

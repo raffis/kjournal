@@ -1,11 +1,10 @@
-package storage
+package config
 
 import (
 	"context"
 	"fmt"
 	"reflect"
 
-	config "github.com/elastic/go-config/v8"
 	"k8s.io/apimachinery/pkg/api/meta"
 	metainternalversion "k8s.io/apimachinery/pkg/apis/meta/internalversion"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -23,7 +22,6 @@ var _ rest.Storage = &configREST{}
 func NewConfigREST(
 	groupResource schema.GroupResource,
 	codec runtime.Codec,
-	es *config.Client,
 	isNamespaced bool,
 	newFunc func() runtime.Object,
 	newListFunc func() runtime.Object,
@@ -31,7 +29,6 @@ func NewConfigREST(
 	return &configREST{
 		groupResource: groupResource,
 		codec:         codec,
-		es:            es,
 		metaAccessor:  meta.NewAccessor(),
 		isNamespaced:  isNamespaced,
 		newFunc:       newFunc,
@@ -43,7 +40,6 @@ type configREST struct {
 	rest.TableConvertor
 	groupResource schema.GroupResource
 	codec         runtime.Codec
-	es            *config.Client
 	isNamespaced  bool
 	metaAccessor  meta.MetadataAccessor
 	newFunc       func() runtime.Object
@@ -96,21 +92,10 @@ func (f *configREST) List(
 	klog.InfoS("List request", "options", options)
 
 	newListObj := f.NewList()
-	v, err := getListPrt(newListObj)
-	if err != nil {
+	//v, err := getListPrt(newListObj)
+	/*if err != nil {
 		return nil, err
-	}
-
-	//ns, _ := request.NamespaceFrom(ctx)
-	for _, hit = range esResults.Hits.Hits {
-		newObj := f.newFunc()
-		decodedObj, _, err := f.codec.Decode(hit.Source, nil, newObj)
-		if err != nil {
-			return nil, err
-		}
-
-		appendItem(v, decodedObj)
-	}
+	}*/
 
 	return newListObj, nil
 }
