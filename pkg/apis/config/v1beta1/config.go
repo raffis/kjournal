@@ -1,13 +1,14 @@
 package v1beta1
 
 type Config struct {
-	Backend Backend  `json:"backend"`
-	Buckets []Bucket `json:"buckets"`
+	Backends []Backend `json:"backends"`
+	Buckets  []Bucket  `json:"buckets"`
 }
 
 type Backend struct {
 	Type          string               `json:"type"`
 	Elasticsearch BackendElasticsearch `json:"elasticsearch"`
+	Name          string               `json:"name"`
 }
 
 type BackendElasticsearch struct {

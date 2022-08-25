@@ -30,7 +30,6 @@ import (
 	srvstorage "k8s.io/apiserver/pkg/server/storage"
 	"k8s.io/apiserver/pkg/storage/storagebackend"
 	"sigs.k8s.io/apiserver-runtime/pkg/builder/resource"
-	builderrest "sigs.k8s.io/apiserver-runtime/pkg/builder/rest"
 
 	// +kubebuilder:scaffold:resource-imports
 	elasticsearch "github.com/elastic/go-elasticsearch/v8"
@@ -110,6 +109,7 @@ func elasticsearchFlags(cmd *cobra.Command) {
 	cmd.Flags().DurationVar(&elasticsearchStorageArgs.refreshRate, "es-refresh-rate", 500*time.Millisecond, "The refresh rate to poll from elasticsearch while checking for new documents during watch requests.")
 }
 
+/*
 func newElasticsearchLogStorageProvider(obj resource.Object) builderrest.ResourceHandlerProvider {
 	return func(scheme *runtime.Scheme, getter generic.RESTOptionsGetter) (rest.Storage, error) {
 		opts := storage.ElasticsearchOptions{
@@ -134,7 +134,7 @@ func newElasticsearchAuditStorageProvider(obj resource.Object) builderrest.Resou
 
 		return newElasticsearchStorageProvider(obj, scheme, getter, opts)
 	}
-}
+}*/
 
 func newElasticsearchStorageProvider(obj resource.Object, scheme *runtime.Scheme, getter generic.RESTOptionsGetter, bucket config.Bucket) (rest.Storage, error) {
 	gr := obj.GetGroupVersionResource().GroupResource()

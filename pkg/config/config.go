@@ -8,11 +8,13 @@ type Config struct {
 }
 
 type Backend struct {
-	Type          string               `json:"type"`
+	Type          string `json:"type"`
+	Name          string
 	Elasticsearch BackendElasticsearch `json:"elasticsearch"`
 }
 
 type BackendElasticsearch struct {
+	URL string
 }
 
 type Bucket struct {

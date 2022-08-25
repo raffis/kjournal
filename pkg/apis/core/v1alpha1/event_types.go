@@ -19,115 +19,73 @@ package v1alpha1
 import (
 	"context"
 
+	eventv1 "k8s.io/api/events/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/apimachinery/pkg/util/validation/field"
-	auditv1 "k8s.io/apiserver/pkg/apis/audit"
 	"sigs.k8s.io/apiserver-runtime/pkg/builder/resource"
 	"sigs.k8s.io/apiserver-runtime/pkg/builder/resource/resourcestrategy"
 )
 
 // +genclient
 
-// AuditEvent
+// Event
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
 
-// AuditEvent
+// Event
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
-type AuditEvent struct {
-	// ObjectMeta is only included to fullfil metav1.Object interface,
-	// it will be omitted from any json de and encoding. It is required for storage.ConvertToTable()
-	metav1.ObjectMeta `json:"-"`
-
-	auditv1.Event `json:",inline"`
+type Event struct {
+	eventv1.Event `json:",inline"`
 }
 
-// AuditEventList
+// EventList
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
-type AuditEventList struct {
+type EventList struct {
 	metav1.TypeMeta `json:",inline"`
 	metav1.ListMeta `json:"metadata,omitempty"`
 
-	Items []AuditEvent `json:"items"`
+	Items []Event `json:"items"`
 }
 
-var _ resource.Object = &AuditEvent{}
-var _ resourcestrategy.Validater = &AuditEvent{}
+var _ resource.Object = &Event{}
+var _ resourcestrategy.Validater = &Event{}
 
-func (in *AuditEvent) GetObjectMeta() *metav1.ObjectMeta {
+func (in *Event) GetObjectMeta() *metav1.ObjectMeta {
 	return &in.ObjectMeta
 }
 
-func (in *AuditEvent) NamespaceScoped() bool {
+func (in *Event) NamespaceScoped() bool {
 	return false
 }
 
-func (in *AuditEvent) New() runtime.Object {
-	return &AuditEvent{}
+func (in *Event) New() runtime.Object {
+	return &Event{}
 }
 
-func (in *AuditEvent) NewList() runtime.Object {
-	return &AuditEventList{}
+func (in *Event) NewList() runtime.Object {
+	return &EventList{}
 }
 
-func (in *AuditEvent) GetGroupVersionResource() schema.GroupVersionResource {
+func (in *Event) GetGroupVersionResource() schema.GroupVersionResource {
 	return schema.GroupVersionResource{
 		Group:    "core.kjournal",
 		Version:  "v1alpha1",
-		Resource: "auditevents",
+		Resource: "events",
 	}
 }
 
-func (in *AuditEvent) IsStorageVersion() bool {
+func (in *Event) IsStorageVersion() bool {
 	return true
 }
 
-func (in *AuditEvent) Validate(ctx context.Context) field.ErrorList {
+func (in *Event) Validate(ctx context.Context) field.ErrorList {
 	return nil
 }
 
-var _ resource.ObjectList = &AuditEventList{}
+var _ resource.ObjectList = &EventList{}
 
-func (in *AuditEventList) GetListMeta() *metav1.ListMeta {
+func (in *EventList) GetListMeta() *metav1.ListMeta {
 	return &in.ListMeta
-}
-
-// ConvertToTable implements the TableConvertor interface for REST.
-func (in *AuditEvent) ConvertToTable(ctx context.Context, tableOptions runtime.Object) (*metav1.Table, error) {
-	table := &metav1.Table{
-		ColumnDefinitions: eventTableColums,
-		TypeMeta:          in.TypeMeta,
-	}
-
-	rows := make([]metav1.TableRow, 0, 1)
-	row := metav1.TableRow{
-		Object: runtime.RawExtension{Object: in},
-		Cells:  []interface{}{in.RequestReceivedTimestamp, in.Verb, in.ResponseStatus.Code, in.User.Username},
-	}
-
-	rows = append(rows, row)
-	table.Rows = rows
-	return table, nil
-}
-
-// ConvertToTable implements the TableConvertor interface for REST.
-func (in *AuditEventList) ConvertToTable(ctx context.Context, tableOptions runtime.Object) (*metav1.Table, error) {
-	table := &metav1.Table{
-		ColumnDefinitions: eventTableColums,
-		TypeMeta:          in.TypeMeta,
-	}
-
-	rows := make([]metav1.TableRow, 0, 1)
-
-	for _, v := range in.Items {
-		row := metav1.TableRow{
-			Object: runtime.RawExtension{Object: &v},
-			Cells:  []interface{}{v.RequestReceivedTimestamp, v.Verb, v.ResponseStatus.Code, v.User.Username},
-		}
-		rows = append(rows, row)
-	}
-
-	table.Rows = rows
-	return table, nil
 }

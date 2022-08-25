@@ -15,8 +15,8 @@ var (
 )
 
 type BackendRegistry interface {
-	AddBackend(Backend) error
-	GetBackends() []Backend
+	AddBackend(backend Backend) error
+	GetBackend(name string) (Backend, error)
 }
 
 type backendRegistry struct {
