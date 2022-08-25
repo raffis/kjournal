@@ -18,6 +18,7 @@ package v1alpha1
 
 import (
 	"context"
+	"encoding/json"
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -31,9 +32,10 @@ import (
 
 // Log
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
-
 type Log struct {
-	Namespace string `json:"namespace"`
+	metav1.TypeMeta   `json:",inline"`
+	metav1.ObjectMeta `json:"metadata"`
+	Payload           json.RawMessage `json:"payload"`
 }
 
 // LogList
@@ -66,8 +68,8 @@ func (in *Log) NewList() runtime.Object {
 
 func (in *Log) GetGroupVersionResource() schema.GroupVersionResource {
 	return schema.GroupVersionResource{
-		Group:    "container.kjournal",
-		Version:  "v1beta1",
+		Group:    "core.kjournal",
+		Version:  "v1alpha1",
 		Resource: "logs",
 	}
 }

@@ -58,8 +58,9 @@ func main() {
 		// +kubebuilder:scaffold:resource-register
 		WithResourceAndHandler(&corev1alpha1.Bucket{}, newBucketConfigStorageProvider(&corev1alpha1.Bucket{})).
 		//WithResourceAndHandler(&corev1alpha1.Log{}, newStorageProvider(&corev1alpha1.Log{})).
-		WithResourceAndHandler(&corev1alpha1.ContainerLog{}, newStorageProvider(&logv1beta1.ContainerLog{})).
-		WithResourceAndHandler(&corev1alpha1.AuditEvent{}, newStorageProvider(&logv1beta1.AuditEvent{})).
+		WithResourceAndHandler(&corev1alpha1.ContainerLog{}, newStorageProvider(&corev1alpha1.ContainerLog{}, "container")).
+		WithResourceAndHandler(&corev1alpha1.AuditEvent{}, newStorageProvider(&corev1alpha1.AuditEvent{}, "audit")).
+		WithResourceAndHandler(&corev1alpha1.Event{}, newStorageProvider(&corev1alpha1.Event{}, "event")).
 		WithLocalDebugExtension().
 		WithoutEtcd().
 		WithServerFns(func(server *builder.GenericAPIServer) *builder.GenericAPIServer {

@@ -17,7 +17,6 @@ limitations under the License.
 package v1alpha1
 
 import (
-	eventsv1 "k8s.io/api/events/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/schema"
@@ -38,12 +37,12 @@ var AddToScheme = func(scheme *runtime.Scheme) error {
 	scheme.AddKnownTypes(schema.GroupVersion{
 		Group:   "core.kjournal",
 		Version: "v1alpha1",
-	}, &ContainerLog{}, &ContainerLogtList{})
+	}, &ContainerLog{}, &ContainerLogList{})
 
 	scheme.AddKnownTypes(schema.GroupVersion{
 		Group:   "core.kjournal",
 		Version: "v1alpha1",
-	}, &eventsv1.Event{}, &eventsv1.EventList{})
+	}, &Event{}, &EventList{})
 
 	scheme.AddKnownTypes(schema.GroupVersion{
 		Group:   "core.kjournal",

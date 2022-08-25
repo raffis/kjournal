@@ -32,9 +32,6 @@ import (
 
 // AuditEvent
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
-
-// AuditEvent
-// +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
 type AuditEvent struct {
 	// ObjectMeta is only included to fullfil metav1.Object interface,
 	// it will be omitted from any json de and encoding. It is required for storage.ConvertToTable()
