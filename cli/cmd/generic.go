@@ -34,20 +34,20 @@ import (
 	"k8s.io/apimachinery/pkg/runtime/schema"
 )
 
-type diaryFlags struct {
+type genericFlags struct {
 	container string
 	noColor   bool
 	timestamp bool
 }
 
-var diaryArgs diaryFlags
+var genericArgs genericFlags
 
-var diaryCmd = &cobra.Command{
-	Use:   "diary",
+var genericCmd = &cobra.Command{
+	Use:   "generic",
 	Short: "Get container logs",
-	Long:  "The diary command prints logs from containers",
+	Long:  "The generic command prints logs from containers",
 	Example: `  # Print logs from all pods in the same namespace
-  kjoural diary -n mynamespace`,
+  kjoural generic -n mynamespace`,
 	//ValidArgsFunction: resourceNamesCompletionFunc(logsv1beta1.GroupVersion.WithKind(logsv1beta1.LogKind)),
 	RunE: func(cmd *cobra.Command, args []string) error {
 		get := getCommand{
@@ -72,8 +72,8 @@ var diaryCmd = &cobra.Command{
 					fieldSelector = append(fieldSelector, fmt.Sprintf("creationTimestamp>%d", time.Now().Unix()*1000-ts.Milliseconds()))
 				}
 
-				if diaryArgs.container != "" {
-					fieldSelector = append(fieldSelector, fmt.Sprintf("container=%s", diaryArgs.container))
+				if genericArgs.container != "" {
+					fieldSelector = append(fieldSelector, fmt.Sprintf("container=%s", genericArgs.container))
 				}
 
 				opts.FieldSelector = strings.Join(fieldSelector, ",")
@@ -171,12 +171,12 @@ func print(log logsv1beta1.Log) {
 }
 
 func init() {
-	diaryCmd.PersistentFlags().StringVarP(&diaryArgs.container, "container", "c", "", "Only dump logs from container names matching. (This is the same as --field-selector container=name)")
-	diaryCmd.PersistentFlags().BoolVarP(&diaryArgs.noColor, "no-color", "", false, "Don't use colors in the default output")
-	diaryCmd.PersistentFlags().BoolVarP(&diaryArgs.timestamp, "timestamp", "t", false, "Print creationTime timestamp in the default output.")
+	genericCmd.PersistentFlags().StringVarP(&genericArgs.container, "container", "c", "", "Only dump logs from container names matching. (This is the same as --field-selector container=name)")
+	genericCmd.PersistentFlags().BoolVarP(&genericArgs.noColor, "no-color", "", false, "Don't use colors in the default output")
+	genericCmd.PersistentFlags().BoolVarP(&genericArgs.timestamp, "timestamp", "t", false, "Print creationTime timestamp in the default output.")
 
-	addGetFlags(diaryCmd)
-	rootCmd.AddCommand(diaryCmd)
+	addGetFlags(genericCmd)
+	rootCmd.AddCommand(genericCmd)
 }
 
 var logAdapterType = apiType{

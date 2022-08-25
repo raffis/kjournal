@@ -46,7 +46,7 @@ Install the elastic helm repository and deploy a single es node.
 
 ```sh
 helm repo add elastic https://helm.elastic.co
-helm install elasticsearch elastic/elasticsearch -n logging --set replicas=0
+helm install elasticsearch elastic/elasticsearch -n logging --set replicas=1
 ```
 
 ## Deploy fluent-bit

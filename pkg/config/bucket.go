@@ -15,19 +15,19 @@ var (
 )
 
 type BucketRegistry interface {
-	AddBucket(bucket Bucket) error
-	GetBucket(name string) (Bucket, error)
+	AddBucket(bucket *Bucket) error
+	GetBucket(name string) (*Bucket, error)
 }
 
 type bucketRegistry struct {
-	store []Bucket
+	store []*Bucket
 }
 
 func NewBucketRegistry() BucketRegistry {
 	return &bucketRegistry{}
 }
 
-func (r *bucketRegistry) AddBucket(bucket Bucket) error {
+func (r *bucketRegistry) AddBucket(bucket *Bucket) error {
 	for _, v := range r.store {
 		if v.Name == bucket.Name {
 			return fmt.Errorf("%w: can not add bucket %s", ErrBucketAlreadyExists, bucket.Name)
@@ -35,14 +35,14 @@ func (r *bucketRegistry) AddBucket(bucket Bucket) error {
 	}
 
 	if errs := validation.NameIsDNSSubdomain(bucket.Name, false); len(errs) > 0 {
-		return fmt.Errorf("%w: can not add bucket %s (%s)", ErrBucketNameInvalid, strings.Join(errs, ";"))
+		return fmt.Errorf("%w: can not add bucket %s (%s)", ErrBucketNameInvalid, bucket.Name, strings.Join(errs, ";"))
 	}
 
 	r.store = append(r.store, bucket)
 	return nil
 }
 
-func (r *bucketRegistry) GetBucket(name string) (Bucket, error) {
+func (r *bucketRegistry) GetBucket(name string) (*Bucket, error) {
 	for _, v := range r.store {
 		if v.Name == name {
 			return v, nil
