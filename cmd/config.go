@@ -17,6 +17,8 @@ limitations under the License.
 package main
 
 import (
+	"errors"
+
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apiserver/pkg/registry/generic"
 	"k8s.io/apiserver/pkg/registry/rest"
@@ -85,5 +87,7 @@ func newStorageProvider(obj resource.Object, name string) builderrest.ResourceHa
 		case "elasticsearch":
 			return newElasticsearchStorageProvider(obj, scheme, getter, bucket)
 		}
+
+		return nil, errors.New("unsupported backend configured")
 	}
 }

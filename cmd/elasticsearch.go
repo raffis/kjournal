@@ -136,7 +136,7 @@ func newElasticsearchAuditStorageProvider(obj resource.Object) builderrest.Resou
 	}
 }*/
 
-func newElasticsearchStorageProvider(obj resource.Object, scheme *runtime.Scheme, getter generic.RESTOptionsGetter, bucket config.Bucket) (rest.Storage, error) {
+func newElasticsearchStorageProvider(obj resource.Object, scheme *runtime.Scheme, getter generic.RESTOptionsGetter, bucket *config.Bucket) (rest.Storage, error) {
 	gr := obj.GetGroupVersionResource().GroupResource()
 	codec, _, err := srvstorage.NewStorageCodec(srvstorage.StorageCodecConfig{
 		StorageMediaType:  runtime.ContentTypeJSON,

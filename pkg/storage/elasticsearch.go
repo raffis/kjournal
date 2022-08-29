@@ -35,7 +35,7 @@ func NewElasticsearchREST(
 	groupResource schema.GroupResource,
 	codec runtime.Codec,
 	es *elasticsearch.Client,
-	bucket config.Bucket,
+	bucket *config.Bucket,
 	isNamespaced bool,
 	newFunc func() runtime.Object,
 	newListFunc func() runtime.Object,
@@ -91,7 +91,7 @@ type elasticsearchREST struct {
 	groupResource schema.GroupResource
 	codec         runtime.Codec
 	es            *elasticsearch.Client
-	bucket        config.Bucket
+	bucket        *config.Bucket
 	isNamespaced  bool
 	metaAccessor  meta.MetadataAccessor
 	newFunc       func() runtime.Object
@@ -141,7 +141,7 @@ func (f *elasticsearchREST) Watch(ctx context.Context, options *metainternalvers
 	klog.InfoS("Start watch stream", "options", options)
 
 	jw := &streamer{
-		refreshRate: f.bucket.RefreshRate,
+		refreshRate: f.bucket.Backend.Elasticsearch.RefreshRate,
 		f:           f,
 		ch:          make(chan watch.Event, 500),
 	}
