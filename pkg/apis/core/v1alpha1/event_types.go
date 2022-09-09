@@ -17,27 +17,20 @@ limitations under the License.
 package v1alpha1
 
 import (
-	"context"
-
-	eventv1 "k8s.io/api/events/v1"
+	eventsv1 "k8s.io/api/events/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/schema"
-	"k8s.io/apimachinery/pkg/util/validation/field"
 	"sigs.k8s.io/apiserver-runtime/pkg/builder/resource"
-	"sigs.k8s.io/apiserver-runtime/pkg/builder/resource/resourcestrategy"
 )
 
 // +genclient
 
 // Event
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
-
-// Event
-// +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
 type Event struct {
-	eventv1.Event `json:",inline"`
+	eventsv1.Event `json:",inline"`
 }
 
 // EventList
@@ -50,14 +43,13 @@ type EventList struct {
 }
 
 var _ resource.Object = &Event{}
-var _ resourcestrategy.Validater = &Event{}
 
 func (in *Event) GetObjectMeta() *metav1.ObjectMeta {
 	return &in.ObjectMeta
 }
 
 func (in *Event) NamespaceScoped() bool {
-	return false
+	return true
 }
 
 func (in *Event) New() runtime.Object {
@@ -78,10 +70,6 @@ func (in *Event) GetGroupVersionResource() schema.GroupVersionResource {
 
 func (in *Event) IsStorageVersion() bool {
 	return true
-}
-
-func (in *Event) Validate(ctx context.Context) field.ErrorList {
-	return nil
 }
 
 var _ resource.ObjectList = &EventList{}

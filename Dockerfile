@@ -1,5 +1,5 @@
 # Build the manager binary
-FROM golang:1.17 as builder
+FROM golang:1.18 as builder
 
 WORKDIR /workspace
 # Copy the Go Modules manifests
@@ -23,6 +23,7 @@ RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -a -o apiserver cmd/*
 FROM gcr.io/distroless/static:nonroot
 WORKDIR /
 COPY --from=builder /workspace/apiserver .
+COPY config.yaml /config.yaml
 USER 65532:65532
 
 ENTRYPOINT ["/apiserver"]

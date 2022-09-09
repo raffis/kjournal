@@ -41,7 +41,7 @@ help: ## Display this help.
 
 .PHONY: generate
 generate: controller-gen ## Generate code containing DeepCopy, DeepCopyInto, and DeepCopyObject method implementations.
-	$(CONTROLLER_GEN) object:headerFile="hack/boilerplate.go.txt" paths="./..."
+	$(CONTROLLER_GEN) object:headerFile="hack/boilerplate.go.txt" paths="./pkg/apis/..."
 
 .PHONY: fmt
 fmt: ## Run go fmt against code.
@@ -58,7 +58,7 @@ test: generate fmt vet envtest ## Run tests.
 .PHONY: kind-test
 kind-test: docker-build
 # apiserver-boot  build container --targets apiserver --image kjournal:latest &&
-	kind load docker-image ${IMG} && kubectl -n logging rollout restart deployment/kjournal-apiserver && stern -n logging kjournal
+	kind load docker-image ${IMG} --name kjournal && kubectl -n logging rollout restart deployment/kjournal-apiserver && stern -n logging kjournal
 
 ##@ Build
 

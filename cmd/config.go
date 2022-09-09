@@ -17,9 +17,13 @@ limitations under the License.
 package main
 
 import (
-	"errors"
+	"fmt"
+	"io/ioutil"
+	"sync"
 
+	configv1alpha1 "github.com/raffis/kjournal/pkg/apis/config/v1alpha1"
 	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/apimachinery/pkg/runtime/serializer"
 	"k8s.io/apiserver/pkg/registry/generic"
 	"k8s.io/apiserver/pkg/registry/rest"
 	"sigs.k8s.io/apiserver-runtime/pkg/builder/resource"
@@ -27,67 +31,55 @@ import (
 
 	// +kubebuilder:scaffold:resource-imports
 
-	"github.com/raffis/kjournal/pkg/config"
+	"github.com/raffis/kjournal/pkg/storage"
+	_ "github.com/raffis/kjournal/pkg/storage/elasticsearch"
 )
 
-var cfg config.Config
-var buckets config.BucketRegistry
-var backends config.BackendRegistry
+var (
+	provider storage.Provider
+	once     sync.Once
+)
 
-func newBucketConfigStorageProvider(obj resource.Object) builderrest.ResourceHandlerProvider {
-	return func(scheme *runtime.Scheme, getter generic.RESTOptionsGetter) (rest.Storage, error) {
-		cfg = config.Config{
-			Backends: []config.Backend{{
-				Type: "elasticsearch",
-				Elasticsearch: config.BackendElasticsearch{
-					URL: "http://localhost:9200",
-				},
-			}},
-			Buckets: []config.Bucket{{
-				Type: "container",
-				Name: "container",
-				Backend: config.BucketBackend{
-					Elasticsearch: config.BucketBackendElasticsearch{
-						Index: "logstash-*",
-					},
-				},
-			}},
-		}
+func initConfig() (configv1alpha1.APIServerConfig, error) {
+	var conf configv1alpha1.APIServerConfig
 
-		buckets = config.NewBucketRegistry()
-		err := buckets.AddBucket(&cfg.Buckets[0])
-		if err != nil {
-			return nil, err
-		}
-
-		backends = config.NewBackendRegistry()
-		err = backends.AddBackend(&cfg.Backends[0])
-		if err != nil {
-			return nil, err
-		}
-
-		return nil, nil
-		//return BucketStorage(obj, scheme, getter, opts)
+	b, err := ioutil.ReadFile("/config.yaml")
+	if err != nil {
+		return conf, err
 	}
+
+	scheme := runtime.NewScheme()
+	configv1alpha1.AddToScheme(scheme)
+	codec := serializer.NewCodecFactory(scheme)
+	decoder := codec.UniversalDeserializer()
+
+	_, _, err = decoder.Decode(b, nil, &conf)
+	if err != nil {
+		return conf, err
+	}
+
+	return conf, nil
 }
 
-func newStorageProvider(obj resource.Object, name string) builderrest.ResourceHandlerProvider {
+func storageMapper(obj resource.Object) builderrest.ResourceHandlerProvider {
 	return func(scheme *runtime.Scheme, getter generic.RESTOptionsGetter) (rest.Storage, error) {
-		bucket, err := buckets.GetBucket(name)
+		var err error
+		once.Do(func() {
+			conf, e := initConfig()
+			if e != nil {
+				err = e
+				return
+			}
+
+			pr, e := storage.NewProvider(conf)
+			provider = pr
+			err = e
+		})
+
 		if err != nil {
-			return nil, err
+			return nil, fmt.Errorf("%w: failed to initialize config", err)
 		}
 
-		backend, err := backends.GetBackend(bucket.Name)
-		if err != nil {
-			return nil, err
-		}
-
-		switch backend.Type {
-		case "elasticsearch":
-			return newElasticsearchStorageProvider(obj, scheme, getter, bucket)
-		}
-
-		return nil, errors.New("unsupported backend configured")
+		return provider.Provide(obj, scheme, getter)
 	}
 }

@@ -35,8 +35,7 @@ import (
 	k8sget "k8s.io/kubectl/pkg/cmd/get"
 	"k8s.io/kubectl/pkg/util/interrupt"
 
-	auditv1 "github.com/raffis/kjournal/pkg/apis/audit/v1"
-	logsv1beta1 "github.com/raffis/kjournal/pkg/apis/container/v1beta1"
+	corev1alpha1 "github.com/raffis/kjournal/pkg/apis/core/v1alpha1"
 )
 
 type GetFlags struct {
@@ -63,8 +62,7 @@ func addGetFlags(getCmd *cobra.Command) {
 // which can be shared by tests.
 func NewScheme() *runtime.Scheme {
 	scheme := runtime.NewScheme()
-	auditv1.AddToScheme(scheme)
-	logsv1beta1.AddToScheme(scheme)
+	corev1alpha1.AddToScheme(scheme)
 
 	return scheme
 }
@@ -133,9 +131,12 @@ func (get getCommand) prepareRequest(args []string) (*rest.Request, error) {
 
 	r := c.
 		Get().
-		Namespace(*kubeconfigArgs.Namespace).
 		Resource(get.resource).
 		Param("fieldSelector", opts.FieldSelector)
+
+	if get.namespaced {
+		r.Namespace(*kubeconfigArgs.Namespace)
+	}
 
 	return r, nil
 }

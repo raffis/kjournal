@@ -29,7 +29,7 @@ import (
 	k8sget "k8s.io/kubectl/pkg/cmd/get"
 
 	"github.com/raffis/kjournal/cli/pkg/printers"
-	auditv1 "github.com/raffis/kjournal/pkg/apis/audit/v1"
+	corev1alpha1 "github.com/raffis/kjournal/pkg/apis/core/v1alpha1"
 )
 
 type auditFlags struct {
@@ -53,13 +53,13 @@ var auditCmd = &cobra.Command{
   
   # Stream events for a pod named abc
   kjournal audit -n mynamespace pods/abc`,
-	//ValidArgsFunction: resourceNamesCompletionFunc(auditv1.GroupVersion.WithKind(auditv1.EventKind)),
+	//ValidArgsFunction: resourceNamesCompletionFunc(auditv1.GroupVersion.WithKind(corev1alpha1.AuditEventKind)),
 	RunE: func(cmd *cobra.Command, args []string) error {
 		firstIteration := true
 
 		get := getCommand{
-			apiType: eventAdapterType,
-			list:    &eventListAdapter{&auditv1.EventList{}},
+			apiType: auditEventAdapterType,
+			list:    &auditEventListAdapter{&corev1alpha1.AuditEventList{}},
 			filter: func(args []string, opts *metav1.ListOptions) error {
 				var fieldSelector []string
 				if opts.FieldSelector != "" {
@@ -94,8 +94,8 @@ var auditCmd = &cobra.Command{
 				return nil
 			},
 			defaultPrinter: func(obj runtime.Object) error {
-				var list auditv1.EventList
-				log, ok := obj.(*auditv1.Event)
+				var list corev1alpha1.AuditEventList
+				log, ok := obj.(*corev1alpha1.AuditEvent)
 				if ok {
 					list.Items = append(list.Items, *log)
 				}
@@ -142,24 +142,24 @@ func init() {
 	rootCmd.AddCommand(auditCmd)
 }
 
-var eventAdapterType = apiType{
+var auditEventAdapterType = apiType{
 	kind:      "Event",
 	humanKind: "event",
 	resource:  "events",
 	groupVersion: schema.GroupVersion{
-		Group:   "audit.kjournal",
-		Version: "v1",
+		Group:   "core.kjournal",
+		Version: "v1alpha1",
 	},
 }
 
-type eventListAdapter struct {
-	*auditv1.EventList
+type auditEventListAdapter struct {
+	*corev1alpha1.AuditEventList
 }
 
-func (h eventListAdapter) asClientList() ObjectList {
-	return h.EventList
+func (h auditEventListAdapter) asClientList() ObjectList {
+	return h.AuditEventList
 }
 
-func (h eventListAdapter) len() int {
-	return len(h.EventList.Items)
+func (h auditEventListAdapter) len() int {
+	return len(h.AuditEventList.Items)
 }
