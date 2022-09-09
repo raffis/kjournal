@@ -17,15 +17,12 @@ limitations under the License.
 package v1alpha1
 
 import (
-	"context"
 	"encoding/json"
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/schema"
-	"k8s.io/apimachinery/pkg/util/validation/field"
 	"sigs.k8s.io/apiserver-runtime/pkg/builder/resource"
-	"sigs.k8s.io/apiserver-runtime/pkg/builder/resource/resourcestrategy"
 )
 
 // +genclient
@@ -51,7 +48,6 @@ type ContainerLogList struct {
 }
 
 var _ resource.Object = &ContainerLog{}
-var _ resourcestrategy.Validater = &ContainerLog{}
 
 func (in *ContainerLog) GetObjectMeta() *metav1.ObjectMeta {
 	return &in.ObjectMeta
@@ -79,10 +75,6 @@ func (in *ContainerLog) GetGroupVersionResource() schema.GroupVersionResource {
 
 func (in *ContainerLog) IsStorageVersion() bool {
 	return true
-}
-
-func (in *ContainerLog) Validate(ctx context.Context) field.ErrorList {
-	return nil
 }
 
 var _ resource.ObjectList = &ContainerLogList{}

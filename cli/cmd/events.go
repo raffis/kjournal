@@ -26,30 +26,40 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/schema"
+	k8sget "k8s.io/kubectl/pkg/cmd/get"
 
 	"github.com/raffis/kjournal/cli/pkg/printers"
-	auditv1 "github.com/raffis/kjournal/pkg/apis/audit/v1"
+	corev1alpha1 "github.com/raffis/kjournal/pkg/apis/core/v1alpha1"
 )
 
-var clusterAuditCmd = &cobra.Command{
-	Use:   "clusteraudit",
-	Short: "Get cluster audit events",
-	Long:  "The clusteraudit command fetchs events from alle resources without a namespace",
-	Example: `  # Stream cluster events from the last 48h
-  kjournal clusteraudit --since 48h
+type eventsFlags struct {
+	noHeader bool
+}
+
+var eventsArgs eventsFlags
+
+var eventsCmd = &cobra.Command{
+	Use:   "events",
+	Short: "Get events events",
+	Long:  "The events command fetchs events from namespaced resources",
+	Example: `  # Stream all events events from the namespace mynamespace
+  kjournal events -n mynamespace
   
-  # Stream events for all clusterroles
-  kjournal clusteraudit clusterroles
+  # Stream events from the last 48 hours
+  kjournal events -n mynamespace --since 48h
   
-  # Stream events for the namespace abc
-  kjournal clusteraudit namespaces/abc`,
-	//ValidArgsFunction: resourceNamesCompletionFunc(auditv1.GroupVersion.WithKind(auditv1.EventKind)),
+  # Stream events for all deployments
+  kjournal events -n mynamespace deployments
+  
+  # Stream events for a pod named abc
+  kjournal events -n mynamespace pods/abc`,
+	//ValidArgsFunction: resourceNamesCompletionFunc(eventsv1.GroupVersion.WithKind(corev1alpha1.EventKind)),
 	RunE: func(cmd *cobra.Command, args []string) error {
 		firstIteration := true
 
 		get := getCommand{
 			apiType: eventAdapterType,
-			list:    &clustereventListAdapter{&auditv1.ClusterEventList{}},
+			list:    &eventListAdapter{&corev1alpha1.EventList{}},
 			filter: func(args []string, opts *metav1.ListOptions) error {
 				var fieldSelector []string
 				if opts.FieldSelector != "" {
@@ -84,8 +94,8 @@ var clusterAuditCmd = &cobra.Command{
 				return nil
 			},
 			defaultPrinter: func(obj runtime.Object) error {
-				var list auditv1.ClusterEventList
-				log, ok := obj.(*auditv1.ClusterEvent)
+				var list corev1alpha1.EventList
+				log, ok := obj.(*corev1alpha1.Event)
 				if ok {
 					list.Items = append(list.Items, *log)
 				}
@@ -94,16 +104,16 @@ var clusterAuditCmd = &cobra.Command{
 					var headers []string
 
 					if firstIteration {
-						headers = []string{"Received", "Verb", "Status", "Level", "Username"}
+						headers = []string{"LAST SEEN", "TYPE", "REASON", "OBJECT", "MESSAGE"}
 						firstIteration = false
 					}
 
 					err := printers.TablePrinter(headers).Print(cmd.OutOrStdout(), [][]string{[]string{
-						item.RequestReceivedTimestamp.String(),
-						item.Verb,
-						fmt.Sprintf("%d", item.ResponseStatus.Code),
-						string(item.Level),
-						item.User.Username,
+						item.EventTime.Format("%t"),
+						item.Type,
+						item.Reason,
+						fmt.Sprintf("%s/%s", item.InvolvedObject.Kind, item.InvolvedObject.Name),
+						item.Message,
 					}})
 
 					if err != nil {
@@ -125,30 +135,31 @@ var clusterAuditCmd = &cobra.Command{
 }
 
 func init() {
-	addGetFlags(clusterAuditCmd)
-	clusterAuditCmd.PersistentFlags().BoolVarP(&auditArgs.noHeader, "no-header", "", false, "skip the header when printing the results")
+	printFlags = k8sget.NewGetPrintFlags()
+	addGetFlags(eventsCmd)
+	eventsCmd.PersistentFlags().BoolVarP(&eventsArgs.noHeader, "no-header", "", false, "skip the header when printing the results")
 
-	rootCmd.AddCommand(clusterAuditCmd)
+	rootCmd.AddCommand(eventsCmd)
 }
 
-var clusterEventAdapterType = apiType{
-	kind:      "ClusterEvent",
-	humanKind: "clusterevent",
-	resource:  "clusterevents",
+var eventAdapterType = apiType{
+	kind:      "Event",
+	humanKind: "event",
+	resource:  "events",
 	groupVersion: schema.GroupVersion{
-		Group:   "audit.kjournal",
-		Version: "v1beta1",
+		Group:   "core.kjournal",
+		Version: "v1alpha1",
 	},
 }
 
-type clustereventListAdapter struct {
-	*auditv1.ClusterEventList
+type eventListAdapter struct {
+	*corev1alpha1.EventList
 }
 
-func (h clustereventListAdapter) asClientList() ObjectList {
-	return h.ClusterEventList
+func (h eventListAdapter) asClientList() ObjectList {
+	return h.EventList
 }
 
-func (h clustereventListAdapter) len() int {
-	return len(h.ClusterEventList.Items)
+func (h eventListAdapter) len() int {
+	return len(h.EventList.Items)
 }

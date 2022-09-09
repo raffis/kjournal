@@ -20,7 +20,6 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
-	"hash/fnv"
 	"strings"
 	"text/template"
 	"time"
@@ -30,29 +29,29 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 
-	logsv1beta1 "github.com/raffis/kjournal/pkg/apis/container/v1beta1"
+	corev1alpha1 "github.com/raffis/kjournal/pkg/apis/core/v1alpha1"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 )
 
-type genericFlags struct {
-	container string
+type logsFlags struct {
+	log       string
 	noColor   bool
 	timestamp bool
 }
 
-var genericArgs genericFlags
+var logsArgs logsFlags
 
-var genericCmd = &cobra.Command{
-	Use:   "generic",
-	Short: "Get container logs",
-	Long:  "The generic command prints logs from containers",
+var logCmd = &cobra.Command{
+	Use:   "logs",
+	Short: "Get generic logs",
+	Long:  "The log command prints generic logs",
 	Example: `  # Print logs from all pods in the same namespace
-  kjoural generic -n mynamespace`,
+  kjoural log -n mynamespace`,
 	//ValidArgsFunction: resourceNamesCompletionFunc(logsv1beta1.GroupVersion.WithKind(logsv1beta1.LogKind)),
 	RunE: func(cmd *cobra.Command, args []string) error {
 		get := getCommand{
 			apiType: logAdapterType,
-			list:    &logListAdapter{&logsv1beta1.LogList{}},
+			list:    &logListAdapter{&corev1alpha1.LogList{}},
 			filter: func(args []string, opts *metav1.ListOptions) error {
 				var fieldSelector []string
 				if opts.FieldSelector != "" {
@@ -69,25 +68,25 @@ var genericCmd = &cobra.Command{
 						return err
 					}
 
-					fieldSelector = append(fieldSelector, fmt.Sprintf("creationTimestamp>%d", time.Now().Unix()*1000-ts.Milliseconds()))
+					fieldSelector = append(fieldSelector, fmt.Sprintf("metadata.creationTimestamp>%d", time.Now().Unix()*1000-ts.Milliseconds()))
 				}
 
-				if genericArgs.container != "" {
-					fieldSelector = append(fieldSelector, fmt.Sprintf("container=%s", genericArgs.container))
+				if logsArgs.log != "" {
+					fieldSelector = append(fieldSelector, fmt.Sprintf("log=%s", logsArgs.log))
 				}
 
 				opts.FieldSelector = strings.Join(fieldSelector, ",")
 				return nil
 			},
 			defaultPrinter: func(obj runtime.Object) error {
-				var list logsv1beta1.LogList
-				log, ok := obj.(*logsv1beta1.Log)
+				var list corev1alpha1.LogList
+				log, ok := obj.(*corev1alpha1.Log)
 				if ok {
 					list.Items = append(list.Items, *log)
 				}
 
 				for _, item := range list.Items {
-					print(item)
+					printLog(item)
 				}
 				return nil
 			},
@@ -101,41 +100,20 @@ var genericCmd = &cobra.Command{
 	},
 }
 
-// Log is the object which will be used together with the template to generate
-// the output.
-type Log struct {
-	// Message is the log message itself
-	Message string `json:"message"`
+func init() {
+	logCmd.PersistentFlags().BoolVarP(&logsArgs.timestamp, "timestamp", "t", false, "Print creationTime timestamp in the default output.")
 
-	// Node name of the pod
-	NodeName string `json:"nodeName"`
-
-	// Namespace of the pod
-	Namespace string `json:"namespace"`
-
-	// PodName of the pod
-	PodName string `json:"podName"`
-
-	// ContainerName of the container
-	ContainerName string `json:"containerName"`
-
-	PodColor       *color.Color `json:"-"`
-	ContainerColor *color.Color `json:"-"`
+	addGetFlags(logCmd)
+	rootCmd.AddCommand(logCmd)
 }
 
 // Print prints a color coded log message with the pod and container names
-func print(log logsv1beta1.Log) {
-	podColor, containerColor := determineColor(log.Pod)
-
+func printLog(log corev1alpha1.Log) {
 	vm := Log{
-		Message:        string(log.Unstructured),
-		PodName:        log.Pod,
-		ContainerName:  log.Container,
-		PodColor:       podColor,
-		ContainerColor: containerColor,
+		Message: string(log.Payload),
 	}
 
-	t := "{{color .PodColor .PodName}} {{color .ContainerColor .ContainerName}} {{.Message}}\n"
+	t := "{{.Message}}\n"
 
 	funs := map[string]interface{}{
 		"json": func(in interface{}) (string, error) {
@@ -170,27 +148,18 @@ func print(log logsv1beta1.Log) {
 	fmt.Printf(buf.String())
 }
 
-func init() {
-	genericCmd.PersistentFlags().StringVarP(&genericArgs.container, "container", "c", "", "Only dump logs from container names matching. (This is the same as --field-selector container=name)")
-	genericCmd.PersistentFlags().BoolVarP(&genericArgs.noColor, "no-color", "", false, "Don't use colors in the default output")
-	genericCmd.PersistentFlags().BoolVarP(&genericArgs.timestamp, "timestamp", "t", false, "Print creationTime timestamp in the default output.")
-
-	addGetFlags(genericCmd)
-	rootCmd.AddCommand(genericCmd)
-}
-
 var logAdapterType = apiType{
 	kind:      "Log",
 	humanKind: "log",
 	resource:  "logs",
 	groupVersion: schema.GroupVersion{
-		Group:   "container.kjournal",
-		Version: "v1beta1",
+		Group:   "core.kjournal",
+		Version: "v1alpha1",
 	},
 }
 
 type logListAdapter struct {
-	*logsv1beta1.LogList
+	*corev1alpha1.LogList
 }
 
 func (h logListAdapter) asClientList() ObjectList {
@@ -199,22 +168,4 @@ func (h logListAdapter) asClientList() ObjectList {
 
 func (h logListAdapter) len() int {
 	return len(h.LogList.Items)
-}
-
-var colorList = [][2]*color.Color{
-	{color.New(color.FgHiCyan), color.New(color.FgCyan)},
-	{color.New(color.FgHiGreen), color.New(color.FgGreen)},
-	{color.New(color.FgHiMagenta), color.New(color.FgMagenta)},
-	{color.New(color.FgHiYellow), color.New(color.FgYellow)},
-	{color.New(color.FgHiBlue), color.New(color.FgBlue)},
-	{color.New(color.FgHiRed), color.New(color.FgRed)},
-}
-
-func determineColor(podName string) (podColor, containerColor *color.Color) {
-	hash := fnv.New32()
-	_, _ = hash.Write([]byte(podName))
-	idx := hash.Sum32() % uint32(len(colorList))
-
-	colors := colorList[idx]
-	return colors[0], colors[1]
 }

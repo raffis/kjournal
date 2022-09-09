@@ -14,13 +14,25 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-// Api versions allow the api contract for a resource to be changed while keeping
-// backward compatibility by support multiple concurrent versions
-// of the same resource
+package v1alpha1
 
-// +k8s:openapi-gen=true
-// +k8s:deepcopy-gen=package,register
-// +k8s:conversion-gen=github.com/raffis/kjournal/pkg/apis/core
-// +k8s:defaulter-gen=TypeMeta
-// +groupName=core.kjournal
-package v1alpha1 // import "github.com/raffis/kjournal/pkg/apis/core/v1beta1"
+import (
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/apimachinery/pkg/runtime/schema"
+)
+
+var AddToScheme = func(scheme *runtime.Scheme) error {
+	metav1.AddToGroupVersion(scheme, schema.GroupVersion{
+		Group:   "config.kjournal",
+		Version: "v1alpha1",
+	})
+	// +kubebuilder:scaffold:install
+
+	scheme.AddKnownTypes(schema.GroupVersion{
+		Group:   "config.kjournal",
+		Version: "v1alpha1",
+	}, &APIServerConfig{})
+
+	return nil
+}

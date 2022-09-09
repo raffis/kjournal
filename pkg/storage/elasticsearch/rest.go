@@ -1,4 +1,4 @@
-package storage
+package elasticsearch
 
 import (
 	"bytes"
@@ -11,6 +11,7 @@ import (
 
 	elasticsearch "github.com/elastic/go-elasticsearch/v8"
 	"github.com/elastic/go-elasticsearch/v8/esapi"
+	"github.com/tidwall/gjson"
 	statuserr "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/api/meta"
 	metainternalversion "k8s.io/apimachinery/pkg/apis/meta/internalversion"
@@ -19,12 +20,13 @@ import (
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/apimachinery/pkg/selection"
+	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/watch"
 	"k8s.io/apiserver/pkg/endpoints/request"
 	"k8s.io/apiserver/pkg/registry/rest"
 	"k8s.io/klog/v2"
 
-	"github.com/raffis/kjournal/pkg/config"
+	configv1alpha1 "github.com/raffis/kjournal/pkg/apis/config/v1alpha1"
 )
 
 var _ rest.Scoper = &elasticsearchREST{}
@@ -35,7 +37,7 @@ func NewElasticsearchREST(
 	groupResource schema.GroupResource,
 	codec runtime.Codec,
 	es *elasticsearch.Client,
-	bucket *config.Bucket,
+	apiBinding *configv1alpha1.API,
 	isNamespaced bool,
 	newFunc func() runtime.Object,
 	newListFunc func() runtime.Object,
@@ -44,7 +46,7 @@ func NewElasticsearchREST(
 		groupResource: groupResource,
 		codec:         codec,
 		es:            es,
-		bucket:        bucket,
+		apiBinding:    apiBinding,
 		metaAccessor:  meta.NewAccessor(),
 		isNamespaced:  isNamespaced,
 		newFunc:       newFunc,
@@ -91,7 +93,7 @@ type elasticsearchREST struct {
 	groupResource schema.GroupResource
 	codec         runtime.Codec
 	es            *elasticsearch.Client
-	bucket        *config.Bucket
+	apiBinding    *configv1alpha1.API
 	isNamespaced  bool
 	metaAccessor  meta.MetadataAccessor
 	newFunc       func() runtime.Object
@@ -141,7 +143,7 @@ func (f *elasticsearchREST) Watch(ctx context.Context, options *metainternalvers
 	klog.InfoS("Start watch stream", "options", options)
 
 	jw := &streamer{
-		refreshRate: f.bucket.Backend.Elasticsearch.RefreshRate,
+		refreshRate: f.apiBinding.Backend.Elasticsearch.RefreshRate,
 		f:           f,
 		ch:          make(chan watch.Event, 500),
 	}
@@ -189,8 +191,7 @@ func (f *elasticsearchREST) List(
 
 	//ns, _ := request.NamespaceFrom(ctx)
 	for _, hit = range esResults.Hits.Hits {
-		newObj := f.newFunc()
-		decodedObj, _, err := f.codec.Decode(hit.Source, nil, newObj)
+		decodedObj, err := f.decodeFrom(hit)
 		if err != nil {
 			return nil, err
 		}
@@ -247,7 +248,7 @@ func (f *elasticsearchREST) fetch(
 	}
 
 	if _, ok := query["pit"]; !ok {
-		req = append(req, f.es.Search.WithIndex(f.bucket.Backend.Elasticsearch.Index))
+		req = append(req, f.es.Search.WithIndex(f.apiBinding.Backend.Elasticsearch.Index))
 	}
 
 	if options.Limit != 0 {
@@ -284,22 +285,22 @@ func (f *elasticsearchREST) fetch(
 	return esResults, err
 }
 
-func (f *elasticsearchREST) getFieldMap(field, fallback string) string {
-	if val, ok := f.bucket.FieldMap[field]; ok {
+func (f *elasticsearchREST) getFieldMap(field string) string {
+	if val, ok := f.apiBinding.FieldMap[field]; ok {
 		return val
 	}
 
-	return fallback
+	return field
 }
 
 func (f *elasticsearchREST) buildQuery(
 	ctx context.Context,
 	options *metainternalversion.ListOptions,
 ) (map[string]interface{}, error) {
-	timestampField := f.getFieldMap("metadata.creationTimestamp", "@es_timestamp")
+	timestampField := f.getFieldMap("metadata.creationTimestamp")
 	query := map[string]interface{}{
 		"_source": map[string]interface{}{
-			"excludes": []interface{}{"kind"},
+			"excludes": []interface{}{"kind", "apiVersion"},
 		},
 		"sort": []map[string]interface{}{
 			{
@@ -332,7 +333,7 @@ func (f *elasticsearchREST) buildQuery(
 		q := query["query"].(map[string]interface{})["bool"].(map[string]interface{})[operator[0]].([]map[string]interface{})
 		field := req.Key()
 
-		if val, ok := f.bucket.FieldMap[field]; ok {
+		if val, ok := f.apiBinding.FieldMap[field]; ok {
 			field = val
 		}
 
@@ -398,7 +399,7 @@ func (f *elasticsearchREST) buildQuery(
 		q := query["query"].(map[string]interface{})["bool"].(map[string]interface{})["must"].([]map[string]interface{})
 		match := map[string]interface{}{
 			"match_phrase": map[string]interface{}{
-				f.getFieldMap("metadata.namespace", "metadata.namespace"): ns,
+				f.getFieldMap("metadata.namespace"): ns,
 			},
 		}
 		q = append(q, match)
@@ -449,7 +450,7 @@ func (w *streamer) errorAndAbort(err error) {
 
 func (w *streamer) Start(ctx context.Context, options *metainternalversion.ListOptions) {
 	if w.usePIT {
-		res, err := w.f.es.OpenPointInTime([]string{w.f.bucket.Backend.Elasticsearch.Index}, "5m")
+		res, err := w.f.es.OpenPointInTime([]string{w.f.apiBinding.Backend.Elasticsearch.Index}, "5m")
 		if err != nil {
 			w.errorAndAbort(err)
 			return
@@ -485,10 +486,9 @@ func (w *streamer) Start(ctx context.Context, options *metainternalversion.ListO
 		//ns, _ := request.NamespaceFrom(ctx)
 
 		for _, hit = range esResults.Hits.Hits {
-			newObj := w.f.newFunc()
-			decodedObj, _, err := w.f.codec.Decode(hit.Source, nil, newObj)
+			decodedObj, err := w.f.decodeFrom(hit)
 			if err != nil {
-				return
+				break
 			}
 
 			/*if w.f.isNamespaced {
@@ -538,6 +538,26 @@ func (w *streamer) Start(ctx context.Context, options *metainternalversion.ListO
 			w.pit.ID = esResults.PitID
 		}
 	}
+}
+
+func (f *elasticsearchREST) decodeFrom(obj esHit) (runtime.Object, error) {
+	newObj := f.newFunc()
+
+	if f.apiBinding.DocRoot != "" {
+		obj.Source = json.RawMessage(gjson.Get(string(obj.Source), f.apiBinding.DocRoot).Raw)
+	}
+
+	decodedObj, _, err := f.codec.Decode(obj.Source, nil, newObj)
+	if err != nil {
+		return nil, err
+	}
+
+	f.metaAccessor.SetAnnotations(decodedObj, map[string]string{
+		"kjournal/es-index": obj.Index,
+	})
+	f.metaAccessor.SetUID(decodedObj, types.UID(obj.ID))
+
+	return decodedObj, err
 }
 
 func (w *streamer) Stop() {

@@ -17,19 +17,24 @@ limitations under the License.
 package main
 
 import (
+	"fmt"
 	"net/http"
 
+	v1 "k8s.io/api/core/v1"
+	"k8s.io/apimachinery/pkg/conversion"
+	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/klog/v2"
 	"sigs.k8s.io/apiserver-runtime/pkg/builder"
 
 	// +kubebuilder:scaffold:resource-imports
 
-	corev1alpha1 "github.com/raffis/kjournal/pkg/apis/core/v1alpha1"
+	adapterv1alpha1 "github.com/raffis/kjournal/internal/apis/core/v1alpha1"
 	"github.com/spf13/cobra"
+	eventsv1 "k8s.io/api/events/v1"
 )
 
 type apiServerFlags struct {
-	storageBackend string
+	configFile string
 }
 
 type httpWrap struct {
@@ -56,13 +61,23 @@ func (m *httpWrap) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 func main() {
 	cmd, err := builder.APIServer.
 		// +kubebuilder:scaffold:resource-register
-		WithResourceAndHandler(&corev1alpha1.Bucket{}, newBucketConfigStorageProvider(&corev1alpha1.Bucket{})).
-		//WithResourceAndHandler(&corev1alpha1.Log{}, newStorageProvider(&corev1alpha1.Log{})).
-		WithResourceAndHandler(&corev1alpha1.ContainerLog{}, newStorageProvider(&corev1alpha1.ContainerLog{}, "container")).
-		WithResourceAndHandler(&corev1alpha1.AuditEvent{}, newStorageProvider(&corev1alpha1.AuditEvent{}, "audit")).
-		WithResourceAndHandler(&corev1alpha1.Event{}, newStorageProvider(&corev1alpha1.Event{}, "event")).
+		WithResourceAndHandler(&adapterv1alpha1.Log{}, storageMapper(&adapterv1alpha1.Log{})).
+		WithResourceAndHandler(&adapterv1alpha1.ContainerLog{}, storageMapper(&adapterv1alpha1.ContainerLog{})).
+		WithResourceAndHandler(&adapterv1alpha1.AuditEvent{}, storageMapper(&adapterv1alpha1.AuditEvent{})).
+		WithResourceAndHandler(&adapterv1alpha1.Event{}, storageMapper(&adapterv1alpha1.Event{})).
 		WithLocalDebugExtension().
 		WithoutEtcd().
+		WithAdditionalSchemeInstallers(func(s *runtime.Scheme) error {
+
+			if err := s.AddGeneratedConversionFunc((*eventsv1.Event)(nil), (*v1.Event)(nil), func(a, b interface{}, scope conversion.Scope) error {
+				fmt.Printf("CONNNNNNNVERRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRR \n\n\n")
+				return nil
+			}); err != nil {
+				return err
+			}
+			return nil
+
+		}).
 		WithServerFns(func(server *builder.GenericAPIServer) *builder.GenericAPIServer {
 			wrap := server.Handler.FullHandlerChain
 
@@ -77,8 +92,8 @@ func main() {
 		klog.Fatal(err)
 	}
 
-	cmd.Flags().StringVar(&apiServerArgs.storageBackend, "log-storage-backend", "elasticsearch", "Storage backend, currently only elasticsearch is supported")
-	elasticsearchFlags(cmd)
+	cmd.Flags().StringVar(&apiServerArgs.configFile, "config", "", "Path to kjournal config")
+
 	rootCmd = cmd
 	rootCmd.Use = "kjournal-apiserver"
 	rootCmd.Short = "Launches the kjournal kubernetes apiserver"

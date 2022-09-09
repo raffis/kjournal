@@ -30,7 +30,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 
-	logsv1beta1 "github.com/raffis/kjournal/pkg/apis/container/v1beta1"
+	corev1alpha1 "github.com/raffis/kjournal/pkg/apis/core/v1alpha1"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 )
 
@@ -51,8 +51,8 @@ var containerCmd = &cobra.Command{
 	//ValidArgsFunction: resourceNamesCompletionFunc(logsv1beta1.GroupVersion.WithKind(logsv1beta1.LogKind)),
 	RunE: func(cmd *cobra.Command, args []string) error {
 		get := getCommand{
-			apiType: logAdapterType,
-			list:    &logListAdapter{&logsv1beta1.LogList{}},
+			apiType: containerLogAdapterType,
+			list:    &containerLogListAdapter{&corev1alpha1.ContainerLogList{}},
 			filter: func(args []string, opts *metav1.ListOptions) error {
 				var fieldSelector []string
 				if opts.FieldSelector != "" {
@@ -69,7 +69,7 @@ var containerCmd = &cobra.Command{
 						return err
 					}
 
-					fieldSelector = append(fieldSelector, fmt.Sprintf("creationTimestamp>%d", time.Now().Unix()*1000-ts.Milliseconds()))
+					fieldSelector = append(fieldSelector, fmt.Sprintf("metadata.creationTimestamp>%d", time.Now().Unix()*1000-ts.Milliseconds()))
 				}
 
 				if containerArgs.container != "" {
@@ -80,14 +80,14 @@ var containerCmd = &cobra.Command{
 				return nil
 			},
 			defaultPrinter: func(obj runtime.Object) error {
-				var list logsv1beta1.LogList
-				log, ok := obj.(*logsv1beta1.Log)
+				var list corev1alpha1.ContainerLogList
+				log, ok := obj.(*corev1alpha1.ContainerLog)
 				if ok {
 					list.Items = append(list.Items, *log)
 				}
 
 				for _, item := range list.Items {
-					print(item)
+					printContainerLog(item)
 				}
 				return nil
 			},
@@ -124,11 +124,10 @@ type Log struct {
 }
 
 // Print prints a color coded log message with the pod and container names
-func print(log logsv1beta1.Log) {
+func printContainerLog(log corev1alpha1.ContainerLog) {
 	podColor, containerColor := determineColor(log.Pod)
-
 	vm := Log{
-		Message:        string(log.Unstructured),
+		Message:        string(log.Payload),
 		PodName:        log.Pod,
 		ContainerName:  log.Container,
 		PodColor:       podColor,
@@ -179,26 +178,27 @@ func init() {
 	rootCmd.AddCommand(containerCmd)
 }
 
-var logAdapterType = apiType{
-	kind:      "Log",
-	humanKind: "log",
-	resource:  "logs",
+var containerLogAdapterType = apiType{
+	kind:      "ContainerLog",
+	humanKind: "containerlog",
+	resource:  "containerlogs",
 	groupVersion: schema.GroupVersion{
-		Group:   "container.kjournal",
-		Version: "v1beta1",
+		Group:   "core.kjournal",
+		Version: "v1alpha1",
 	},
+	namespaced: true,
 }
 
-type logListAdapter struct {
-	*logsv1beta1.LogList
+type containerLogListAdapter struct {
+	*corev1alpha1.ContainerLogList
 }
 
-func (h logListAdapter) asClientList() ObjectList {
-	return h.LogList
+func (h containerLogListAdapter) asClientList() ObjectList {
+	return h.ContainerLogList
 }
 
-func (h logListAdapter) len() int {
-	return len(h.LogList.Items)
+func (h containerLogListAdapter) len() int {
+	return len(h.ContainerLogList.Items)
 }
 
 var colorList = [][2]*color.Color{

@@ -17,15 +17,11 @@ limitations under the License.
 package v1alpha1
 
 import (
-	"context"
-
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/schema"
-	"k8s.io/apimachinery/pkg/util/validation/field"
 	auditv1 "k8s.io/apiserver/pkg/apis/audit"
 	"sigs.k8s.io/apiserver-runtime/pkg/builder/resource"
-	"sigs.k8s.io/apiserver-runtime/pkg/builder/resource/resourcestrategy"
 )
 
 // +genclient
@@ -36,6 +32,7 @@ type AuditEvent struct {
 	// ObjectMeta is only included to fullfil metav1.Object interface,
 	// it will be omitted from any json de and encoding. It is required for storage.ConvertToTable()
 	metav1.ObjectMeta `json:"-"`
+	metav1.TypeMeta   `json:",inline"`
 
 	auditv1.Event `json:",inline"`
 }
@@ -50,7 +47,6 @@ type AuditEventList struct {
 }
 
 var _ resource.Object = &AuditEvent{}
-var _ resourcestrategy.Validater = &AuditEvent{}
 
 func (in *AuditEvent) GetObjectMeta() *metav1.ObjectMeta {
 	return &in.ObjectMeta
@@ -61,7 +57,14 @@ func (in *AuditEvent) NamespaceScoped() bool {
 }
 
 func (in *AuditEvent) New() runtime.Object {
-	return &AuditEvent{}
+	return &AuditEvent{
+		//Force set Event kind as we ditch it while fetching from the storage
+		Event: auditv1.Event{
+			TypeMeta: metav1.TypeMeta{
+				Kind: "AuditEvent",
+			},
+		},
+	}
 }
 
 func (in *AuditEvent) NewList() runtime.Object {
@@ -80,52 +83,8 @@ func (in *AuditEvent) IsStorageVersion() bool {
 	return true
 }
 
-func (in *AuditEvent) Validate(ctx context.Context) field.ErrorList {
-	return nil
-}
-
 var _ resource.ObjectList = &AuditEventList{}
 
 func (in *AuditEventList) GetListMeta() *metav1.ListMeta {
 	return &in.ListMeta
 }
-
-// ConvertToTable implements the TableConvertor interface for REST.
-/*func (in *AuditEvent) ConvertToTable(ctx context.Context, tableOptions runtime.Object) (*metav1.Table, error) {
-	table := &metav1.Table{
-		ColumnDefinitions: eventTableColums,
-		TypeMeta:          in.TypeMeta,
-	}
-
-	rows := make([]metav1.TableRow, 0, 1)
-	row := metav1.TableRow{
-		Object: runtime.RawExtension{Object: in},
-		Cells:  []interface{}{in.RequestReceivedTimestamp, in.Verb, in.ResponseStatus.Code, in.User.Username},
-	}
-
-	rows = append(rows, row)
-	table.Rows = rows
-	return table, nil
-}
-
-// ConvertToTable implements the TableConvertor interface for REST.
-func (in *AuditEventList) ConvertToTable(ctx context.Context, tableOptions runtime.Object) (*metav1.Table, error) {
-	table := &metav1.Table{
-		ColumnDefinitions: eventTableColums,
-		TypeMeta:          in.TypeMeta,
-	}
-
-	rows := make([]metav1.TableRow, 0, 1)
-
-	for _, v := range in.Items {
-		row := metav1.TableRow{
-			Object: runtime.RawExtension{Object: &v},
-			Cells:  []interface{}{v.RequestReceivedTimestamp, v.Verb, v.ResponseStatus.Code, v.User.Username},
-		}
-		rows = append(rows, row)
-	}
-
-	table.Rows = rows
-	return table, nil
-}
-*/

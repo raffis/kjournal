@@ -17,72 +17,65 @@ limitations under the License.
 package v1alpha1
 
 import (
-	"context"
+	"encoding/json"
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/schema"
-	"k8s.io/apimachinery/pkg/util/validation/field"
 	"sigs.k8s.io/apiserver-runtime/pkg/builder/resource"
-	"sigs.k8s.io/apiserver-runtime/pkg/builder/resource/resourcestrategy"
 )
 
 // +genclient
 
-// Bucket
+// Log
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
-
-type Bucket struct {
+type Log struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata"`
+	Payload           json.RawMessage `json:"payload"`
 }
 
-// BucketList
+// LogList
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
-type BucketList struct {
+type LogList struct {
 	metav1.TypeMeta `json:",inline"`
 	metav1.ListMeta `json:"metadata,omitempty"`
 
-	Items []Bucket `json:"items"`
+	Items []Log `json:"items"`
 }
 
-var _ resource.Object = &Bucket{}
-var _ resourcestrategy.Validater = &Bucket{}
+var _ resource.Object = &Log{}
 
-func (in *Bucket) GetObjectMeta() *metav1.ObjectMeta {
+func (in *Log) GetObjectMeta() *metav1.ObjectMeta {
 	return &in.ObjectMeta
 }
 
-func (in *Bucket) NamespaceScoped() bool {
+func (in *Log) NamespaceScoped() bool {
 	return false
 }
 
-func (in *Bucket) New() runtime.Object {
-	return &Bucket{}
+func (in *Log) New() runtime.Object {
+	return &Log{}
 }
 
-func (in *Bucket) NewList() runtime.Object {
-	return &BucketList{}
+func (in *Log) NewList() runtime.Object {
+	return &LogList{}
 }
 
-func (in *Bucket) GetGroupVersionResource() schema.GroupVersionResource {
+func (in *Log) GetGroupVersionResource() schema.GroupVersionResource {
 	return schema.GroupVersionResource{
 		Group:    "core.kjournal",
 		Version:  "v1alpha1",
-		Resource: "buckets",
+		Resource: "logs",
 	}
 }
 
-func (in *Bucket) IsStorageVersion() bool {
+func (in *Log) IsStorageVersion() bool {
 	return true
 }
 
-func (in *Bucket) Validate(ctx context.Context) field.ErrorList {
-	return nil
-}
+var _ resource.ObjectList = &LogList{}
 
-var _ resource.ObjectList = &BucketList{}
-
-func (in *BucketList) GetListMeta() *metav1.ListMeta {
+func (in *LogList) GetListMeta() *metav1.ListMeta {
 	return &in.ListMeta
 }

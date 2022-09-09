@@ -32,11 +32,6 @@ var AddToScheme = func(scheme *runtime.Scheme) error {
 	scheme.AddKnownTypes(schema.GroupVersion{
 		Group:   "core.kjournal",
 		Version: "v1alpha1",
-	}, &Bucket{}, &BucketList{})
-
-	scheme.AddKnownTypes(schema.GroupVersion{
-		Group:   "core.kjournal",
-		Version: "v1alpha1",
 	}, &ContainerLog{}, &ContainerLogList{})
 
 	scheme.AddKnownTypes(schema.GroupVersion{

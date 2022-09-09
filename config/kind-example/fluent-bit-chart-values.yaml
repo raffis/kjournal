@@ -13,7 +13,7 @@ config:
 
     [INPUT]
         Name              tail
-        Path              /var/log/kube-apiserver-audit.log
+        Path              /var/log/kubernetes/kube-apiserver-audit.log
         Parser            docker
         DB                /var/log/audit-fwd.db
         Tag               audit.*
