@@ -17,12 +17,8 @@ limitations under the License.
 package main
 
 import (
-	"fmt"
 	"net/http"
 
-	v1 "k8s.io/api/core/v1"
-	"k8s.io/apimachinery/pkg/conversion"
-	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/klog/v2"
 	"sigs.k8s.io/apiserver-runtime/pkg/builder"
 
@@ -30,7 +26,6 @@ import (
 
 	adapterv1alpha1 "github.com/raffis/kjournal/internal/apis/core/v1alpha1"
 	"github.com/spf13/cobra"
-	eventsv1 "k8s.io/api/events/v1"
 )
 
 type apiServerFlags struct {
@@ -67,17 +62,6 @@ func main() {
 		WithResourceAndHandler(&adapterv1alpha1.Event{}, storageMapper(&adapterv1alpha1.Event{})).
 		WithLocalDebugExtension().
 		WithoutEtcd().
-		WithAdditionalSchemeInstallers(func(s *runtime.Scheme) error {
-
-			if err := s.AddGeneratedConversionFunc((*eventsv1.Event)(nil), (*v1.Event)(nil), func(a, b interface{}, scope conversion.Scope) error {
-				fmt.Printf("CONNNNNNNVERRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRR \n\n\n")
-				return nil
-			}); err != nil {
-				return err
-			}
-			return nil
-
-		}).
 		WithServerFns(func(server *builder.GenericAPIServer) *builder.GenericAPIServer {
 			wrap := server.Handler.FullHandlerChain
 
