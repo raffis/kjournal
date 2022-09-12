@@ -1,15 +1,13 @@
 apiVersion: config.kjournal/v1alpha1
 kind: APIServerConfig
 
-backends: 
-- name: elasticsearch
-  type: elasticsearch
+backend: 
   elasticsearch:
     url:
     - http://elasticsearch-master:9200
 
 apis:
-- name: containerlogs
+- resource: containerlogs
   fieldMap:
     metadata.namespace: kubernetes.namespace_name
     metadata.creationTimestamp: "@timestamp"
@@ -18,31 +16,23 @@ apis:
     container: kubernetes.container_name
     payload: "."
   backend:
-    name: elasticsearch
     elasticsearch:
       index: logstash-*
 
-- name: events
+- resource: events
   backend:
-    name: elasticsearch
     elasticsearch:
         index: k8sevents-*
 
-- name: auditevents
-  fieldMap:
-    metadata.creationTimestamp: RequestReceivedTimestamp
+- resource: auditevents
   backend:
-    name: elasticsearch
     elasticsearch:
         index: k8saudit-*
 
-- name: logs
+- resource: logs
   fieldMap:
     metadata.creationTimestamp: "@timestamp"
     payload: "."
   backend:
-    name: elasticsearch
     elasticsearch:
         index: "*"
-
-  

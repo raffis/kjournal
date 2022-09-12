@@ -80,11 +80,15 @@ func KubeConfig(rcg genericclioptions.RESTClientGetter, opts *Options) (*rest.Co
 	return cfg, nil
 }
 
+type command interface {
+	filter(args []string, opts *metav1.ListOptions) error
+	defaultPrinter(obj runtime.Object) error
+}
+
 type getCommand struct {
 	apiType
-	list           listAdapter
-	filter         func(args []string, opts *metav1.ListOptions) error
-	defaultPrinter func(obj runtime.Object) error
+	command command
+	list    listAdapter
 }
 
 func (get getCommand) run(cmd *cobra.Command, args []string) error {
@@ -124,7 +128,7 @@ func (get getCommand) prepareRequest(args []string) (*rest.Request, error) {
 
 	opts.FieldSelector = selector.String()
 
-	err = get.filter(args, &opts)
+	err = get.command.filter(args, &opts)
 	if err != nil {
 		return nil, err
 	}
@@ -187,7 +191,7 @@ func (get getCommand) listObjects(cmd *cobra.Command, args []string) error {
 		return nil
 	}
 
-	return get.defaultPrinter(get.list.asClientList())
+	return get.command.defaultPrinter(get.list.asClientList())
 }
 
 func (get getCommand) streamObjects(cmd *cobra.Command, args []string) error {
@@ -236,7 +240,7 @@ func (get getCommand) streamObjects(cmd *cobra.Command, args []string) error {
 				return false, nil
 			}
 
-			return false, get.defaultPrinter(objToPrint)
+			return false, get.command.defaultPrinter(objToPrint)
 		})
 		return err
 	})

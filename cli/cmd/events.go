@@ -26,6 +26,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/schema"
+	"k8s.io/apimachinery/pkg/util/duration"
 	k8sget "k8s.io/kubectl/pkg/cmd/get"
 
 	"github.com/raffis/kjournal/cli/pkg/printers"
@@ -55,82 +56,15 @@ var eventsCmd = &cobra.Command{
   kjournal events -n mynamespace pods/abc`,
 	//ValidArgsFunction: resourceNamesCompletionFunc(eventsv1.GroupVersion.WithKind(corev1alpha1.EventKind)),
 	RunE: func(cmd *cobra.Command, args []string) error {
-		firstIteration := true
-
 		get := getCommand{
+			command: &eventsCommand{
+				cmd: cmd,
+			},
 			apiType: eventAdapterType,
 			list:    &eventListAdapter{&corev1alpha1.EventList{}},
-			filter: func(args []string, opts *metav1.ListOptions) error {
-				var fieldSelector []string
-				if opts.FieldSelector != "" {
-					fieldSelector = strings.Split(opts.FieldSelector, ",")
-				}
-
-				if len(args) == 1 {
-					kn := strings.Split(args[0], "/")
-					if len(kn) > 2 {
-						return errors.New("expects either resource/name or resource. Invalid number of parts given")
-					}
-
-					if len(kn) > 0 {
-						fieldSelector = append(fieldSelector, fmt.Sprintf("objectRef.resource=%s", kn[0]))
-					}
-
-					if len(kn) == 2 {
-						fieldSelector = append(fieldSelector, fmt.Sprintf("objectRef.name=%s", kn[1]))
-					}
-				}
-
-				if getArgs.since != "" {
-					ts, err := time.ParseDuration(getArgs.since)
-					if err != nil {
-						return err
-					}
-
-					fieldSelector = append(fieldSelector, fmt.Sprintf("requestReceivedTimestamp>%d", time.Now().Unix()*1000-ts.Milliseconds()))
-				}
-
-				opts.FieldSelector = strings.Join(fieldSelector, ",")
-				return nil
-			},
-			defaultPrinter: func(obj runtime.Object) error {
-				var list corev1alpha1.EventList
-				log, ok := obj.(*corev1alpha1.Event)
-				if ok {
-					list.Items = append(list.Items, *log)
-				}
-
-				for _, item := range list.Items {
-					var headers []string
-
-					if firstIteration {
-						headers = []string{"LAST SEEN", "TYPE", "REASON", "OBJECT", "MESSAGE"}
-						firstIteration = false
-					}
-
-					err := printers.TablePrinter(headers).Print(cmd.OutOrStdout(), [][]string{[]string{
-						item.EventTime.Format("%t"),
-						item.Type,
-						item.Reason,
-						fmt.Sprintf("%s/%s", item.InvolvedObject.Kind, item.InvolvedObject.Name),
-						item.Message,
-					}})
-
-					if err != nil {
-						return err
-					}
-				}
-
-				return nil
-
-			},
 		}
 
-		if err := get.run(cmd, args); err != nil {
-			return err
-		}
-
-		return nil
+		return get.run(cmd, args)
 	},
 }
 
@@ -142,6 +76,73 @@ func init() {
 	rootCmd.AddCommand(eventsCmd)
 }
 
+type eventsCommand struct {
+	firstIteration bool
+	cmd            *cobra.Command
+}
+
+func (cmd *eventsCommand) filter(args []string, opts *metav1.ListOptions) error {
+	var fieldSelector []string
+
+	if opts.FieldSelector != "" {
+		fieldSelector = strings.Split(opts.FieldSelector, ",")
+	}
+
+	if len(args) == 1 {
+		kn := strings.Split(args[0], "/")
+		if len(kn) > 2 {
+			return errors.New("expects either resource/name or resource. Invalid number of parts given")
+		}
+
+		if len(kn) > 0 {
+			fieldSelector = append(fieldSelector, fmt.Sprintf("objectRef.resource=%s", kn[0]))
+		}
+
+		if len(kn) == 2 {
+			fieldSelector = append(fieldSelector, fmt.Sprintf("objectRef.name=%s", kn[1]))
+		}
+	}
+
+	if getArgs.since != "" {
+		ts, err := time.ParseDuration(getArgs.since)
+		if err != nil {
+			return err
+		}
+
+		fieldSelector = append(fieldSelector, fmt.Sprintf("requestReceivedTimestamp>%d", time.Now().Unix()*1000-ts.Milliseconds()))
+	}
+
+	opts.FieldSelector = strings.Join(fieldSelector, ",")
+	return nil
+}
+
+func (cmd *eventsCommand) defaultPrinter(obj runtime.Object) error {
+	var list corev1alpha1.EventList
+	log, ok := obj.(*corev1alpha1.Event)
+	if ok {
+		list.Items = append(list.Items, *log)
+	}
+
+	for _, item := range list.Items {
+		var headers []string
+
+		if cmd.firstIteration {
+			headers = []string{"LAST SEEN", "TYPE", "REASON", "OBJECT", "MESSAGE"}
+			cmd.firstIteration = false
+		}
+
+		return printers.TablePrinter(headers).Print(cmd.cmd.OutOrStdout(), [][]string{[]string{
+			getInterval(item),
+			item.Type,
+			item.Reason,
+			fmt.Sprintf("%s/%s", item.Regarding.Kind, item.Regarding.Name),
+			item.Note,
+		}})
+	}
+
+	return nil
+}
+
 var eventAdapterType = apiType{
 	kind:      "Event",
 	humanKind: "event",
@@ -150,6 +151,7 @@ var eventAdapterType = apiType{
 		Group:   "core.kjournal",
 		Version: "v1alpha1",
 	},
+	namespaced: true,
 }
 
 type eventListAdapter struct {
@@ -162,4 +164,41 @@ func (h eventListAdapter) asClientList() ObjectList {
 
 func (h eventListAdapter) len() int {
 	return len(h.EventList.Items)
+}
+
+func getInterval(e corev1alpha1.Event) string {
+	var interval string
+	firstTimestampSince := translateMicroTimestampSince(e.EventTime)
+	if e.EventTime.IsZero() {
+		firstTimestampSince = translateTimestampSince(e.DeprecatedFirstTimestamp)
+	}
+	if e.Series == nil {
+		interval = firstTimestampSince
+	} else if e.Series.Count > 1 {
+		interval = fmt.Sprintf("%s (x%d over %s)", translateTimestampSince(e.DeprecatedLastTimestamp), e.Series.Count, firstTimestampSince)
+	} else {
+		interval = fmt.Sprintf("%s (x%d over %s)", translateMicroTimestampSince(e.Series.LastObservedTime), e.Series.Count, firstTimestampSince)
+	}
+
+	return interval
+}
+
+// translateMicroTimestampSince returns the elapsed time since timestamp in
+// human-readable approximation.
+func translateMicroTimestampSince(timestamp metav1.MicroTime) string {
+	if timestamp.IsZero() {
+		return "<unknown>"
+	}
+
+	return duration.HumanDuration(time.Since(timestamp.Time))
+}
+
+// translateTimestampSince returns the elapsed time since timestamp in
+// human-readable approximation.
+func translateTimestampSince(timestamp metav1.Time) string {
+	if timestamp.IsZero() {
+		return "<unknown>"
+	}
+
+	return duration.HumanDuration(time.Since(timestamp.Time))
 }

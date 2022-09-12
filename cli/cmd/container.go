@@ -51,54 +51,55 @@ var containerCmd = &cobra.Command{
 	//ValidArgsFunction: resourceNamesCompletionFunc(logsv1beta1.GroupVersion.WithKind(logsv1beta1.LogKind)),
 	RunE: func(cmd *cobra.Command, args []string) error {
 		get := getCommand{
+			command: &containerCommand{},
 			apiType: containerLogAdapterType,
 			list:    &containerLogListAdapter{&corev1alpha1.ContainerLogList{}},
-			filter: func(args []string, opts *metav1.ListOptions) error {
-				var fieldSelector []string
-				if opts.FieldSelector != "" {
-					fieldSelector = strings.Split(opts.FieldSelector, ",")
-				}
-
-				if len(args) == 1 {
-					fieldSelector = append(fieldSelector, fmt.Sprintf("pod=%s", args[0]))
-				}
-
-				if getArgs.since != "" {
-					ts, err := time.ParseDuration(getArgs.since)
-					if err != nil {
-						return err
-					}
-
-					fieldSelector = append(fieldSelector, fmt.Sprintf("metadata.creationTimestamp>%d", time.Now().Unix()*1000-ts.Milliseconds()))
-				}
-
-				if containerArgs.container != "" {
-					fieldSelector = append(fieldSelector, fmt.Sprintf("container=%s", containerArgs.container))
-				}
-
-				opts.FieldSelector = strings.Join(fieldSelector, ",")
-				return nil
-			},
-			defaultPrinter: func(obj runtime.Object) error {
-				var list corev1alpha1.ContainerLogList
-				log, ok := obj.(*corev1alpha1.ContainerLog)
-				if ok {
-					list.Items = append(list.Items, *log)
-				}
-
-				for _, item := range list.Items {
-					printContainerLog(item)
-				}
-				return nil
-			},
 		}
+		return get.run(cmd, args)
+	},
+}
 
-		if err := get.run(cmd, args); err != nil {
+type containerCommand struct {
+}
+
+func (cmd *containerCommand) filter(args []string, opts *metav1.ListOptions) error {
+	var fieldSelector []string
+	if opts.FieldSelector != "" {
+		fieldSelector = strings.Split(opts.FieldSelector, ",")
+	}
+
+	if len(args) == 1 {
+		fieldSelector = append(fieldSelector, fmt.Sprintf("pod=%s", args[0]))
+	}
+
+	if getArgs.since != "" {
+		ts, err := time.ParseDuration(getArgs.since)
+		if err != nil {
 			return err
 		}
 
-		return nil
-	},
+		fieldSelector = append(fieldSelector, fmt.Sprintf("metadata.creationTimestamp>%d", time.Now().Unix()*1000-ts.Milliseconds()))
+	}
+
+	if containerArgs.container != "" {
+		fieldSelector = append(fieldSelector, fmt.Sprintf("container=%s", containerArgs.container))
+	}
+
+	opts.FieldSelector = strings.Join(fieldSelector, ",")
+	return nil
+}
+
+func (cmd *containerCommand) defaultPrinter(obj runtime.Object) error {
+	var list corev1alpha1.ContainerLogList
+	log, ok := obj.(*corev1alpha1.ContainerLog)
+	if ok {
+		list.Items = append(list.Items, *log)
+	}
+
+	for _, item := range list.Items {
+		printContainerLog(item)
+	}
+	return nil
 }
 
 // Log is the object which will be used together with the template to generate

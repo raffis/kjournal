@@ -55,82 +55,14 @@ var auditCmd = &cobra.Command{
   kjournal audit -n mynamespace pods/abc`,
 	//ValidArgsFunction: resourceNamesCompletionFunc(auditv1.GroupVersion.WithKind(corev1alpha1.AuditEventKind)),
 	RunE: func(cmd *cobra.Command, args []string) error {
-		firstIteration := true
-
 		get := getCommand{
+			command: &auditCommand{
+				cmd: cmd,
+			},
 			apiType: auditEventAdapterType,
 			list:    &auditEventListAdapter{&corev1alpha1.AuditEventList{}},
-			filter: func(args []string, opts *metav1.ListOptions) error {
-				var fieldSelector []string
-				if opts.FieldSelector != "" {
-					fieldSelector = strings.Split(opts.FieldSelector, ",")
-				}
-
-				if len(args) == 1 {
-					kn := strings.Split(args[0], "/")
-					if len(kn) > 2 {
-						return errors.New("expects either resource/name or resource. Invalid number of parts given")
-					}
-
-					if len(kn) > 0 {
-						fieldSelector = append(fieldSelector, fmt.Sprintf("objectRef.resource=%s", kn[0]))
-					}
-
-					if len(kn) == 2 {
-						fieldSelector = append(fieldSelector, fmt.Sprintf("objectRef.name=%s", kn[1]))
-					}
-				}
-
-				if getArgs.since != "" {
-					ts, err := time.ParseDuration(getArgs.since)
-					if err != nil {
-						return err
-					}
-
-					fieldSelector = append(fieldSelector, fmt.Sprintf("requestReceivedTimestamp>%d", time.Now().Unix()*1000-ts.Milliseconds()))
-				}
-
-				opts.FieldSelector = strings.Join(fieldSelector, ",")
-				return nil
-			},
-			defaultPrinter: func(obj runtime.Object) error {
-				var list corev1alpha1.AuditEventList
-				log, ok := obj.(*corev1alpha1.AuditEvent)
-				if ok {
-					list.Items = append(list.Items, *log)
-				}
-
-				for _, item := range list.Items {
-					var headers []string
-
-					if firstIteration {
-						headers = []string{"Received", "Verb", "Status", "Level", "Username"}
-						firstIteration = false
-					}
-
-					err := printers.TablePrinter(headers).Print(cmd.OutOrStdout(), [][]string{[]string{
-						item.RequestReceivedTimestamp.String(),
-						item.Verb,
-						fmt.Sprintf("%d", item.ResponseStatus.Code),
-						string(item.Level),
-						item.User.Username,
-					}})
-
-					if err != nil {
-						return err
-					}
-				}
-
-				return nil
-
-			},
 		}
-
-		if err := get.run(cmd, args); err != nil {
-			return err
-		}
-
-		return nil
+		return get.run(cmd, args)
 	},
 }
 
@@ -142,10 +74,80 @@ func init() {
 	rootCmd.AddCommand(auditCmd)
 }
 
+type auditCommand struct {
+	firstIteration bool
+	cmd            *cobra.Command
+}
+
+func (cmd *auditCommand) filter(args []string, opts *metav1.ListOptions) error {
+	var fieldSelector []string
+	if opts.FieldSelector != "" {
+		fieldSelector = strings.Split(opts.FieldSelector, ",")
+	}
+
+	if len(args) == 1 {
+		kn := strings.Split(args[0], "/")
+		if len(kn) > 2 {
+			return errors.New("expects either resource/name or resource. Invalid number of parts given")
+		}
+
+		if len(kn) > 0 {
+			fieldSelector = append(fieldSelector, fmt.Sprintf("objectRef.resource=%s", kn[0]))
+		}
+
+		if len(kn) == 2 {
+			fieldSelector = append(fieldSelector, fmt.Sprintf("objectRef.name=%s", kn[1]))
+		}
+	}
+
+	if getArgs.since != "" {
+		ts, err := time.ParseDuration(getArgs.since)
+		if err != nil {
+			return err
+		}
+
+		fieldSelector = append(fieldSelector, fmt.Sprintf("requestReceivedTimestamp>%d", time.Now().Unix()*1000-ts.Milliseconds()))
+	}
+
+	opts.FieldSelector = strings.Join(fieldSelector, ",")
+	return nil
+}
+
+func (cmd *auditCommand) defaultPrinter(obj runtime.Object) error {
+	var list corev1alpha1.AuditEventList
+	log, ok := obj.(*corev1alpha1.AuditEvent)
+	if ok {
+		list.Items = append(list.Items, *log)
+	}
+
+	for _, item := range list.Items {
+		var headers []string
+
+		if cmd.firstIteration {
+			headers = []string{"Received", "Verb", "Status", "Level", "Username"}
+			cmd.firstIteration = false
+		}
+
+		err := printers.TablePrinter(headers).Print(cmd.cmd.OutOrStdout(), [][]string{[]string{
+			item.RequestReceivedTimestamp.String(),
+			item.Verb,
+			fmt.Sprintf("%d", item.ResponseStatus.Code),
+			string(item.Level),
+			item.User.Username,
+		}})
+
+		if err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
 var auditEventAdapterType = apiType{
-	kind:      "Event",
-	humanKind: "event",
-	resource:  "events",
+	kind:      "AuditEvent",
+	humanKind: "auditevent",
+	resource:  "auditevents",
 	groupVersion: schema.GroupVersion{
 		Group:   "core.kjournal",
 		Version: "v1alpha1",
