@@ -22,13 +22,14 @@ import (
 	"strings"
 	"time"
 
+	"github.com/liggitt/tabwriter"
 	"github.com/spf13/cobra"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/schema"
+	"k8s.io/cli-runtime/pkg/printers"
 	k8sget "k8s.io/kubectl/pkg/cmd/get"
 
-	"github.com/raffis/kjournal/cli/pkg/printers"
 	corev1alpha1 "github.com/raffis/kjournal/pkg/apis/core/v1alpha1"
 )
 
@@ -75,8 +76,8 @@ func init() {
 }
 
 type auditCommand struct {
-	firstIteration bool
-	cmd            *cobra.Command
+	printer *tabwriter.Writer
+	cmd     *cobra.Command
 }
 
 func (cmd *auditCommand) filter(args []string, opts *metav1.ListOptions) error {
@@ -114,31 +115,31 @@ func (cmd *auditCommand) filter(args []string, opts *metav1.ListOptions) error {
 }
 
 func (cmd *auditCommand) defaultPrinter(obj runtime.Object) error {
-	var list corev1alpha1.AuditEventList
-	log, ok := obj.(*corev1alpha1.AuditEvent)
-	if ok {
+	list := &corev1alpha1.AuditEventList{}
+
+	if log, ok := obj.(*corev1alpha1.AuditEvent); ok {
 		list.Items = append(list.Items, *log)
+	} else if obj, ok := obj.(*corev1alpha1.AuditEventList); ok {
+		list = obj
 	}
 
 	for _, item := range list.Items {
-		var headers []string
-
-		if cmd.firstIteration {
-			headers = []string{"Received", "Verb", "Status", "Level", "Username"}
-			cmd.firstIteration = false
+		if cmd.printer == nil {
+			cmd.printer = printers.GetNewTabWriter(cmd.cmd.OutOrStdout())
+			fmt.Fprintln(cmd.printer, strings.Join([]string{"RECEIVED", "VERB", "STATUS", "LEVEL", "USERNAME"}, "\t"))
 		}
 
-		err := printers.TablePrinter(headers).Print(cmd.cmd.OutOrStdout(), [][]string{[]string{
+		fmt.Fprintf(cmd.printer, "%s\t%s\t%d\t%s\t%s\n",
 			item.RequestReceivedTimestamp.String(),
 			item.Verb,
-			fmt.Sprintf("%d", item.ResponseStatus.Code),
+			item.ResponseStatus.Code,
 			string(item.Level),
 			item.User.Username,
-		}})
+		)
+	}
 
-		if err != nil {
-			return err
-		}
+	if cmd.printer != nil {
+		cmd.printer.Flush()
 	}
 
 	return nil

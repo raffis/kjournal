@@ -44,6 +44,7 @@ type GetFlags struct {
 	noStream      bool
 	chunkSize     int64
 	since         string
+	timeRange     string
 }
 
 var getArgs GetFlags
@@ -51,7 +52,8 @@ var printFlags *k8sget.PrintFlags
 
 func addGetFlags(getCmd *cobra.Command) {
 	getCmd.Flags().StringVarP(printFlags.OutputFormat, "output", "o", *printFlags.OutputFormat, fmt.Sprintf(`Output format. One of: (%s). See custom columns [https://kubernetes.io/docs/reference/kubectl/overview/#custom-columns], golang template [http://golang.org/pkg/text/template/#pkg-overview] and jsonpath template [https://kubernetes.io/docs/reference/kubectl/jsonpath/].`, strings.Join(printFlags.AllowedFormats(), ", ")))
-	getCmd.PersistentFlags().StringVarP(&getArgs.since, "since", "", "", "Change the time range from which logs are received. (e.g. `--since=now-24h`)")
+	getCmd.PersistentFlags().StringVarP(&getArgs.since, "since", "", "", "Change the time range from which logs are received. (e.g. `--since=24h`)")
+	getCmd.PersistentFlags().StringVarP(&getArgs.timeRange, "range", "", "", "Change the time range from which logs are received. (e.g. `--range=20h-24h`)")
 	getCmd.PersistentFlags().BoolVarP(&getArgs.noStream, "no-stream", "", false, "By default all logs are streamed. This behaviour can be disabled. Be mindful that this can lead to an increased memory usage and no output while logs are beeing gathered")
 	getCmd.PersistentFlags().BoolVarP(&getArgs.watch, "watch", "w", false, "After dumping all existing logs keep watching for newly added ones")
 	getCmd.PersistentFlags().StringVar(&getArgs.fieldSelector, "field-selector", "", "Selector (field query) to filter on, supports '=', '==', '!=', '!=', '>' and '<'. (e.g. --field-selector key1=value1,key2=value2).")
@@ -150,7 +152,6 @@ func (get getCommand) listObjects(cmd *cobra.Command, args []string) error {
 	defer cancel()
 	res := get.list.asClientList()
 
-	fmt.Printf("into %#v", res)
 	r, err := get.prepareRequest(args)
 	if err != nil {
 		return err
@@ -183,7 +184,7 @@ func (get getCommand) listObjects(cmd *cobra.Command, args []string) error {
 	)
 
 	if *printFlags.OutputFormat != "" {
-		err = p.PrintObj(get.list.asClientList(), os.Stdout)
+		err = p.PrintObj(res, os.Stdout)
 		if err != nil {
 			return err
 		}
@@ -191,7 +192,7 @@ func (get getCommand) listObjects(cmd *cobra.Command, args []string) error {
 		return nil
 	}
 
-	return get.command.defaultPrinter(get.list.asClientList())
+	return get.command.defaultPrinter(res)
 }
 
 func (get getCommand) streamObjects(cmd *cobra.Command, args []string) error {

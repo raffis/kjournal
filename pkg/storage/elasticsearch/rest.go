@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"reflect"
@@ -31,6 +32,7 @@ import (
 
 var _ rest.Scoper = &elasticsearchREST{}
 var _ rest.Storage = &elasticsearchREST{}
+var _ rest.TableConvertor = &elasticsearchREST{}
 
 // NewelasticsearchREST instantiates a new REST storage.
 func NewElasticsearchREST(
@@ -136,7 +138,7 @@ func (f *elasticsearchREST) ConvertToTable(ctx context.Context, obj runtime.Obje
 		return tbl, err
 	}
 
-	return nil, nil
+	return &metav1.Table{}, errors.New("could not convert to table")
 }
 
 func (f *elasticsearchREST) Watch(ctx context.Context, options *metainternalversion.ListOptions) (watch.Interface, error) {
@@ -160,7 +162,7 @@ func (f *elasticsearchREST) List(
 	ctx context.Context,
 	options *metainternalversion.ListOptions,
 ) (runtime.Object, error) {
-	klog.InfoS("List request", "options", options)
+	klog.InfoS("list request", "options", options)
 
 	newListObj := f.NewList()
 	v, err := getListPrt(newListObj)
@@ -587,8 +589,6 @@ func (obj *PITStream) DeepCopyObject() runtime.Object {
 	panic("rest.PITStream does not implement DeepCopyObject")
 }
 
-// InputStream returns a stream with the contents of the URL location. If no location is provided,
-// a null stream is returned.
 func (s *PITStream) InputStream(ctx context.Context, apiVersion, acceptHeader string) (stream io.ReadCloser, flush bool, contentType string, err error) {
 	jw := &streamer{
 		usePIT:      true,

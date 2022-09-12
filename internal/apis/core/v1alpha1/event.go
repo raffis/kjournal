@@ -62,6 +62,7 @@ var eventTableColums = []metav1.TableColumnDefinition{
 
 // ConvertToTable implements the TableConvertor interface for REST.
 func (in *Event) ConvertToTable(ctx context.Context, tableOptions runtime.Object) (*metav1.Table, error) {
+	fmt.Printf("============================================================\n")
 	table := &metav1.Table{
 		ColumnDefinitions: eventTableColums,
 		TypeMeta:          in.TypeMeta,
