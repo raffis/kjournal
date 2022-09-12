@@ -35,19 +35,17 @@ import (
 	elasticsearch "github.com/elastic/go-elasticsearch/v8"
 	configv1alpha1 "github.com/raffis/kjournal/pkg/apis/config/v1alpha1"
 	"github.com/raffis/kjournal/pkg/storage"
-	"github.com/raffis/kjournal/pkg/utils"
 )
 
-var esClientRegistry utils.Registry[*elasticsearch.Client]
+var esClient *elasticsearch.Client
 
 func init() {
-	esClientRegistry = utils.NewRegistry[*elasticsearch.Client]()
 	storage.Providers.Add("elasticsearch", newElasticsearchStorageProvider)
 }
 
 func getESClient(backend *configv1alpha1.Backend) (*elasticsearch.Client, error) {
-	if val, err := esClientRegistry.Get(backend.Name); err == nil {
-		return val, nil
+	if esClient != nil {
+		return esClient, nil
 	}
 
 	var cert []byte
@@ -84,8 +82,8 @@ func getESClient(backend *configv1alpha1.Backend) (*elasticsearch.Client, error)
 		return nil, fmt.Errorf("%w: failed to create elasticsearch client", err)
 	}
 
-	err = esClientRegistry.Add(backend.Name, es)
-	return es, err
+	esClient = es
+	return es, nil
 }
 
 func newElasticsearchStorageProvider(obj resource.Object, scheme *runtime.Scheme, getter generic.RESTOptionsGetter, backend *configv1alpha1.Backend, apiBinding *configv1alpha1.API) (rest.Storage, error) {

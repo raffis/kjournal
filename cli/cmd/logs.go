@@ -50,53 +50,12 @@ var logCmd = &cobra.Command{
 	//ValidArgsFunction: resourceNamesCompletionFunc(logsv1beta1.GroupVersion.WithKind(logsv1beta1.LogKind)),
 	RunE: func(cmd *cobra.Command, args []string) error {
 		get := getCommand{
+			command: &logsCommand{},
 			apiType: logAdapterType,
 			list:    &logListAdapter{&corev1alpha1.LogList{}},
-			filter: func(args []string, opts *metav1.ListOptions) error {
-				var fieldSelector []string
-				if opts.FieldSelector != "" {
-					fieldSelector = strings.Split(opts.FieldSelector, ",")
-				}
-
-				if len(args) == 1 {
-					fieldSelector = append(fieldSelector, fmt.Sprintf("pod=%s", args[0]))
-				}
-
-				if getArgs.since != "" {
-					ts, err := time.ParseDuration(getArgs.since)
-					if err != nil {
-						return err
-					}
-
-					fieldSelector = append(fieldSelector, fmt.Sprintf("metadata.creationTimestamp>%d", time.Now().Unix()*1000-ts.Milliseconds()))
-				}
-
-				if logsArgs.log != "" {
-					fieldSelector = append(fieldSelector, fmt.Sprintf("log=%s", logsArgs.log))
-				}
-
-				opts.FieldSelector = strings.Join(fieldSelector, ",")
-				return nil
-			},
-			defaultPrinter: func(obj runtime.Object) error {
-				var list corev1alpha1.LogList
-				log, ok := obj.(*corev1alpha1.Log)
-				if ok {
-					list.Items = append(list.Items, *log)
-				}
-
-				for _, item := range list.Items {
-					printLog(item)
-				}
-				return nil
-			},
 		}
+		return get.run(cmd, args)
 
-		if err := get.run(cmd, args); err != nil {
-			return err
-		}
-
-		return nil
 	},
 }
 
@@ -105,6 +64,49 @@ func init() {
 
 	addGetFlags(logCmd)
 	rootCmd.AddCommand(logCmd)
+}
+
+type logsCommand struct {
+}
+
+func (cmd *logsCommand) filter(args []string, opts *metav1.ListOptions) error {
+	var fieldSelector []string
+	if opts.FieldSelector != "" {
+		fieldSelector = strings.Split(opts.FieldSelector, ",")
+	}
+
+	if len(args) == 1 {
+		fieldSelector = append(fieldSelector, fmt.Sprintf("pod=%s", args[0]))
+	}
+
+	if getArgs.since != "" {
+		ts, err := time.ParseDuration(getArgs.since)
+		if err != nil {
+			return err
+		}
+
+		fieldSelector = append(fieldSelector, fmt.Sprintf("metadata.creationTimestamp>%d", time.Now().Unix()*1000-ts.Milliseconds()))
+	}
+
+	if logsArgs.log != "" {
+		fieldSelector = append(fieldSelector, fmt.Sprintf("log=%s", logsArgs.log))
+	}
+
+	opts.FieldSelector = strings.Join(fieldSelector, ",")
+	return nil
+}
+
+func (cmd *logsCommand) defaultPrinter(obj runtime.Object) error {
+	var list corev1alpha1.LogList
+	log, ok := obj.(*corev1alpha1.Log)
+	if ok {
+		list.Items = append(list.Items, *log)
+	}
+
+	for _, item := range list.Items {
+		printLog(item)
+	}
+	return nil
 }
 
 // Print prints a color coded log message with the pod and container names
