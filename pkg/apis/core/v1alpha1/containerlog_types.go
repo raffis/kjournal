@@ -58,7 +58,12 @@ func (in *ContainerLog) NamespaceScoped() bool {
 }
 
 func (in *ContainerLog) New() runtime.Object {
-	return &ContainerLog{}
+	return &ContainerLog{
+		TypeMeta: metav1.TypeMeta{
+			Kind:       "ContainerLog",
+			APIVersion: "core.kjournal/v1alpha1",
+		},
+	}
 }
 
 func (in *ContainerLog) NewList() runtime.Object {

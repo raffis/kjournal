@@ -28,7 +28,6 @@ import (
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/cli-runtime/pkg/printers"
-	k8sget "k8s.io/kubectl/pkg/cmd/get"
 
 	corev1alpha1 "github.com/raffis/kjournal/pkg/apis/core/v1alpha1"
 )
@@ -68,7 +67,6 @@ var auditCmd = &cobra.Command{
 }
 
 func init() {
-	printFlags = k8sget.NewGetPrintFlags()
 	addGetFlags(auditCmd)
 	auditCmd.PersistentFlags().BoolVarP(&auditArgs.noHeader, "no-header", "", false, "skip the header when printing the results")
 
@@ -108,6 +106,23 @@ func (cmd *auditCommand) filter(args []string, opts *metav1.ListOptions) error {
 		}
 
 		fieldSelector = append(fieldSelector, fmt.Sprintf("requestReceivedTimestamp>%d", time.Now().Unix()*1000-ts.Milliseconds()))
+	} else if getArgs.timeRange != "" {
+		parts := strings.Split(getArgs.timeRange, "-")
+
+		fromTimestamp, err := time.ParseDuration(parts[0])
+		if err != nil {
+			return err
+		}
+		toTimestamp, err := time.ParseDuration(parts[1])
+		if err != nil {
+			return err
+		}
+
+		fieldSelector = append(
+			fieldSelector,
+			fmt.Sprintf("metadata.creationTimestamp<%d", time.Now().Unix()*1000-fromTimestamp.Milliseconds()),
+			fmt.Sprintf("metadata.creationTimestamp>%d", time.Now().Unix()*1000-toTimestamp.Milliseconds()),
+		)
 	}
 
 	opts.FieldSelector = strings.Join(fieldSelector, ",")

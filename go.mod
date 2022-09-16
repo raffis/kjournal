@@ -3,9 +3,9 @@ module github.com/raffis/kjournal
 go 1.18
 
 require (
+	github.com/Jeffail/gabs v1.4.0
 	github.com/elastic/go-elasticsearch/v8 v8.2.0
 	github.com/spf13/cobra v1.5.0
-	github.com/tidwall/gjson v1.14.3
 	k8s.io/api v0.23.1
 	k8s.io/apimachinery v0.23.1
 	k8s.io/apiserver v0.23.1
@@ -58,6 +58,7 @@ require (
 	github.com/prometheus/procfs v0.6.0 // indirect
 	github.com/russross/blackfriday/v2 v2.1.0 // indirect
 	github.com/spf13/pflag v1.0.5 // indirect
+	github.com/tidwall/gjson v1.14.3 // indirect
 	github.com/tidwall/match v1.1.1 // indirect
 	github.com/tidwall/pretty v1.2.0 // indirect
 	go.etcd.io/etcd/api/v3 v3.5.0 // indirect

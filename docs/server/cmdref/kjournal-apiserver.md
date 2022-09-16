@@ -2,7 +2,7 @@
 
 ## kjournal-apiserver
 
-Launch a wardle API server
+Launches the kjournal kubernetes apiserver
 
 ### Synopsis
 
@@ -58,6 +58,7 @@ kjournal-apiserver [flags]
       --bind-address ip                                         The IP address on which to listen for the --secure-port port. The associated interface(s) must be reachable by the rest of the cluster, and by CLI/web clients. If blank or an unspecified address (0.0.0.0 or ::), all interfaces will be used. (default 0.0.0.0)
       --cert-dir string                                         The directory where the TLS certs are located. If --tls-cert-file and --tls-private-key-file are provided, this flag will be ignored. (default "apiserver.local.config/certificates")
       --client-ca-file string                                   If set, any request presenting a client certificate signed by one of the authorities in the client-ca-file is authenticated with an identity corresponding to the CommonName of the client certificate.
+      --config string                                           Path to kjournal config
       --contention-profiling                                    Enable lock contention profiling, if profiling is enabled
       --default-watch-cache-size int                            Default watch cache size. If zero, watch cache will be disabled for resources that do not have a default watch size set. (default 100)
       --delete-collection-workers int                           Number of workers spawned for DeleteCollection call. These are used to speed up namespace cleanup. (default 1)
@@ -66,25 +67,6 @@ kjournal-apiserver [flags]
       --enable-admission-plugins strings                        admission plugins that should be enabled in addition to default enabled ones (NamespaceLifecycle, MutatingAdmissionWebhook, ValidatingAdmissionWebhook). Comma-delimited list of admission plugins: MutatingAdmissionWebhook, NamespaceLifecycle, ValidatingAdmissionWebhook. The order of plugins in this flag does not matter.
       --enable-garbage-collector                                Enables the generic garbage collector. MUST be synced with the corresponding flag of the kube-controller-manager. (default true)
       --encryption-provider-config string                       The file containing configuration for encryption providers to be used for storing secrets in etcd
-      --es-allow-insecure-tls                                   Allow insecure TLS connections. Do not verify the certificate
-      --es-audit-index audit-*                                  The index pattern where the kubernetes audit documents are stored. (For example: audit-*). You may specify multiple ones comma separated
-      --es-audit-timestamp-field string                         The index field which is used as timestamop field for the audit documents (default "@timestamp")
-      --es-cacert string                                        Path to the CA (PEM) used to verify the server tls certificate
-      --es-container-index logstash-*                           The index pattern where the kubernetes container logs are stored. (For example: logstash-*). You may specify multiple ones comma separated
-      --es-container-namespace-field string                     The field which holds the kubernetes namespace. This field must not be indexed using any analyers! Usually a .keyword field is wanted here (default "kubernetes.namespace_name.keyword")
-      --es-container-timestamp-field string                     The index field which is used as timestamop field for the audit documents (default "@timestamp")
-      --es-refresh-rate duration                                The refresh rate to poll from elasticsearch while checking for new documents during watch requests (default 500ms)
-      --es-url strings                                          Elasticsearch URL, you may add multiple ones comma separated (default [http://localhost:9200])
-      --etcd-cafile string                                      SSL Certificate Authority file used to secure etcd communication.
-      --etcd-certfile string                                    SSL certification file used to secure etcd communication.
-      --etcd-compaction-interval duration                       The interval of compaction requests. If 0, the compaction request from apiserver is disabled. (default 5m0s)
-      --etcd-count-metric-poll-period duration                  Frequency of polling etcd for number of resources per type. 0 disables the metric collection. (default 1m0s)
-      --etcd-db-metric-poll-interval duration                   The interval of requests to poll etcd and update metric. 0 disables the metric collection (default 30s)
-      --etcd-healthcheck-timeout duration                       The timeout to use when checking etcd health. (default 2s)
-      --etcd-keyfile string                                     SSL key file used to secure etcd communication.
-      --etcd-prefix string                                      The prefix to prepend to all resource paths in etcd. (default "/registry/sample-apiserver")
-      --etcd-servers strings                                    List of etcd servers to connect with (scheme://ip:port), comma separated.
-      --etcd-servers-overrides strings                          Per-resource etcd servers overrides, comma separated. The individual override format: group/resource#servers, where servers are URLs, semicolon separated. Note that this applies only to resources compiled into this server binary. 
       --feature-gates mapStringBool                             A set of key=value pairs that describe feature gates for alpha/experimental features. Options are:
                                                                 APIListChunking=true|false (BETA - default=true)
                                                                 APIPriorityAndFairness=true|false (BETA - default=true)
@@ -106,7 +88,6 @@ kjournal-apiserver [flags]
       --http2-max-streams-per-connection int                    The limit that the server gives to clients for the maximum number of streams in an HTTP/2 connection. Zero means to use golang's default. (default 1000)
       --kubeconfig string                                       kubeconfig file pointing at the 'core' kubernetes server.
       --lease-reuse-duration-seconds int                        The time in seconds that each lease is reused. A lower value could avoid large number of objects reusing the same lease. Notice that a too small value may cause performance problems at storage layer. (default 60)
-      --log-storage-backend string                              Storage backend, currently only elasticsearch is supported (default "elasticsearch")
       --permit-address-sharing                                  If true, SO_REUSEADDR will be used when binding the port. This allows binding to wildcard IPs like 0.0.0.0 and specific IPs in parallel, and it avoids waiting for the kernel to release sockets in TIME_WAIT state. [default=false]
       --permit-port-sharing                                     If true, SO_REUSEPORT will be used when binding the port, which allows more than one instance to bind on the same address and port. [default=false]
       --profiling                                               Enable profiling via web interface host:port/debug/pprof/ (default true)

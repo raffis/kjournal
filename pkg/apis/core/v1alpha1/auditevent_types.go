@@ -61,7 +61,8 @@ func (in *AuditEvent) New() runtime.Object {
 		//Force set Event kind as we ditch it while fetching from the storage
 		Event: auditv1.Event{
 			TypeMeta: metav1.TypeMeta{
-				Kind: "AuditEvent",
+				Kind:       "AuditEvent",
+				APIVersion: "core.kjournal/v1alpha1",
 			},
 		},
 	}

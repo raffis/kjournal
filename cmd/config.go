@@ -19,6 +19,7 @@ package main
 import (
 	"fmt"
 	"io/ioutil"
+	"os"
 	"sync"
 
 	configv1alpha1 "github.com/raffis/kjournal/pkg/apis/config/v1alpha1"
@@ -45,17 +46,19 @@ func initConfig() (configv1alpha1.APIServerConfig, error) {
 
 	b, err := ioutil.ReadFile("/config.yaml")
 	if err != nil {
-		return conf, err
+		return conf, fmt.Errorf("failed to read apiserver config: %w", err)
 	}
+
+	expand := os.ExpandEnv(string(b))
 
 	scheme := runtime.NewScheme()
 	configv1alpha1.AddToScheme(scheme)
 	codec := serializer.NewCodecFactory(scheme)
 	decoder := codec.UniversalDeserializer()
 
-	_, _, err = decoder.Decode(b, nil, &conf)
+	_, _, err = decoder.Decode([]byte(expand), nil, &conf)
 	if err != nil {
-		return conf, err
+		return conf, fmt.Errorf("failed to decode apiserver config: %w", err)
 	}
 
 	return conf, nil

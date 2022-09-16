@@ -30,7 +30,7 @@ type Provider interface {
 }
 
 type MappableObject interface {
-	WithFieldMap(map[string]string)
+	WithFieldMap(map[string][]string)
 }
 
 type provider struct {

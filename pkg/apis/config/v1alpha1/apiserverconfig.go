@@ -25,18 +25,19 @@ type BackendElasticsearch struct {
 }
 
 type API struct {
-	Resource string            `json:"resource"`
-	FieldMap map[string]string `json:"fieldMap"`
-	Filter   map[string]string `json:"filter"`
-	Backend  ApiBackend        `json:"backend"`
-	DocRoot  string            `json:"docRoot"`
+	Resource         string              `json:"resource"`
+	FieldMap         map[string][]string `json:"fieldMap"`
+	DropFields       []string            `json:"dropFields"`
+	Filter           map[string]string   `json:"filter"`
+	Backend          ApiBackend          `json:"backend"`
+	DefaultTimeRange string              `json:"defaultTimeRange"`
 }
 
 type ApiBackend struct {
-	Elasticsearch BucketBackendElasticsearch `json:"elasticsearch"`
+	Elasticsearch ApiBackendElasticsearch `json:"elasticsearch"`
 }
 
-type BucketBackendElasticsearch struct {
+type ApiBackendElasticsearch struct {
 	Index       string        `json:"index"`
 	RefreshRate time.Duration `json:"refreshRate"`
 }

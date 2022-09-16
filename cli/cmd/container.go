@@ -59,6 +59,15 @@ var containerCmd = &cobra.Command{
 	},
 }
 
+func init() {
+	containerCmd.PersistentFlags().StringVarP(&containerArgs.container, "container", "c", "", "Only dump logs from container names matching. (This is the same as --field-selector container=name)")
+	containerCmd.PersistentFlags().BoolVarP(&containerArgs.noColor, "no-color", "", false, "Don't use colors in the default output")
+	containerCmd.PersistentFlags().BoolVarP(&containerArgs.timestamp, "timestamp", "t", false, "Print creationTime timestamp in the default output.")
+
+	addGetFlags(containerCmd)
+	rootCmd.AddCommand(containerCmd)
+}
+
 type containerCommand struct {
 }
 
@@ -107,15 +116,18 @@ func (cmd *containerCommand) filter(args []string, opts *metav1.ListOptions) err
 }
 
 func (cmd *containerCommand) defaultPrinter(obj runtime.Object) error {
-	var list corev1alpha1.ContainerLogList
-	log, ok := obj.(*corev1alpha1.ContainerLog)
-	if ok {
+	list := &corev1alpha1.ContainerLogList{}
+
+	if log, ok := obj.(*corev1alpha1.ContainerLog); ok {
 		list.Items = append(list.Items, *log)
+	} else if obj, ok := obj.(*corev1alpha1.ContainerLogList); ok {
+		list = obj
 	}
 
 	for _, item := range list.Items {
 		printContainerLog(item)
 	}
+
 	return nil
 }
 
@@ -185,15 +197,6 @@ func printContainerLog(log corev1alpha1.ContainerLog) {
 	}
 
 	fmt.Printf(buf.String())
-}
-
-func init() {
-	containerCmd.PersistentFlags().StringVarP(&containerArgs.container, "container", "c", "", "Only dump logs from container names matching. (This is the same as --field-selector container=name)")
-	containerCmd.PersistentFlags().BoolVarP(&containerArgs.noColor, "no-color", "", false, "Don't use colors in the default output")
-	containerCmd.PersistentFlags().BoolVarP(&containerArgs.timestamp, "timestamp", "t", false, "Print creationTime timestamp in the default output.")
-
-	addGetFlags(containerCmd)
-	rootCmd.AddCommand(containerCmd)
 }
 
 var containerLogAdapterType = apiType{

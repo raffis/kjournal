@@ -79,8 +79,8 @@ docker-push: ## Push docker image with the apiserver.
 	docker push ${IMG}
 
 api-docs: gen-crd-api-reference-docs  ## Generate API reference documentation
-	$(GEN_CRD_API_REFERENCE_DOCS) -api-dir=./pkg/apis/audit/v1 -config=./hack/api-docs/config.json -template-dir=./hack/api-docs/template -out-file=./docs/api/audit.v1.md
-	$(GEN_CRD_API_REFERENCE_DOCS) -api-dir=./pkg/apis/container/v1beta1 -config=./hack/api-docs/config.json -template-dir=./hack/api-docs/template -out-file=./docs/api/container.v1beta1.md
+	$(GEN_CRD_API_REFERENCE_DOCS) -api-dir=./pkg/apis/core/v1alpha1 -config=./hack/api-docs/config.json -template-dir=./hack/api-docs/template -out-file=./docs/api/core.kjournal.v1alpha1.md
+	$(GEN_CRD_API_REFERENCE_DOCS) -api-dir=./pkg/apis/config/v1alpha1 -config=./hack/api-docs/config.json -template-dir=./hack/api-docs/template -out-file=./docs/api/config.kjournal.v1alpha1.md
 
 # Find or download gen-crd-api-reference-docs
 GEN_CRD_API_REFERENCE_DOCS = $(GOBIN)/gen-crd-api-reference-docs

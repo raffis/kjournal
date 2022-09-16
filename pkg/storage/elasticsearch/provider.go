@@ -75,6 +75,7 @@ func getESClient(backend *configv1alpha1.Backend) (*elasticsearch.Client, error)
 				ClientCAs:          pool,
 			},
 		},
+		Logger: &logger{},
 	}
 
 	es, err := elasticsearch.NewClient(cfg)

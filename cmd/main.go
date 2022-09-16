@@ -25,6 +25,7 @@ import (
 	// +kubebuilder:scaffold:resource-imports
 
 	adapterv1alpha1 "github.com/raffis/kjournal/internal/apis/core/v1alpha1"
+	"github.com/raffis/kjournal/pkg/apis/core/v1alpha1"
 	"github.com/spf13/cobra"
 )
 
@@ -56,8 +57,8 @@ func (m *httpWrap) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 func main() {
 	cmd, err := builder.APIServer.
 		// +kubebuilder:scaffold:resource-register
-		WithResourceAndHandler(&adapterv1alpha1.Log{}, storageMapper(&adapterv1alpha1.Log{})).
-		WithResourceAndHandler(&adapterv1alpha1.ContainerLog{}, storageMapper(&adapterv1alpha1.ContainerLog{})).
+		WithResourceAndHandler(&v1alpha1.Log{}, storageMapper(&v1alpha1.Log{})).
+		WithResourceAndHandler(&v1alpha1.ContainerLog{}, storageMapper(&v1alpha1.ContainerLog{})).
 		WithResourceAndHandler(&adapterv1alpha1.AuditEvent{}, storageMapper(&adapterv1alpha1.AuditEvent{})).
 		WithResourceAndHandler(&adapterv1alpha1.Event{}, storageMapper(&adapterv1alpha1.Event{})).
 		WithLocalDebugExtension().

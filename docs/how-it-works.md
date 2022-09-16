@@ -1,7 +1,6 @@
 # How it works
 
-kjournal is a kubernetes compatible apiserver. It is meant to run on kubernetes and attached
-to the kube core apiserver using the kubernetes api aggregation layer.
+kjournal is a kubernetes compatible apiserver.
 Read more about the kubernetes apiserver aggregation [here](https://kubernetes.io/docs/concepts/extend-kubernetes/api-extension/apiserver-aggregation/).
 
 ![Sketch Overview](assets/sketch-overview.png)
@@ -24,10 +23,11 @@ Like for container logs these logs should be persisted into longterm storage to 
 
 ## Expose longterm logs using kjournal
 To close the gap again between the longterm storage and kubernetes is kjournals job. 
-The kjournal-apiserver exposes two api groups `container` and `audit` which make the longterm logs accessible
+The kjournal-apiserver exposes a single api group `core.kjournal` with `containerlogs`, `events`, `auditevents` as resources which makes logs accessible
 to kubernetes tooling.
-The kjournal-apiserver talks to the longterm storage while clients including kjournal or kubectl talk only to the kjournal-apiserver (via the kube-apiserver).
+The kjournal-apiserver talks to the longterm storage while clients including kjournal or kubectl talk to the kjournal-apiserver (via the kube-apiserver).
 
 ## Limitations
 It is **not** the job of kjournal to feed the kubernetes logs into your longterm storage solution.
 For this part various tooling exists. The job of kjournal is rather the other way around.
+kjournal itself does **not** store any data. It serves logs from a backing storage.

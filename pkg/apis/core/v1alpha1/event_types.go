@@ -53,7 +53,14 @@ func (in *Event) NamespaceScoped() bool {
 }
 
 func (in *Event) New() runtime.Object {
-	return &Event{}
+	return &Event{
+		Event: eventsv1.Event{
+			TypeMeta: metav1.TypeMeta{
+				Kind:       "Event",
+				APIVersion: "core.kjournal/v1alpha1",
+			},
+		},
+	}
 }
 
 func (in *Event) NewList() runtime.Object {

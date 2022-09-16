@@ -29,19 +29,12 @@ func (r *registry[T]) Add(key string, value T) error {
 	if _, ok := r.store[key]; ok {
 		return fmt.Errorf("%w: can not add key %s", ErrAlreadyExists, key)
 	}
-	fmt.Printf("\n STORE KEY %#v -- %#v -- %#v\n", key, r.store, value)
 
 	r.store[key] = value
 	return nil
 }
 
 func (r *registry[T]) Get(key string) (T, error) {
-	fmt.Printf("\nGET KEY %#v -- %#v -- %#v\n", key, r.store, r.store[key])
-
-	for k, v := range r.store {
-		fmt.Printf("DEBUG key: %#v -- value: %#v\n\n", k, v)
-	}
-
 	if _, ok := r.store[key]; ok {
 		return r.store[key], nil
 	}
