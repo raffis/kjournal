@@ -26,11 +26,6 @@ type Event struct {
 }
 
 func (in *Event) UnmarshalJSON(bs []byte) error {
-	//apiVersion := gjson.Get(string(bs), "apiVersion").Str
-
-	in.TypeMeta.Kind = "Event"
-	in.TypeMeta.APIVersion = "core.kjournal/v1alpha1"
-
 	coreEvent := &v1.Event{}
 	err := json.Unmarshal(bs, coreEvent)
 	if err != nil {
@@ -62,7 +57,6 @@ var eventTableColums = []metav1.TableColumnDefinition{
 
 // ConvertToTable implements the TableConvertor interface for REST.
 func (in *Event) ConvertToTable(ctx context.Context, tableOptions runtime.Object) (*metav1.Table, error) {
-	fmt.Printf("============================================================\n")
 	table := &metav1.Table{
 		ColumnDefinitions: eventTableColums,
 		TypeMeta:          in.TypeMeta,

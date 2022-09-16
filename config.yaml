@@ -9,12 +9,21 @@ backend:
 apis:
 - resource: containerlogs
   fieldMap:
-    metadata.namespace: kubernetes.namespace_name
-    metadata.creationTimestamp: "@timestamp"
-    metadata.annotations.kjournal/fluentbit-meta: "kubernetes"
-    pod: kubernetes.pod_name
-    container: kubernetes.container_name
-    payload: "."
+    metadata.namespace: [kubernetes.namespace_name]
+    metadata.creationTimestamp: ["@timestamp"]
+    pod: [kubernetes.pod_name]
+    container: [kubernetes.container_name]
+    payload: ["."]
+    metadata.labels: [kubernetes.labels]
+    metadata.annotations.docker_id: [kubernetes.docker_id]
+    metadata.annotations.host: [kubernetes.host]
+    metadata.annotations.pod_id: [kubernetes.pod_id]
+
+
+  dropFields:
+  - payload.@timestamp
+  - payload.kubernetes
+
   backend:
     elasticsearch:
       index: logstash-*
@@ -31,8 +40,8 @@ apis:
 
 - resource: logs
   fieldMap:
-    metadata.creationTimestamp: "@timestamp"
-    payload: "."
+    metadata.creationTimestamp: ["@timestamp"]
+    payload: ["."]
   backend:
     elasticsearch:
-        index: "*"
+      index: "*"

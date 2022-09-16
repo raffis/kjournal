@@ -6,24 +6,20 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"io"
 	"reflect"
 	"time"
 
+	"github.com/Jeffail/gabs"
 	elasticsearch "github.com/elastic/go-elasticsearch/v8"
 	"github.com/elastic/go-elasticsearch/v8/esapi"
-	"github.com/tidwall/gjson"
-	statuserr "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/api/meta"
 	metainternalversion "k8s.io/apimachinery/pkg/apis/meta/internalversion"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/conversion"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/schema"
-	"k8s.io/apimachinery/pkg/selection"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/watch"
-	"k8s.io/apiserver/pkg/endpoints/request"
 	"k8s.io/apiserver/pkg/registry/rest"
 	"k8s.io/klog/v2"
 
@@ -54,16 +50,6 @@ func NewElasticsearchREST(
 		newFunc:       newFunc,
 		newListFunc:   newListFunc,
 	}
-}
-
-var operatorMap = map[selection.Operator][]string{
-	selection.Equals:       {"must", "match_phrase"},
-	selection.DoubleEquals: {"must", "match_phrase"},
-	selection.NotEquals:    {"must_not", "match_phrase"},
-	selection.GreaterThan:  {"must", "range"},
-	selection.LessThan:     {"must", "range"},
-	selection.DoesNotExist: {"must_not", "exists"},
-	selection.Exists:       {"must", "exists"},
 }
 
 type esHit struct {
@@ -102,19 +88,19 @@ type elasticsearchREST struct {
 	newListFunc   func() runtime.Object
 }
 
-func (f *elasticsearchREST) New() runtime.Object {
-	return f.newFunc()
+func (r *elasticsearchREST) New() runtime.Object {
+	return r.newFunc()
 }
 
-func (f *elasticsearchREST) NewList() runtime.Object {
-	return f.newListFunc()
+func (r *elasticsearchREST) NewList() runtime.Object {
+	return r.newListFunc()
 }
 
-func (f *elasticsearchREST) NamespaceScoped() bool {
-	return f.isNamespaced
+func (r *elasticsearchREST) NamespaceScoped() bool {
+	return r.isNamespaced
 }
 
-func (f *elasticsearchREST) Get(
+func (r *elasticsearchREST) Get(
 	ctx context.Context,
 	name string,
 	options *metav1.GetOptions,
@@ -127,9 +113,9 @@ type tableConvertor interface {
 }
 
 // ConvertToTable implements the TableConvertor interface for REST.
-func (f *elasticsearchREST) ConvertToTable(ctx context.Context, obj runtime.Object, tableOptions runtime.Object) (*metav1.Table, error) {
+func (r *elasticsearchREST) ConvertToTable(ctx context.Context, obj runtime.Object, tableOptions runtime.Object) (*metav1.Table, error) {
 	if convert, ok := obj.(tableConvertor); ok {
-		token, err := f.metaAccessor.Continue(obj)
+		token, err := r.metaAccessor.Continue(obj)
 		if err != nil {
 			return nil, err
 		}
@@ -141,73 +127,58 @@ func (f *elasticsearchREST) ConvertToTable(ctx context.Context, obj runtime.Obje
 	return &metav1.Table{}, errors.New("could not convert to table")
 }
 
-func (f *elasticsearchREST) Watch(ctx context.Context, options *metainternalversion.ListOptions) (watch.Interface, error) {
+func (r *elasticsearchREST) Watch(ctx context.Context, options *metainternalversion.ListOptions) (watch.Interface, error) {
 	klog.InfoS("Start watch stream", "options", options)
 
-	jw := &streamer{
-		refreshRate: f.apiBinding.Backend.Elasticsearch.RefreshRate,
-		f:           f,
+	stream := &stream{
+		refreshRate: r.apiBinding.Backend.Elasticsearch.RefreshRate,
+		rest:        r,
 		ch:          make(chan watch.Event, 500),
 	}
 
 	go func() {
 		options.Limit = 500
-		jw.Start(ctx, options)
+		stream.Start(ctx, options)
 	}()
 
-	return jw, nil
+	return stream, nil
 }
 
-func (f *elasticsearchREST) List(
+func (r *elasticsearchREST) List(
 	ctx context.Context,
 	options *metainternalversion.ListOptions,
 ) (runtime.Object, error) {
 	klog.InfoS("list request", "options", options)
 
-	newListObj := f.NewList()
+	newListObj := r.NewList()
 	v, err := getListPrt(newListObj)
 	if err != nil {
 		return nil, err
 	}
 
 	if options.Limit == -1 {
-		streamer := &PITStream{
-			f:       f,
+		stream := &pitStream{
+			rest:    r,
 			options: options,
 			context: ctx,
 		}
 
-		return streamer, nil
+		return stream, nil
 	}
 
-	query, err := f.buildQuery(ctx, options)
-	if err != nil {
-		return nil, err
-	}
+	query := QueryFromListOptions(ctx, options, r)
 
 	var hit esHit
-	esResults, err := f.fetch(ctx, query, options)
+	esResults, err := r.fetch(ctx, query, options)
 	if err != nil {
 		return nil, err
 	}
 
-	//ns, _ := request.NamespaceFrom(ctx)
 	for _, hit = range esResults.Hits.Hits {
-		decodedObj, err := f.decodeFrom(hit)
+		decodedObj, err := r.decodeFrom(hit)
 		if err != nil {
 			return nil, err
 		}
-
-		/*if f.isNamespaced {
-			meta, err := meta.Accessor(decodedObj)
-			if err != nil {
-				return newListObj, err
-			}
-
-			if meta.GetNamespace() != ns {
-				continue
-			}
-		}*/
 
 		appendItem(v, decodedObj)
 	}
@@ -222,13 +193,13 @@ func (f *elasticsearchREST) List(
 		}
 
 		klog.InfoS("setting continue token", "token", string(b))
-		f.metaAccessor.SetContinue(newListObj, string(b))
+		r.metaAccessor.SetContinue(newListObj, string(b))
 	}
 
 	return newListObj, nil
 }
 
-func (f *elasticsearchREST) fetch(
+func (r *elasticsearchREST) fetch(
 	ctx context.Context,
 	query map[string]interface{},
 	options *metainternalversion.ListOptions,
@@ -243,24 +214,21 @@ func (f *elasticsearchREST) fetch(
 	}
 
 	req := []func(*esapi.SearchRequest){
-		f.es.Search.WithContext(ctx),
-		f.es.Search.WithBody(&buf),
-		//f.es.Search.WithTimeout(time.Duration(int64(time.Second) * int64(*options.TimeoutSeconds))),
-		f.es.Search.WithTrackTotalHits(false),
+		r.es.Search.WithContext(ctx),
+		r.es.Search.WithBody(&buf),
+		//r.es.Search.WithTimeout(time.Duration(int64(time.Second) * int64(*options.TimeoutSeconds))),
+		r.es.Search.WithTrackTotalHits(false),
 	}
 
 	if _, ok := query["pit"]; !ok {
-		req = append(req, f.es.Search.WithIndex(f.apiBinding.Backend.Elasticsearch.Index))
+		req = append(req, r.es.Search.WithIndex(r.apiBinding.Backend.Elasticsearch.Index))
 	}
 
 	if options.Limit != 0 {
-		req = append(req, f.es.Search.WithSize(int(options.Limit)))
+		req = append(req, r.es.Search.WithSize(int(options.Limit)))
 	}
 
-	klog.InfoS("executing elasicsearch query...", "query", query)
-	res, err := f.es.Search(req...)
-	klog.InfoS("done...")
-
+	res, err := r.es.Search(req...)
 	if err != nil {
 		klog.ErrorS(err, "error getting response from es")
 		return esResults, err
@@ -287,128 +255,44 @@ func (f *elasticsearchREST) fetch(
 	return esResults, err
 }
 
-func (f *elasticsearchREST) getFieldMap(field string) string {
-	if val, ok := f.apiBinding.FieldMap[field]; ok {
-		return val
+func (r *elasticsearchREST) decodeFrom(obj esHit) (runtime.Object, error) {
+	newObj := r.newFunc()
+
+	jsonParsed, err := gabs.ParseJSON(obj.Source)
+	if err != nil {
+		return newObj, err
 	}
 
-	return field
-}
-
-func (f *elasticsearchREST) buildQuery(
-	ctx context.Context,
-	options *metainternalversion.ListOptions,
-) (map[string]interface{}, error) {
-	timestampField := f.getFieldMap("metadata.creationTimestamp")
-	query := map[string]interface{}{
-		"_source": map[string]interface{}{
-			"excludes": []interface{}{"kind", "apiVersion"},
-		},
-		"sort": []map[string]interface{}{
-			{
-				timestampField: "asc",
-			},
-		},
-		"query": map[string]interface{}{
-			"bool": map[string]interface{}{
-				"must":     []map[string]interface{}{},
-				"must_not": []map[string]interface{}{},
-			},
-		},
-	}
-
-	if options.Continue != "" {
-		var searchAfter []interface{}
-		err := json.Unmarshal([]byte(options.Continue), &searchAfter)
-		if err != nil {
-			return query, err
-		}
-
-		query["search_after"] = searchAfter
-	}
-
-	var skipTimestampFilter bool
-	requirements, _ := options.LabelSelector.Requirements()
-	for _, req := range requirements {
-		operator := operatorMap[req.Operator()]
-
-		q := query["query"].(map[string]interface{})["bool"].(map[string]interface{})[operator[0]].([]map[string]interface{})
-		field := req.Key()
-
-		if val, ok := f.apiBinding.FieldMap[field]; ok {
-			field = val
-		}
-
-		var match map[string]interface{}
-
-		switch req.Operator() {
-		case selection.LessThan:
-			match = map[string]interface{}{
-				operator[1]: map[string]interface{}{
-					field: map[string]interface{}{
-						"lt": req.Values().UnsortedList()[0],
-					},
-				},
-			}
-		case selection.GreaterThan:
-			match = map[string]interface{}{
-				operator[1]: map[string]interface{}{
-					field: map[string]interface{}{
-						"gt": req.Values().UnsortedList()[0],
-					},
-				},
-			}
-		case selection.Exists:
-		case selection.DoesNotExist:
-			match = map[string]interface{}{
-				operator[1]: map[string]interface{}{
-					"field": field,
-				},
-			}
-		default:
-			match = map[string]interface{}{
-				operator[1]: map[string]interface{}{
-					field: req.Values().UnsortedList()[0],
-				},
+	for k, fields := range r.apiBinding.FieldMap {
+		for _, field := range fields {
+			if field == "." {
+				jsonParsed.SetP(obj.Source, k)
+			} else {
+				jsonParsed.SetP(jsonParsed.Path(field).Data(), k)
 			}
 		}
-
-		q = append(q, match)
-		query["query"].(map[string]interface{})["bool"].(map[string]interface{})[operator[0]] = q
-
-		if !skipTimestampFilter && field == timestampField {
-			skipTimestampFilter = true
-		}
 	}
 
-	if !skipTimestampFilter {
-		q := query["query"].(map[string]interface{})["bool"].(map[string]interface{})["must"].([]map[string]interface{})
-		match := map[string]interface{}{
-			"range": map[string]interface{}{
-				timestampField: map[string]interface{}{
-					"gte": "now-5h",
-				},
-			},
-		}
-		q = append(q, match)
-		query["query"].(map[string]interface{})["bool"].(map[string]interface{})["must"] = q
-
+	jsonParsed, err = gabs.ParseJSON(jsonParsed.Bytes())
+	if err != nil {
+		return newObj, err
 	}
 
-	// If resource is namespaced objectRef.namespace will always be set to the current calling context namespace
-	if f.isNamespaced {
-		ns, _ := request.NamespaceFrom(ctx)
-		q := query["query"].(map[string]interface{})["bool"].(map[string]interface{})["must"].([]map[string]interface{})
-		match := map[string]interface{}{
-			"match_phrase": map[string]interface{}{
-				f.getFieldMap("metadata.namespace"): ns,
-			},
-		}
-		q = append(q, match)
-		query["query"].(map[string]interface{})["bool"].(map[string]interface{})["must"] = q
+	for _, field := range r.apiBinding.DropFields {
+		jsonParsed.DeleteP(field)
 	}
 
-	return query, nil
+	decodedObj, _, err := r.codec.Decode(jsonParsed.Bytes(), nil, newObj)
+	if err != nil {
+		return nil, err
+	}
+
+	annotations, _ := r.metaAccessor.Annotations(decodedObj)
+	annotations["kjournal/es-index"] = obj.Index
+	r.metaAccessor.SetAnnotations(decodedObj, annotations)
+	r.metaAccessor.SetUID(decodedObj, types.UID(obj.ID))
+
+	return decodedObj, err
 }
 
 func appendItem(v reflect.Value, obj runtime.Object) {
@@ -427,219 +311,4 @@ func getListPrt(listObj runtime.Object) (reflect.Value, error) {
 	}
 
 	return v, nil
-}
-
-type pit struct {
-	ID string `json:"id"`
-}
-
-type streamer struct {
-	usePIT      bool
-	f           *elasticsearchREST
-	refreshRate time.Duration
-	ch          chan watch.Event
-	done        chan bool
-	pit         pit
-}
-
-func (w *streamer) errorAndAbort(err error) {
-	status := statuserr.NewBadRequest(err.Error()).Status()
-	w.ch <- watch.Event{
-		Type:   watch.Error,
-		Object: &status,
-	}
-}
-
-func (w *streamer) Start(ctx context.Context, options *metainternalversion.ListOptions) {
-	if w.usePIT {
-		res, err := w.f.es.OpenPointInTime([]string{w.f.apiBinding.Backend.Elasticsearch.Index}, "5m")
-		if err != nil {
-			w.errorAndAbort(err)
-			return
-		}
-
-		if err := json.NewDecoder(res.Body).Decode(&w.pit); err != nil {
-			w.errorAndAbort(err)
-			return
-		}
-	}
-
-	for {
-		query, err := w.f.buildQuery(ctx, options)
-		if err != nil {
-			w.errorAndAbort(err)
-			return
-		}
-
-		if w.pit.ID != "" {
-			query["pit"] = map[string]interface{}{
-				"id":         w.pit.ID,
-				"keep_alive": "5m",
-			}
-		}
-
-		esResults, err := w.f.fetch(ctx, query, options)
-		if err != nil {
-			w.errorAndAbort(err)
-			return
-		}
-
-		var hit esHit
-		//ns, _ := request.NamespaceFrom(ctx)
-
-		for _, hit = range esResults.Hits.Hits {
-			decodedObj, err := w.f.decodeFrom(hit)
-			if err != nil {
-				break
-			}
-
-			/*if w.f.isNamespaced {
-				meta, err := meta.Accessor(decodedObj)
-				if err != nil {
-					w.errorAndAbort(err)
-					return
-				}
-
-				if meta.GetNamespace() != ns {
-					continue
-				}
-			}*/
-
-			w.ch <- watch.Event{
-				Type:   watch.Added,
-				Object: decodedObj,
-			}
-		}
-
-		if len(esResults.Hits.Hits) != 500 && w.refreshRate == 0 {
-			klog.Info("All objects consumed from pit")
-			w.done <- true
-			break
-		}
-
-		if len(esResults.Hits.Hits) != 500 {
-			klog.InfoS("wait for next check", "sleep", w.refreshRate.String())
-			time.Sleep(w.refreshRate)
-		}
-
-		// The continue token represents teh last sort value from the last hit.
-		// Which itself gets used in the next es query as search_after
-		// If there is no hit there will be no continue token as this means we reached the end of available results
-		if len(hit.Sort) > 0 {
-			b, err := json.Marshal(hit.Sort)
-			if err != nil {
-				w.errorAndAbort(err)
-				return
-			}
-
-			options.Continue = string(b)
-		}
-
-		// For the next search request the PIT from the previous search response needs to be taken as it can change over time
-		if w.pit.ID != "" {
-			w.pit.ID = esResults.PitID
-		}
-	}
-}
-
-func (f *elasticsearchREST) decodeFrom(obj esHit) (runtime.Object, error) {
-	newObj := f.newFunc()
-
-	if f.apiBinding.DocRoot != "" {
-		obj.Source = json.RawMessage(gjson.Get(string(obj.Source), f.apiBinding.DocRoot).Raw)
-	}
-
-	decodedObj, _, err := f.codec.Decode(obj.Source, nil, newObj)
-	if err != nil {
-		return nil, err
-	}
-
-	f.metaAccessor.SetAnnotations(decodedObj, map[string]string{
-		"kjournal/es-index": obj.Index,
-	})
-	f.metaAccessor.SetUID(decodedObj, types.UID(obj.ID))
-
-	return decodedObj, err
-}
-
-func (w *streamer) Stop() {
-	_, err := w.f.es.ClosePointInTime()
-	if err != nil {
-		klog.ErrorS(err, "failed to close pit")
-	}
-
-}
-
-func (w *streamer) ResultChan() <-chan watch.Event {
-	return w.ch
-}
-
-type PITStream struct {
-	f       *elasticsearchREST
-	options *metainternalversion.ListOptions
-	context context.Context
-}
-
-var _ rest.ResourceStreamer = &PITStream{}
-
-func (obj *PITStream) GetObjectKind() schema.ObjectKind {
-	return schema.EmptyObjectKind
-}
-func (obj *PITStream) DeepCopyObject() runtime.Object {
-	panic("rest.PITStream does not implement DeepCopyObject")
-}
-
-func (s *PITStream) InputStream(ctx context.Context, apiVersion, acceptHeader string) (stream io.ReadCloser, flush bool, contentType string, err error) {
-	jw := &streamer{
-		usePIT:      true,
-		refreshRate: 0,
-		f:           s.f,
-		ch:          make(chan watch.Event, 500),
-		done:        make(chan bool),
-	}
-
-	pipe := &Pipe{
-		streamer: jw,
-	}
-
-	go func() {
-		s.options.Limit = 500
-		jw.Start(s.context, s.options)
-	}()
-
-	return pipe, false, "application/json", nil
-}
-
-type Pipe struct {
-	streamer *streamer
-}
-
-func (p *Pipe) Read(dst []byte) (n int, err error) {
-	read := func(doc watch.Event) (int, error) {
-		b, err := json.Marshal(metav1.WatchEvent{
-			Type:   string(doc.Type),
-			Object: runtime.RawExtension{Object: doc.Object},
-		})
-
-		s := copy(dst, b)
-		return s, err
-	}
-
-	select {
-	case doc, ok := <-p.streamer.ResultChan():
-		if ok {
-			return read(doc)
-		}
-
-		return 0, io.EOF
-	case <-p.streamer.done:
-		close(p.streamer.ch)
-	}
-
-	return 0, nil
-}
-
-func (p *Pipe) Close() error {
-	p.streamer.Stop()
-	return nil
 }

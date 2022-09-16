@@ -86,6 +86,23 @@ func (cmd *logsCommand) filter(args []string, opts *metav1.ListOptions) error {
 		}
 
 		fieldSelector = append(fieldSelector, fmt.Sprintf("metadata.creationTimestamp>%d", time.Now().Unix()*1000-ts.Milliseconds()))
+	} else if getArgs.timeRange != "" {
+		parts := strings.Split(getArgs.timeRange, "-")
+
+		fromTimestamp, err := time.ParseDuration(parts[0])
+		if err != nil {
+			return err
+		}
+		toTimestamp, err := time.ParseDuration(parts[1])
+		if err != nil {
+			return err
+		}
+
+		fieldSelector = append(
+			fieldSelector,
+			fmt.Sprintf("metadata.creationTimestamp<%d", time.Now().Unix()*1000-fromTimestamp.Milliseconds()),
+			fmt.Sprintf("metadata.creationTimestamp>%d", time.Now().Unix()*1000-toTimestamp.Milliseconds()),
+		)
 	}
 
 	if logsArgs.log != "" {

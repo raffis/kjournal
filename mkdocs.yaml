@@ -45,11 +45,16 @@ nav:
 - Home: index.md
 - quick-start.md
 - how-it-works.md
+- resources.md
 - Prerequisites:
   - prerequisites/audit.md
   - prerequisites/ship.md
+  - prerequisites/event-exporter.md
 - Server:
+  - server/quick-start.md
+  - server/config.md
   - server/install.md
+  - server/config.md
   - Storage:
     - server/storage/elasticsearch.md
     - server/storage/other.md
@@ -66,8 +71,8 @@ nav:
 - Tutorials:
   - tutorials/kind.md
 - API:
-  - api/container.v1beta1.md
-  - api/audit.v1.md
+  - api/config.kjournal.v1alpha1.md
+  - api/core.kjournal.v1alpha1.md
 - Community:
   - contributing.md
 

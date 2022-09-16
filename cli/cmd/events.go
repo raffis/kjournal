@@ -29,7 +29,6 @@ import (
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/apimachinery/pkg/util/duration"
 	"k8s.io/cli-runtime/pkg/printers"
-	k8sget "k8s.io/kubectl/pkg/cmd/get"
 
 	corev1alpha1 "github.com/raffis/kjournal/pkg/apis/core/v1alpha1"
 )
@@ -70,7 +69,6 @@ var eventsCmd = &cobra.Command{
 }
 
 func init() {
-	printFlags = k8sget.NewGetPrintFlags()
 	addGetFlags(eventsCmd)
 	eventsCmd.PersistentFlags().BoolVarP(&eventsArgs.noHeader, "no-header", "", false, "skip the header when printing the results")
 

@@ -55,7 +55,12 @@ func (in *Log) NamespaceScoped() bool {
 }
 
 func (in *Log) New() runtime.Object {
-	return &Log{}
+	return &Log{
+		TypeMeta: metav1.TypeMeta{
+			Kind:       "Log",
+			APIVersion: "core.kjournal/v1alpha1",
+		},
+	}
 }
 
 func (in *Log) NewList() runtime.Object {
