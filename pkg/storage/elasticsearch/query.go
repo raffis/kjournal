@@ -3,7 +3,6 @@ package elasticsearch
 import (
 	"context"
 	"encoding/json"
-	"fmt"
 	"strings"
 
 	metainternalversion "k8s.io/apimachinery/pkg/apis/meta/internalversion"
@@ -104,7 +103,6 @@ func (b *queryBuilder) fieldSelectors() *queryBuilder {
 		for field, fieldsTo := range b.rest.apiBinding.FieldMap {
 			for k, fieldTo := range fieldsTo {
 				lookupKey := strings.TrimLeft(strings.Replace(req.Key(), field, fieldTo, -1), ".")
-				fmt.Printf("loop %#v -- %#v -- %#v\n", lookupKey, field, fieldTo)
 				if lookupKey != req.Key() {
 					fieldsMap[k] = lookupKey
 					break

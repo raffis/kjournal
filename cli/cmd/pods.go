@@ -34,44 +34,44 @@ import (
 	"k8s.io/apimachinery/pkg/runtime/schema"
 )
 
-type containerFlags struct {
-	container string
+type podsFlags struct {
+	pods      string
 	noColor   bool
 	timestamp bool
 }
 
-var containerArgs containerFlags
+var podsArgs podsFlags
 
-var containerCmd = &cobra.Command{
-	Use:   "container",
-	Short: "Get container logs",
-	Long:  "The container command prints logs from containers",
+var podsCmd = &cobra.Command{
+	Use:   "pods",
+	Short: "Get pod logs",
+	Long:  "The pods command prints logs from pods",
 	Example: `  # Print logs from all pods in the same namespace
-  kjoural container -n mynamespace`,
+  kjoural pods -n mynamespace`,
 	//ValidArgsFunction: resourceNamesCompletionFunc(logsv1beta1.GroupVersion.WithKind(logsv1beta1.LogKind)),
 	RunE: func(cmd *cobra.Command, args []string) error {
 		get := getCommand{
-			command: &containerCommand{},
-			apiType: containerLogAdapterType,
-			list:    &containerLogListAdapter{&corev1alpha1.ContainerLogList{}},
+			command: &podsCommand{},
+			apiType: podsLogAdapterType,
+			list:    &podsLogListAdapter{&corev1alpha1.ContainerLogList{}},
 		}
 		return get.run(cmd, args)
 	},
 }
 
 func init() {
-	containerCmd.PersistentFlags().StringVarP(&containerArgs.container, "container", "c", "", "Only dump logs from container names matching. (This is the same as --field-selector container=name)")
-	containerCmd.PersistentFlags().BoolVarP(&containerArgs.noColor, "no-color", "", false, "Don't use colors in the default output")
-	containerCmd.PersistentFlags().BoolVarP(&containerArgs.timestamp, "timestamp", "t", false, "Print creationTime timestamp in the default output.")
+	podsCmd.PersistentFlags().StringVarP(&podsArgs.pods, "pods", "c", "", "Only dump logs from pods names matching. (This is the same as --field-selector pods=name)")
+	podsCmd.PersistentFlags().BoolVarP(&podsArgs.noColor, "no-color", "", false, "Don't use colors in the default output")
+	podsCmd.PersistentFlags().BoolVarP(&podsArgs.timestamp, "timestamp", "t", false, "Print creationTime timestamp in the default output.")
 
-	addGetFlags(containerCmd)
-	rootCmd.AddCommand(containerCmd)
+	addGetFlags(podsCmd)
+	rootCmd.AddCommand(podsCmd)
 }
 
-type containerCommand struct {
+type podsCommand struct {
 }
 
-func (cmd *containerCommand) filter(args []string, opts *metav1.ListOptions) error {
+func (cmd *podsCommand) filter(args []string, opts *metav1.ListOptions) error {
 	var fieldSelector []string
 	if opts.FieldSelector != "" {
 		fieldSelector = strings.Split(opts.FieldSelector, ",")
@@ -107,15 +107,15 @@ func (cmd *containerCommand) filter(args []string, opts *metav1.ListOptions) err
 		)
 	}
 
-	if containerArgs.container != "" {
-		fieldSelector = append(fieldSelector, fmt.Sprintf("container=%s", containerArgs.container))
+	if podsArgs.pods != "" {
+		fieldSelector = append(fieldSelector, fmt.Sprintf("pods=%s", podsArgs.pods))
 	}
 
 	opts.FieldSelector = strings.Join(fieldSelector, ",")
 	return nil
 }
 
-func (cmd *containerCommand) defaultPrinter(obj runtime.Object) error {
+func (cmd *podsCommand) defaultPrinter(obj runtime.Object) error {
 	list := &corev1alpha1.ContainerLogList{}
 
 	if log, ok := obj.(*corev1alpha1.ContainerLog); ok {
@@ -146,22 +146,22 @@ type Log struct {
 	// PodName of the pod
 	PodName string `json:"podName"`
 
-	// ContainerName of the container
-	ContainerName string `json:"containerName"`
+	// ContainerName of the pods
+	ContainerName string `json:"podsName"`
 
 	PodColor       *color.Color `json:"-"`
 	ContainerColor *color.Color `json:"-"`
 }
 
-// Print prints a color coded log message with the pod and container names
+// Print prints a color coded log message with the pod and pods names
 func printContainerLog(log corev1alpha1.ContainerLog) {
-	podColor, containerColor := determineColor(log.Pod)
+	podColor, podsColor := determineColor(log.Pod)
 	vm := Log{
 		Message:        string(log.Payload),
 		PodName:        log.Pod,
 		ContainerName:  log.Container,
 		PodColor:       podColor,
-		ContainerColor: containerColor,
+		ContainerColor: podsColor,
 	}
 
 	t := "{{color .PodColor .PodName}} {{color .ContainerColor .ContainerName}} {{.Message}}\n"
@@ -199,10 +199,10 @@ func printContainerLog(log corev1alpha1.ContainerLog) {
 	fmt.Printf(buf.String())
 }
 
-var containerLogAdapterType = apiType{
+var podsLogAdapterType = apiType{
 	kind:      "ContainerLog",
-	humanKind: "containerlog",
-	resource:  "containerlogs",
+	humanKind: "podslog",
+	resource:  "podslogs",
 	groupVersion: schema.GroupVersion{
 		Group:   "core.kjournal",
 		Version: "v1alpha1",
@@ -210,15 +210,15 @@ var containerLogAdapterType = apiType{
 	namespaced: true,
 }
 
-type containerLogListAdapter struct {
+type podsLogListAdapter struct {
 	*corev1alpha1.ContainerLogList
 }
 
-func (h containerLogListAdapter) asClientList() ObjectList {
+func (h podsLogListAdapter) asClientList() ObjectList {
 	return h.ContainerLogList
 }
 
-func (h containerLogListAdapter) len() int {
+func (h podsLogListAdapter) len() int {
 	return len(h.ContainerLogList.Items)
 }
 
@@ -231,7 +231,7 @@ var colorList = [][2]*color.Color{
 	{color.New(color.FgHiRed), color.New(color.FgRed)},
 }
 
-func determineColor(podName string) (podColor, containerColor *color.Color) {
+func determineColor(podName string) (podColor, podsColor *color.Color) {
 	hash := fnv.New32()
 	_, _ = hash.Write([]byte(podName))
 	idx := hash.Sum32() % uint32(len(colorList))
