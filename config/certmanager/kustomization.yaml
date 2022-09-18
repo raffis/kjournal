@@ -1,4 +1,67 @@
-apiVersion: kustomize.config.k8s.io/v1beta1
-kind: Kustomization
+kind: Component
+
 resources:
-- apiservice.yaml
+- issuer.yaml
+- certificate.yaml
+
+patches:
+- target:
+    kind: APIService
+  patch: |
+    kind: APIService
+    metadata:
+      name: apiserver
+      annotations:
+        certmanager.k8s.io/inject-ca-from: $(NAMESPACE)/$(SVC_NAME)
+        cert-manager.io/inject-ca-from: $(NAMESPACE)/$(SVC_NAME)
+    spec:
+      insecureSkipTLSVerify: false
+- target:
+    kind: Deployment
+    name: apiserver
+  patch: |-
+    - op: add
+      path: /spec/template/spec/containers/0/args/-
+      value: --tls-cert-file=/certificates/tls.crt
+    - op: add
+      path: /spec/template/spec/containers/0/args/-
+      value: --tls-private-key-file=/certificates/tls.key
+- target: 
+    kind: Deployment
+    name: apiserver
+  patch: |
+    kind: Deployment
+    metadata:
+      name: apiserver
+    spec: 
+      template: 
+        spec:
+          containers:
+          - name: apiserver
+            volumeMounts:
+            - mountPath: certificates
+              name: apiserver-certs
+              readOnly: true
+          volumes:
+          - name: apiserver-certs
+            secret:
+              secretName: apiserver
+
+configurations:
+- config.yaml
+
+vars:
+- name: SVC_NAME
+  objref:
+    kind: Service
+    name: apiserver
+    apiVersion: v1
+  fieldref:
+    fieldpath: metadata.name
+- name: NAMESPACE
+  objref:
+    kind: Service
+    name: apiserver
+    apiVersion: v1
+  fieldref:
+    fieldpath: metadata.namespace

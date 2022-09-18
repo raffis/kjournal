@@ -1,6 +1,5 @@
 # Install
 
-The recomended way of installing the server is by using the helm chart.
 However the pre-compiled apiserver binaries are also available in different ways or compilable from source. 
 Below you can find the steps for each of them.
 

@@ -1,0 +1,12 @@
+apiVersion: cert-manager.io/v1alpha2
+kind: Certificate
+metadata:
+  name: apiserver
+spec:
+  dnsNames:
+  - $(SVC_NAME).$(NAMESPACE).svc
+  - $(SVC_NAME).$(NAMESPACE).svc.cluster.local
+  issuerRef:
+    kind: Issuer
+    name: selfsigned-issuer
+  secretName: apiserver
