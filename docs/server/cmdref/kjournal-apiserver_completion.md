@@ -18,7 +18,7 @@ See each sub-command's help for details on how to use the generated script.
 
 ### SEE ALSO
 
-* [kjournal-apiserver](kjournal-apiserver.md)	 - Launch a wardle API server
+* [kjournal-apiserver](kjournal-apiserver.md)	 - Launches the kjournal kubernetes apiserver
 * [kjournal-apiserver completion bash](kjournal-apiserver_completion_bash.md)	 - Generate the autocompletion script for bash
 * [kjournal-apiserver completion fish](kjournal-apiserver_completion_fish.md)	 - Generate the autocompletion script for fish
 * [kjournal-apiserver completion powershell](kjournal-apiserver_completion_powershell.md)	 - Generate the autocompletion script for powershell

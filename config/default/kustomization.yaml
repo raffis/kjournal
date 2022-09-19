@@ -1,4 +1,36 @@
 apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
+namespace: logging
+
+namePrefix: kjournal-
+
 resources:
-- aggregated-apiserver.yaml
+- ./namespace.yaml
+- ../apiserver
+- ../apiservice
+- ../rbac
+- ./elasticsearch
+
+components: 
+- ../certmanager
+
+patchesStrategicMerge:
+- |
+  apiVersion: apps/v1
+  kind: Deployment
+  metadata:
+    name: apiserver
+    namespace: logging
+  spec:
+    template:
+      spec:
+        containers:
+        - name: apiserver
+          volumeMounts:
+          - mountPath: /config.yaml
+            name: apiserver-config
+            subPath: apiserver-config.yaml
+        volumes:
+        - name: apiserver-config
+          configMap:
+            name: apiserver-config

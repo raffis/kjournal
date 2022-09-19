@@ -39,13 +39,9 @@ help: ## Display this help.
 
 ##@ Development
 
-.PHONY: manifests
-manifests: controller-gen ## Generate WebhookConfiguration, ClusterRole and CustomResourceDefinition objects.
-	$(CONTROLLER_GEN) rbac:roleName=manager-role crd webhook paths="./..." output:crd:artifacts:config=config/crd/bases
-
 .PHONY: generate
 generate: controller-gen ## Generate code containing DeepCopy, DeepCopyInto, and DeepCopyObject method implementations.
-	$(CONTROLLER_GEN) object:headerFile="hack/boilerplate.go.txt" paths="./..."
+	$(CONTROLLER_GEN) object:headerFile="hack/boilerplate.go.txt" paths="./pkg/apis/..."
 
 .PHONY: fmt
 fmt: ## Run go fmt against code.
@@ -56,13 +52,13 @@ vet: ## Run go vet against code.
 	go vet ./...
 
 .PHONY: test
-test: manifests generate fmt vet envtest ## Run tests.
+test: generate fmt vet envtest ## Run tests.
 	KUBEBUILDER_ASSETS="$(shell $(ENVTEST) use $(ENVTEST_K8S_VERSION) -p path)" go test ./... -coverprofile cover.out
 
 .PHONY: kind-test
 kind-test: docker-build
 # apiserver-boot  build container --targets apiserver --image kjournal:latest &&
-	kind load docker-image ${IMG} && kubectl -n logging rollout restart deployment/kjournal-apiserver && stern -n logging kjournal
+	kind load docker-image ${IMG} --name kjournal && kubectl -n logging rollout restart deployment/kjournal-apiserver && stern -n logging kjournal
 
 ##@ Build
 
@@ -71,7 +67,7 @@ build: generate fmt vet ## Build apiserver binary.
 	go build -o bin/apiserver cmd/*
 
 .PHONY: run
-run: manifests generate fmt vet ## Run apiserver from your host.
+run: generate fmt vet ## Run apiserver from your host.
 	go run cmd/*
 
 .PHONY: docker-build
@@ -83,8 +79,8 @@ docker-push: ## Push docker image with the apiserver.
 	docker push ${IMG}
 
 api-docs: gen-crd-api-reference-docs  ## Generate API reference documentation
-	$(GEN_CRD_API_REFERENCE_DOCS) -api-dir=./pkg/apis/audit/v1 -config=./hack/api-docs/config.json -template-dir=./hack/api-docs/template -out-file=./docs/api/audit.v1.md
-	$(GEN_CRD_API_REFERENCE_DOCS) -api-dir=./pkg/apis/container/v1beta1 -config=./hack/api-docs/config.json -template-dir=./hack/api-docs/template -out-file=./docs/api/container.v1beta1.md
+	$(GEN_CRD_API_REFERENCE_DOCS) -api-dir=./pkg/apis/core/v1alpha1 -config=./hack/api-docs/config.json -template-dir=./hack/api-docs/template -out-file=./docs/api/core.kjournal.v1alpha1.md
+	$(GEN_CRD_API_REFERENCE_DOCS) -api-dir=./pkg/apis/config/v1alpha1 -config=./hack/api-docs/config.json -template-dir=./hack/api-docs/template -out-file=./docs/api/config.kjournal.v1alpha1.md
 
 # Find or download gen-crd-api-reference-docs
 GEN_CRD_API_REFERENCE_DOCS = $(GOBIN)/gen-crd-api-reference-docs
@@ -119,15 +115,15 @@ ifndef ignore-not-found
 endif
 
 .PHONY: install
-install: manifests kustomize ## Install CRDs into the K8s cluster specified in ~/.kube/config.
+install: kustomize ## Install CRDs into the K8s cluster specified in ~/.kube/config.
 	$(KUSTOMIZE) build config/crd | kubectl apply -f -
 
 .PHONY: uninstall
-uninstall: manifests kustomize ## Uninstall CRDs from the K8s cluster specified in ~/.kube/config. Call with ignore-not-found=true to ignore resource not found errors during deletion.
+uninstall: kustomize ## Uninstall CRDs from the K8s cluster specified in ~/.kube/config. Call with ignore-not-found=true to ignore resource not found errors during deletion.
 	$(KUSTOMIZE) build config/crd | kubectl delete --ignore-not-found=$(ignore-not-found) -f -
 
 .PHONY: deploy
-deploy: manifests kustomize ## Deploy controller to the K8s cluster specified in ~/.kube/config.
+deploy: kustomize ## Deploy controller to the K8s cluster specified in ~/.kube/config.
 	cd config/manager && $(KUSTOMIZE) edit set image controller=${IMG}
 	$(KUSTOMIZE) build config/default | kubectl apply -f -
 

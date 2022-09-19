@@ -23,13 +23,14 @@ import (
 	"sigs.k8s.io/apiserver-runtime/pkg/builder"
 
 	// +kubebuilder:scaffold:resource-imports
-	logv1beta1adapter "github.com/raffis/kjournal/internal/container/v1beta1"
-	auditv1 "github.com/raffis/kjournal/pkg/apis/audit/v1"
+
+	adapterv1alpha1 "github.com/raffis/kjournal/internal/apis/core/v1alpha1"
+	"github.com/raffis/kjournal/pkg/apis/core/v1alpha1"
 	"github.com/spf13/cobra"
 )
 
 type apiServerFlags struct {
-	storageBackend string
+	configFile string
 }
 
 type httpWrap struct {
@@ -56,9 +57,10 @@ func (m *httpWrap) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 func main() {
 	cmd, err := builder.APIServer.
 		// +kubebuilder:scaffold:resource-register
-		WithResourceAndHandler(&logv1beta1adapter.Log{}, newElasticsearchLogStorageProvider(&logv1beta1adapter.Log{})).
-		WithResourceAndHandler(&auditv1.Event{}, newElasticsearchAuditStorageProvider(&auditv1.Event{})).
-		WithResourceAndHandler(&auditv1.ClusterEvent{}, newElasticsearchAuditStorageProvider(&auditv1.ClusterEvent{})).
+		WithResourceAndHandler(&v1alpha1.Log{}, storageMapper(&v1alpha1.Log{})).
+		WithResourceAndHandler(&v1alpha1.ContainerLog{}, storageMapper(&v1alpha1.ContainerLog{})).
+		WithResourceAndHandler(&adapterv1alpha1.AuditEvent{}, storageMapper(&adapterv1alpha1.AuditEvent{})).
+		WithResourceAndHandler(&adapterv1alpha1.Event{}, storageMapper(&adapterv1alpha1.Event{})).
 		WithLocalDebugExtension().
 		WithoutEtcd().
 		WithServerFns(func(server *builder.GenericAPIServer) *builder.GenericAPIServer {
@@ -75,8 +77,8 @@ func main() {
 		klog.Fatal(err)
 	}
 
-	cmd.Flags().StringVar(&apiServerArgs.storageBackend, "log-storage-backend", "elasticsearch", "Storage backend, currently only elasticsearch is supported")
-	elasticsearchFlags(cmd)
+	cmd.Flags().StringVar(&apiServerArgs.configFile, "config", "", "Path to kjournal config")
+
 	rootCmd = cmd
 	rootCmd.Use = "kjournal-apiserver"
 	rootCmd.Short = "Launches the kjournal kubernetes apiserver"
