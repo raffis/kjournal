@@ -120,7 +120,7 @@ func installCmdRun(cmd *cobra.Command, args []string) error {
 	if installArgs.manifestsPath == "" {
 		opts.BaseURL = install.MakeDefaultOptions().BaseURL
 	}
-
+	fmt.Printf("%#v", opts)
 	manifest, err := install.Generate(opts, manifestsBase)
 	if err != nil {
 		return fmt.Errorf("install failed : %w", err)

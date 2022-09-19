@@ -4,8 +4,11 @@ namespace: logging
 
 namePrefix: kjournal-
 
+commonLabels:
+  app.kubernetes.io/part-of: kjournal
+
 resources:
-- ./namespace.yaml
+- ../metadata
 - ../apiserver
 - ../apiservice
 - ../rbac

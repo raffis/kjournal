@@ -31,15 +31,25 @@ var kustomizationTmpl = `---
 apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
 namespace: {{.Namespace}}
+namePrefix: kjournal-
+
+commonLabels:
+  app.kubernetes.io/instance: {{.Namespace}}
+  app.kubernetes.io/version: "{{.Version}}"
+  app.kubernetes.io/part-of: kjournal
 
 resources:
-  #- namespace.yaml
-  - ssh://git@github.com/raffis/kjournal//config/apiserver
-  - ssh://git@github.com/raffis/kjournal//config/apiservice
-  - ssh://git@github.com/raffis/kjournal//config/rbac
+- ssh://git@github.com/raffis/kjournal//config/namespace
+- ssh://git@github.com/raffis/kjournal//config/apiserver
+- ssh://git@github.com/raffis/kjournal//config/apiservice
+- ssh://git@github.com/raffis/kjournal//config/rbac
 {{- if .NetworkPolicy }}
-  - ssh://git@github.com/raffis/kjournal//config/policies
+- ssh://git@github.com/raffis/kjournal//config/policies
 {{- end }}
+
+components: 
+- ssh://git@github.com/raffis/kjournal//config/certmanager
+
 `
 var labelsTmpl = `---
 apiVersion: builtin
@@ -47,9 +57,6 @@ kind: LabelTransformer
 metadata:
   name: labels
 labels:
-  app.kubernetes.io/instance: {{.Namespace}}
-  app.kubernetes.io/version: "{{.Version}}"
-  app.kubernetes.io/part-of: flux
 fieldSpecs:
   - path: metadata/labels
     create: true
