@@ -28,8 +28,11 @@ import (
 // convenient to package these up ahead of time, then the command
 // implementation can pick whichever it wants to use.
 type apiType struct {
-	kind, humanKind, resource string
-	groupVersion              schema.GroupVersion
+	kind         string
+	humanKind    string
+	resource     string
+	groupVersion schema.GroupVersion
+	namespaced   bool
 }
 
 // listAdapater is the analogue to adapter, but for lists; the
