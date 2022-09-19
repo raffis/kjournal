@@ -201,8 +201,8 @@ func printContainerLog(log corev1alpha1.ContainerLog) {
 
 var podsLogAdapterType = apiType{
 	kind:      "ContainerLog",
-	humanKind: "podslog",
-	resource:  "podslogs",
+	humanKind: "containerlog",
+	resource:  "containerlogs",
 	groupVersion: schema.GroupVersion{
 		Group:   "core.kjournal",
 		Version: "v1alpha1",

@@ -144,10 +144,15 @@ func (cmd *auditCommand) defaultPrinter(obj runtime.Object) error {
 			fmt.Fprintln(cmd.printer, strings.Join([]string{"RECEIVED", "VERB", "STATUS", "LEVEL", "USERNAME"}, "\t"))
 		}
 
+		var code int32
+		if item.ResponseStatus != nil {
+			code = item.ResponseStatus.Code
+		}
+
 		fmt.Fprintf(cmd.printer, "%s\t%s\t%d\t%s\t%s\n",
 			item.RequestReceivedTimestamp.String(),
 			item.Verb,
-			item.ResponseStatus.Code,
+			code,
 			string(item.Level),
 			item.User.Username,
 		)

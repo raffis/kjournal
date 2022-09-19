@@ -38,6 +38,7 @@ type ApiBackend struct {
 }
 
 type ApiBackendElasticsearch struct {
-	Index       string        `json:"index"`
-	RefreshRate time.Duration `json:"refreshRate"`
+	Index           string        `json:"index"`
+	RefreshRate     time.Duration `json:"refreshRate"`
+	TimestampFields []string      `json:"timestampFields"`
 }

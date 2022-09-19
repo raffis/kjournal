@@ -39,10 +39,10 @@ import (
 var (
 	provider storage.Provider
 	once     sync.Once
+	conf     configv1alpha1.APIServerConfig
 )
 
 func initConfig() (configv1alpha1.APIServerConfig, error) {
-	var conf configv1alpha1.APIServerConfig
 
 	b, err := ioutil.ReadFile("/config.yaml")
 	if err != nil {

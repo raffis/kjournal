@@ -17,6 +17,16 @@ patches:
     spec:
       insecureSkipTLSVerify: false
 - target:
+    kind: Certificate
+  patch: |
+    kind: Certificate
+    metadata:
+      name: apiserver
+    spec:
+      issuerRef:
+        name: $(ISSUER_NAME)
+      secretName: $(CERT_SECRET_NAME)
+- target:
     kind: Deployment
     name: apiserver
   patch: |-
@@ -45,7 +55,7 @@ patches:
           volumes:
           - name: apiserver-certs
             secret:
-              secretName: apiserver
+              secretName: $(CERT_SECRET_NAME)
 
 configurations:
 - config.yaml
@@ -65,3 +75,19 @@ vars:
     apiVersion: v1
   fieldref:
     fieldpath: metadata.namespace
+- name: ISSUER_NAME
+  objref:
+    kind: Issuer
+    name: selfsigned-issuer
+    group: cert-manager.io
+    apiVersion: v1
+  fieldref:
+    fieldpath: metadata.name
+- name: CERT_SECRET_NAME
+  objref:
+    kind: Certificate
+    name: apiserver
+    group: cert-manager.io
+    apiVersion: v1
+  fieldref:
+    fieldpath: metadata.name

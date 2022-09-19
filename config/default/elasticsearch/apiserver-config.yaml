@@ -1,7 +1,7 @@
 apiVersion: config.kjournal/v1alpha1
 kind: APIServerConfig
 
-backend: 
+backend:
   elasticsearch:
     url:
     - http://elasticsearch-master:9200
@@ -19,7 +19,6 @@ apis:
     metadata.annotations.host: [kubernetes.host]
     metadata.annotations.pod_id: [kubernetes.pod_id]
 
-
   dropFields:
   - payload.@timestamp
   - payload.kubernetes
@@ -27,21 +26,25 @@ apis:
   backend:
     elasticsearch:
       index: logstash-*
+      timestampFields: ["@timestamp"]
 
 - resource: events
   backend:
     elasticsearch:
-        index: k8sevents-*
+      index: k8sevents-*
+      timestampFields: ["metadata.creationTimestamp"]
 
 - resource: auditevents
   backend:
     elasticsearch:
-        index: k8saudit-*
+      index: k8saudit-*
+      timestampFields: ["stageTimestamp"]
 
 - resource: logs
   fieldMap:
-    metadata.creationTimestamp: ["@timestamp"]
+    metadata.creationTimestamp: ["@timestamp", "metadata.creationTimestamp", "stageTimestamp"]
     payload: ["."]
   backend:
     elasticsearch:
+      timestampFields: ["@timestamp", "metadata.creationTimestamp"]
       index: "*"
