@@ -1,6 +1,6 @@
 # Auditing
 
-The kubernetes apiserver needs log audit events. 
+To store audit logs into the long-term log storage the kube-apiserver needs to be configured to log audits in the first place.
 See more about [auditing](https://kubernetes.io/docs/tasks/debug/debug-cluster/audit/) in the kubernetes docs.
 
 In short the kube-apiserver needs to be started with these flags:
@@ -9,6 +9,8 @@ In short the kube-apiserver needs to be started with these flags:
 --audit-policy-file=/etc/kubernetes/audit-policy.yaml \
 --audit-log-path=/var/log/kubernetes/audit/audit.log
 ```
+
+This is an example audit policy, a different one may be used.
 
 /etc/kubernetes/audit-policy.yaml
 ```yaml

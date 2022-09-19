@@ -1,0 +1,11 @@
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: apiserver
+spec:
+  selector:
+    matchLabels:
+      api: kjournal
+      apiserver: "true"  
+  endpoints:
+  - port: http-metrics

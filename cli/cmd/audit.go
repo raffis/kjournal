@@ -22,14 +22,14 @@ import (
 	"strings"
 	"time"
 
+	"github.com/liggitt/tabwriter"
 	"github.com/spf13/cobra"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/schema"
-	k8sget "k8s.io/kubectl/pkg/cmd/get"
+	"k8s.io/cli-runtime/pkg/printers"
 
-	"github.com/raffis/kjournal/cli/pkg/printers"
-	auditv1 "github.com/raffis/kjournal/pkg/apis/audit/v1"
+	corev1alpha1 "github.com/raffis/kjournal/pkg/apis/core/v1alpha1"
 )
 
 type auditFlags struct {
@@ -53,113 +53,136 @@ var auditCmd = &cobra.Command{
   
   # Stream events for a pod named abc
   kjournal audit -n mynamespace pods/abc`,
-	//ValidArgsFunction: resourceNamesCompletionFunc(auditv1.GroupVersion.WithKind(auditv1.EventKind)),
+	//ValidArgsFunction: resourceNamesCompletionFunc(auditv1.GroupVersion.WithKind(corev1alpha1.AuditEventKind)),
 	RunE: func(cmd *cobra.Command, args []string) error {
-		firstIteration := true
-
 		get := getCommand{
-			apiType: eventAdapterType,
-			list:    &eventListAdapter{&auditv1.EventList{}},
-			filter: func(args []string, opts *metav1.ListOptions) error {
-				var fieldSelector []string
-				if opts.FieldSelector != "" {
-					fieldSelector = strings.Split(opts.FieldSelector, ",")
-				}
-
-				if len(args) == 1 {
-					kn := strings.Split(args[0], "/")
-					if len(kn) > 2 {
-						return errors.New("expects either resource/name or resource. Invalid number of parts given")
-					}
-
-					if len(kn) > 0 {
-						fieldSelector = append(fieldSelector, fmt.Sprintf("objectRef.resource=%s", kn[0]))
-					}
-
-					if len(kn) == 2 {
-						fieldSelector = append(fieldSelector, fmt.Sprintf("objectRef.name=%s", kn[1]))
-					}
-				}
-
-				if getArgs.since != "" {
-					ts, err := time.ParseDuration(getArgs.since)
-					if err != nil {
-						return err
-					}
-
-					fieldSelector = append(fieldSelector, fmt.Sprintf("requestReceivedTimestamp>%d", time.Now().Unix()*1000-ts.Milliseconds()))
-				}
-
-				opts.FieldSelector = strings.Join(fieldSelector, ",")
-				return nil
+			command: &auditCommand{
+				cmd: cmd,
 			},
-			defaultPrinter: func(obj runtime.Object) error {
-				var list auditv1.EventList
-				log, ok := obj.(*auditv1.Event)
-				if ok {
-					list.Items = append(list.Items, *log)
-				}
-
-				for _, item := range list.Items {
-					var headers []string
-
-					if firstIteration {
-						headers = []string{"Received", "Verb", "Status", "Level", "Username"}
-						firstIteration = false
-					}
-
-					err := printers.TablePrinter(headers).Print(cmd.OutOrStdout(), [][]string{[]string{
-						item.RequestReceivedTimestamp.String(),
-						item.Verb,
-						fmt.Sprintf("%d", item.ResponseStatus.Code),
-						string(item.Level),
-						item.User.Username,
-					}})
-
-					if err != nil {
-						return err
-					}
-				}
-
-				return nil
-
-			},
+			apiType: auditEventAdapterType,
+			list:    &auditEventListAdapter{&corev1alpha1.AuditEventList{}},
 		}
-
-		if err := get.run(cmd, args); err != nil {
-			return err
-		}
-
-		return nil
+		return get.run(cmd, args)
 	},
 }
 
 func init() {
-	printFlags = k8sget.NewGetPrintFlags()
 	addGetFlags(auditCmd)
 	auditCmd.PersistentFlags().BoolVarP(&auditArgs.noHeader, "no-header", "", false, "skip the header when printing the results")
 
 	rootCmd.AddCommand(auditCmd)
 }
 
-var eventAdapterType = apiType{
-	kind:      "Event",
-	humanKind: "event",
-	resource:  "events",
+type auditCommand struct {
+	printer *tabwriter.Writer
+	cmd     *cobra.Command
+}
+
+func (cmd *auditCommand) filter(args []string, opts *metav1.ListOptions) error {
+	var fieldSelector []string
+	if opts.FieldSelector != "" {
+		fieldSelector = strings.Split(opts.FieldSelector, ",")
+	}
+
+	if len(args) == 1 {
+		kn := strings.Split(args[0], "/")
+		if len(kn) > 2 {
+			return errors.New("expects either resource/name or resource. Invalid number of parts given")
+		}
+
+		if len(kn) > 0 {
+			fieldSelector = append(fieldSelector, fmt.Sprintf("objectRef.resource=%s", kn[0]))
+		}
+
+		if len(kn) == 2 {
+			fieldSelector = append(fieldSelector, fmt.Sprintf("objectRef.name=%s", kn[1]))
+		}
+	}
+
+	if getArgs.since != "" {
+		ts, err := time.ParseDuration(getArgs.since)
+		if err != nil {
+			return err
+		}
+
+		fieldSelector = append(fieldSelector, fmt.Sprintf("requestReceivedTimestamp>%d", time.Now().Unix()*1000-ts.Milliseconds()))
+	} else if getArgs.timeRange != "" {
+		parts := strings.Split(getArgs.timeRange, "-")
+
+		fromTimestamp, err := time.ParseDuration(parts[0])
+		if err != nil {
+			return err
+		}
+		toTimestamp, err := time.ParseDuration(parts[1])
+		if err != nil {
+			return err
+		}
+
+		fieldSelector = append(
+			fieldSelector,
+			fmt.Sprintf("metadata.creationTimestamp<%d", time.Now().Unix()*1000-fromTimestamp.Milliseconds()),
+			fmt.Sprintf("metadata.creationTimestamp>%d", time.Now().Unix()*1000-toTimestamp.Milliseconds()),
+		)
+	}
+
+	opts.FieldSelector = strings.Join(fieldSelector, ",")
+	return nil
+}
+
+func (cmd *auditCommand) defaultPrinter(obj runtime.Object) error {
+	list := &corev1alpha1.AuditEventList{}
+
+	if log, ok := obj.(*corev1alpha1.AuditEvent); ok {
+		list.Items = append(list.Items, *log)
+	} else if obj, ok := obj.(*corev1alpha1.AuditEventList); ok {
+		list = obj
+	}
+
+	for _, item := range list.Items {
+		if cmd.printer == nil {
+			cmd.printer = printers.GetNewTabWriter(cmd.cmd.OutOrStdout())
+			fmt.Fprintln(cmd.printer, strings.Join([]string{"RECEIVED", "VERB", "STATUS", "LEVEL", "USERNAME"}, "\t"))
+		}
+
+		var code int32
+		if item.ResponseStatus != nil {
+			code = item.ResponseStatus.Code
+		}
+
+		fmt.Fprintf(cmd.printer, "%s\t%s\t%d\t%s\t%s\n",
+			item.RequestReceivedTimestamp.String(),
+			item.Verb,
+			code,
+			string(item.Level),
+			item.User.Username,
+		)
+	}
+
+	if cmd.printer != nil {
+		cmd.printer.Flush()
+	}
+
+	return nil
+}
+
+var auditEventAdapterType = apiType{
+	kind:      "AuditEvent",
+	humanKind: "auditevent",
+	resource:  "auditevents",
 	groupVersion: schema.GroupVersion{
-		Group:   "audit.kjournal",
-		Version: "v1",
+		Group:   "core.kjournal",
+		Version: "v1alpha1",
 	},
 }
 
-type eventListAdapter struct {
-	*auditv1.EventList
+type auditEventListAdapter struct {
+	*corev1alpha1.AuditEventList
 }
 
-func (h eventListAdapter) asClientList() ObjectList {
-	return h.EventList
+func (h auditEventListAdapter) asClientList() ObjectList {
+	return h.AuditEventList
 }
 
-func (h eventListAdapter) len() int {
-	return len(h.EventList.Items)
+func (h auditEventListAdapter) len() int {
+	return len(h.AuditEventList.Items)
 }
