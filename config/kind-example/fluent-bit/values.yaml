@@ -1,0 +1,71 @@
+config:
+  inputs: |
+    [INPUT]
+        Name              tail
+        Tag               kube.*
+        Path              /var/log/containers/*.log
+        Parser            cri
+        DB                /var/log/flb_kube-fwd.db
+        Refresh_Interval  5
+        Skip_Long_Lines   On
+        Mem_Buf_Limit     5MB
+        Read_from_Head    True
+
+    [INPUT]
+        Name              tail
+        Path              /var/log/kubernetes/kube-apiserver-audit.log
+        Parser            docker
+        DB                /var/log/audit-fwd.db
+        Tag               audit.*
+        Refresh_Interval  5
+        Mem_Buf_Limit     35MB
+        Buffer_Chunk_Size 2MB
+        Buffer_Max_Size   10MB
+        Skip_Long_Lines   On
+        Key               kubernetes-audit
+        Read_from_Head    True
+
+  outputs: |
+    [OUTPUT]
+        Name            es
+        Match           kube.*
+        Host            elasticsearch-master.logging
+        Port            9200
+        Time_Key        @timestamp
+        Logstash_Format On
+        Replace_Dots    On
+        Type            _doc
+    
+    [OUTPUT]
+        Name            es
+        Match           audit.*
+        Host            elasticsearch-master.logging
+        Port            9200
+        Logstash_Format On
+        Replace_Dots    On
+        Logstash_Prefix k8saudit
+        Type            _doc
+
+  service: |
+    [SERVICE]
+        Flush 1
+        Daemon Off
+        Log_Level info
+        Parsers_File parsers.conf
+        HTTP_Server On
+        HTTP_Listen 0.0.0.0
+        HTTP_Port 2020
+
+  filters: |
+    [FILTER]
+        Name parser
+        Match kube.*
+        Key_Name message
+        Parser docker
+
+    [FILTER]
+        Name kubernetes
+        Match kube.*
+        Merge_Log On
+        Keep_Log Off
+        K8S-Logging.Parser On

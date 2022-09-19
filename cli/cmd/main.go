@@ -35,7 +35,7 @@ var rootCmd = &cobra.Command{
 	Version:       VERSION,
 	SilenceUsage:  true,
 	SilenceErrors: true,
-	Short:         "Command line utility for accessing long-term kubernetes logs",
+	Short:         "Command line utility for accessing long-term (kubernetes) logs",
 	Long: `
 Command line utility for accessing long-term kubernetes logs.`,
 }

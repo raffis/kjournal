@@ -29,3 +29,4 @@ dist
 site
 apiserver.local.config
 config/certificates
+/config/**/charts

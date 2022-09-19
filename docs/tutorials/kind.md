@@ -1,8 +1,7 @@
 # Try it using kind
 
 This tutorials rolls out a local kind cluster on your computer in order to test kjournal.
-We will deploy a single node kind control-plane, a single elasticsearch instance as well as a fluent-bit instance
-besides kjournal itself.
+We will deploy a single node kind control-plane, a single elasticsearch instance as well as fluent-bit for shipping.
 
 ## Requirements
 
@@ -46,7 +45,7 @@ Install the elastic helm repository and deploy a single es node.
 
 ```sh
 helm repo add elastic https://helm.elastic.co
-helm install elasticsearch elastic/elasticsearch -n logging --set replicas=0
+helm install elasticsearch elastic/elasticsearch -n logging --set replicas=1
 ```
 
 ## Deploy fluent-bit
