@@ -3,11 +3,9 @@ kind: ServiceMonitor
 metadata:
   name: apiserver
 spec:
-  namespaceSelector:
-    matchNames:
-    - default
   selector:
     matchLabels:
-      service: ambassador-admin
+      api: kjournal
+      apiserver: "true"  
   endpoints:
-  - port: ambassador-admin
+  - port: http-metrics

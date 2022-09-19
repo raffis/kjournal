@@ -2,7 +2,7 @@
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:
-  name: kjournal-apiserver-auth-reader
+  name: apiserver-auth-reader
 rules:
   - apiGroups:
       - ""
@@ -17,42 +17,32 @@ rules:
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRoleBinding
 metadata:
-  name: kjournal-apiserver-auth-reader
-  namespace: kube-system
+  name: apiserver-auth-reader
 roleRef:
   apiGroup: rbac.authorization.k8s.io
   kind: ClusterRole
   name: kjournal-apiserver-auth-reader
 subjects:
   - kind: ServiceAccount
-    namespace: logging
-    name: default
+    name: apiserver
 ---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRoleBinding
 metadata:
-  name: kjournal-apiserver-auth-delegator
+  name: apiserver-auth-delegator
 roleRef:
   apiGroup: rbac.authorization.k8s.io
   kind: ClusterRole
   name: system:auth-delegator
 subjects:
   - kind: ServiceAccount
-    namespace: logging
-    name: default
+    name: apiserver
 ---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:
-  name: kjournal-controller
-  namespace: logging
+  name: apiserver
 rules:
-  - apiGroups:
-      - 'audit.k8s.io'
-    resources:
-      - '*'
-    verbs:
-      - '*'
   - apiGroups:
       - ''
     resources:
@@ -73,18 +63,15 @@ rules:
       - '*'
     verbs:
       - '*'
-
 ---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRoleBinding
 metadata:
-  name: kjournal-controller
-  namespace: logging
+  name: apiserver
 roleRef:
   apiGroup: rbac.authorization.k8s.io
   kind: ClusterRole
-  name: kjournal-controller
+  name: apiserver
 subjects:
   - kind: ServiceAccount
-    namespace: logging
-    name: default
+    name: apiserver

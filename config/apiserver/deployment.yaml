@@ -53,17 +53,15 @@ spec:
         - containerPort: 8443
           name: https
           protocol: TCP
-        - containerPort: 9440
-          name: healthz
-          protocol: TCP
         readinessProbe:
           httpGet:
             path: /readyz
-            port: healthz
+            port: https
         livenessProbe:
           httpGet:
             path: /healthz
-            port: healthz
+            port: https
+      serviceAccountName: apiserver
       volumes:
       - name: tmp
         emptyDir: {}

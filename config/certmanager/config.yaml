@@ -1,3 +1,9 @@
 varReference:
-- path: spec/dnsNames
-  kind: Certificate
+- kind: Certificate
+  path: spec/dnsNames
+- kind: Certificate
+  path: spec/issuerRef/name
+- kind: Certificate
+  path: spec/secretName 
+- kind: Deployment
+  path: spec/template/spec/volumes/secret/secretName 

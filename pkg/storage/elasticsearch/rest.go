@@ -288,6 +288,10 @@ func (r *elasticsearchREST) decodeFrom(obj esHit) (runtime.Object, error) {
 	}
 
 	annotations, _ := r.metaAccessor.Annotations(decodedObj)
+	if annotations == nil {
+		annotations = make(map[string]string)
+	}
+
 	annotations["kjournal/es-index"] = obj.Index
 	r.metaAccessor.SetAnnotations(decodedObj, annotations)
 	r.metaAccessor.SetUID(decodedObj, types.UID(obj.ID))

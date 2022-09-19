@@ -5,11 +5,32 @@ namespace: logging
 namePrefix: kjournal-
 
 resources:
-- ../crd
 - ./namespace.yaml
 - ../apiserver
 - ../apiservice
 - ../rbac
+- ./elasticsearch
 
 components: 
 - ../certmanager
+
+patchesStrategicMerge:
+- |
+  apiVersion: apps/v1
+  kind: Deployment
+  metadata:
+    name: apiserver
+    namespace: logging
+  spec:
+    template:
+      spec:
+        containers:
+        - name: apiserver
+          volumeMounts:
+          - mountPath: /config.yaml
+            name: apiserver-config
+            subPath: apiserver-config.yaml
+        volumes:
+        - name: apiserver-config
+          configMap:
+            name: apiserver-config

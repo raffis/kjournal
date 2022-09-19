@@ -78,9 +78,7 @@ func (b *queryBuilder) continueToken() *queryBuilder {
 }
 
 func (b *queryBuilder) sortByTimestampFields() *queryBuilder {
-	tsFields := b.fieldMapping("metadata.creationTimestamp")
-
-	for _, tsField := range tsFields {
+	for _, tsField := range b.rest.apiBinding.Backend.Elasticsearch.TimestampFields {
 		b.query["sort"] = append(b.query["sort"].([]map[string]interface{}), map[string]interface{}{
 			tsField: "asc",
 		})
@@ -90,7 +88,6 @@ func (b *queryBuilder) sortByTimestampFields() *queryBuilder {
 }
 
 func (b *queryBuilder) fieldSelectors() *queryBuilder {
-	tsFields := b.fieldMapping("metadata.creationTimestamp")
 	var skipTimestampFilter bool
 	requirements, _ := b.options.LabelSelector.Requirements()
 
@@ -147,7 +144,7 @@ func (b *queryBuilder) fieldSelectors() *queryBuilder {
 
 			should = append(should, shouldCondition)
 
-			for _, tsField := range tsFields {
+			for _, tsField := range b.rest.apiBinding.Backend.Elasticsearch.TimestampFields {
 				if !skipTimestampFilter && fieldTo == tsField {
 					skipTimestampFilter = true
 				}
@@ -167,7 +164,7 @@ func (b *queryBuilder) fieldSelectors() *queryBuilder {
 		q := b.query["query"].(map[string]interface{})["bool"].(map[string]interface{})["must"].([]map[string]interface{})
 		var should []map[string]interface{}
 
-		for _, tsField := range tsFields {
+		for _, tsField := range b.rest.apiBinding.Backend.Elasticsearch.TimestampFields {
 			should = append(should, map[string]interface{}{
 				"range": map[string]interface{}{
 					tsField: map[string]interface{}{

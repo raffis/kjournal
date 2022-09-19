@@ -22,7 +22,7 @@ type EventList struct {
 }
 
 type Event struct {
-	v1alpha1.Event
+	v1alpha1.Event `json:",inline"`
 }
 
 func (in *Event) UnmarshalJSON(bs []byte) error {
@@ -36,7 +36,16 @@ func (in *Event) UnmarshalJSON(bs []byte) error {
 }
 
 func (in *Event) New() runtime.Object {
-	return &Event{}
+	return &Event{
+		Event: v1alpha1.Event{
+			Event: eventsv1.Event{
+				TypeMeta: metav1.TypeMeta{
+					Kind:       "Event",
+					APIVersion: "core.kjournal/v1alpha1",
+				},
+			},
+		},
+	}
 }
 
 func (in *Event) NewList() runtime.Object {

@@ -10,7 +10,6 @@ spec:
   group: core.kjournal
   groupPriorityMinimum: 2000
   service:
-    name: kjournal
-    namespace: logging
+    name: apiserver
   versionPriority: 10
   insecureSkipTLSVerify: true
