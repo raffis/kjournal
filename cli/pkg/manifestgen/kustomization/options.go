@@ -25,8 +25,6 @@ type Options struct {
 }
 
 func MakeDefaultOptions() Options {
-	// TODO(hidde): switch MakeFsOnDisk to MakeFsOnDiskSecureBuild when we
-	//  break API.
 	return Options{
 		FileSystem: filesys.MakeFsOnDisk(),
 		BaseDir:    "",
