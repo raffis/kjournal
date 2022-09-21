@@ -17,21 +17,31 @@ limitations under the License.
 package main
 
 import (
+	"context"
 	"fmt"
 	"os"
+	"path/filepath"
+	"time"
 
+	"github.com/raffis/kjournal/cli/internal/utils"
 	"github.com/raffis/kjournal/cli/pkg/manifestgen"
 	"github.com/raffis/kjournal/cli/pkg/manifestgen/install"
+	"github.com/raffis/kjournal/cli/pkg/status"
 	"github.com/spf13/cobra"
+	"k8s.io/apimachinery/pkg/runtime/schema"
+	"sigs.k8s.io/cli-utils/pkg/object"
 )
 
 type installFlags struct {
-	componentsOnly     bool
-	withCertmanager    bool
-	withConfigTemplate string
-	export             bool
-	version            string
-	manifestsPath      string
+	withCertManager     bool
+	withNetworkPolicies bool
+	withConfigTemplate  string
+	export              bool
+	version             string
+	manifestsPath       string
+	asKustomization     bool
+	registry            string
+	imagePullSecret     string
 }
 
 var installArgs installFlags
@@ -56,65 +66,60 @@ var installCmd = &cobra.Command{
 }
 
 func init() {
-	installCmd.PersistentFlags().StringVarP(&installArgs.withConfigTemplate, "with-config-template", "", "", "skip the header when printing the results")
-	installCmd.PersistentFlags().BoolVarP(&installArgs.withCertmanager, "with-certmanager", "", false, "skip the header when printing the results")
-	installCmd.PersistentFlags().BoolVar(&installArgs.export, "export", false,
+	installCmd.PersistentFlags().StringVarP(&installArgs.withConfigTemplate, "with-config-template", "", "",
+		"specify a kjournal config template")
+	installCmd.PersistentFlags().BoolVarP(&installArgs.withCertManager, "with-certmanager", "", false,
+		"Enable certmanager support (recomended option)")
+	installCmd.PersistentFlags().BoolVarP(&installArgs.export, "export", "", false,
 		"write the install manifests to stdout and exit")
-	installCmd.PersistentFlags().StringVarP(&installArgs.version, "version", "v", "",
-		"toolkit version, when specified the manifests are downloaded from https://github.com/fluxcd/flux2/releases")
+	installCmd.PersistentFlags().StringVarP(&installArgs.version, "version", "", "",
+		"specify a specific kjournal version to install (by default the latest version is used)")
+	installCmd.PersistentFlags().BoolVarP(&installArgs.asKustomization, "as-kustomization", "k", false,
+		"Print kustomization to stdout and exit")
+	installCmd.Flags().StringVar(&installArgs.registry, "registry", "",
+		"container registry where the toolkit images are published")
+	installCmd.Flags().StringVar(&installArgs.imagePullSecret, "image-pull-secret", "",
+		"Kubernetes secret name used for pulling the toolkit images from a private registry")
+	installCmd.Flags().BoolVar(&installArgs.withNetworkPolicies, "network-policy", true,
+		"deny ingress access to the toolkit controllers from other namespaces using network policies")
+	installCmd.Flags().StringVarP(&installArgs.manifestsPath, "manifests-base", "", "github.com/raffis/kjournal",
+		"deny ingress access to the toolkit controllers from other namespaces using network policies")
 
 	rootCmd.AddCommand(installCmd)
 }
 
 func installCmdRun(cmd *cobra.Command, args []string) error {
-	/*ctx, cancel := context.WithTimeout(context.Background(), rootArgs.timeout)
+	ctx, cancel := context.WithTimeout(context.Background(), rootArgs.timeout)
 	defer cancel()
-	*/
-	/*components := append(installArgs.defaultComponents, installArgs.extraComponents...)
-	err := utils.ValidateComponents(components)
-	if err != nil {
-		return err
-	}*/
-
-	/*	if ver, err := getVersion(installArgs.version); err != nil {
-			return err
-		} else {
-			installArgs.version = ver
-		}
-	*/
-	if !installArgs.export {
-		logger.Generatef("generating manifests")
-	}
 
 	tmpDir, err := manifestgen.MkdirTempAbs("", *kubeconfigArgs.Namespace)
 	if err != nil {
 		return err
 	}
+
 	defer os.RemoveAll(tmpDir)
 
-	manifestsBase := ""
-	/*if isEmbeddedVersion(installArgs.version) {
-		if err := writeEmbeddedManifests(tmpDir); err != nil {
+	version := installArgs.version
+	if version == "" {
+		latest, err := install.GetLatestVersion()
+		if err != nil {
 			return err
 		}
-		manifestsBase = tmpDir
-	}*/
 
+		version = latest
+	}
+
+	manifestsBase := ""
 	opts := install.Options{
-		//		BaseURL:                installArgs.manifestsPath,
-		Version:   installArgs.version,
-		Namespace: *kubeconfigArgs.Namespace,
-		//		Components:             components,
-		//		Registry:               installArgs.registry,
-		//		ImagePullSecret:        installArgs.imagePullSecret,
-		//		WatchAllNamespaces:     installArgs.watchAllNamespaces,
-		//		NetworkPolicy:          installArgs.networkPolicy,
-		//		LogLevel:               installArgs.logLevel.String(),
-		//		NotificationController: rootArgs.defaults.NotificationController,
-		ManifestFile: fmt.Sprintf("%s.yaml", *kubeconfigArgs.Namespace),
-		Timeout:      rootArgs.timeout,
-		//		ClusterDomain:          installArgs.clusterDomain,
-		//s		TolerationKeys:         installArgs.tolerationKeys,
+		BaseURL:         installArgs.manifestsPath,
+		AsKustomization: installArgs.asKustomization,
+		Version:         version,
+		Namespace:       *kubeconfigArgs.Namespace,
+		Registry:        installArgs.registry,
+		ImagePullSecret: installArgs.imagePullSecret,
+		NetworkPolicy:   installArgs.withNetworkPolicies,
+		CertManager:     installArgs.withCertManager,
+		ManifestFile:    fmt.Sprintf("%s.yaml", *kubeconfigArgs.Namespace),
 	}
 
 	if installArgs.manifestsPath == "" {
@@ -140,30 +145,33 @@ func installCmdRun(cmd *cobra.Command, args []string) error {
 	logger.Successf("manifests build completed")
 	logger.Actionf("installing components in %s namespace", *kubeconfigArgs.Namespace)
 
-	/*
-		applyOutput, err := utils.Apply(ctx, kubeconfigArgs, kubeclientOptions, tmpDir, filepath.Join(tmpDir, manifest.Path))
-		if err != nil {
-			return fmt.Errorf("install failed: %w", err)
-		}
+	kubeConfig, err := kubeconfigArgs.ToRESTConfig()
+	if err != nil {
+		return fmt.Errorf("install failed: %w", err)
+	}
 
-		fmt.Fprintln(os.Stderr, applyOutput)
+	applyOutput, err := utils.Apply(ctx, kubeConfig, tmpDir, filepath.Join(tmpDir, manifest.Path))
+	if err != nil {
+		return fmt.Errorf("install failed: %w", err)
+	}
 
-		kubeConfig, err := utils.KubeConfig(kubeconfigArgs, kubeclientOptions)
-		if err != nil {
-			return fmt.Errorf("install failed: %w", err)
-		}
-		statusChecker, err := status.NewStatusChecker(kubeConfig, 5*time.Second, rootArgs.timeout, logger)
-		if err != nil {
-			return fmt.Errorf("install failed: %w", err)
-		}
-		componentRefs, err := buildComponentObjectRefs(components...)
-		if err != nil {
-			return fmt.Errorf("install failed: %w", err)
-		}
-		logger.Waitingf("verifying installation")
-		if err := statusChecker.Assess(componentRefs...); err != nil {
-			return fmt.Errorf("install failed")
-		}*/
+	fmt.Fprintln(os.Stderr, applyOutput)
+
+	statusChecker, err := status.NewStatusChecker(kubeConfig, 5*time.Second, rootArgs.timeout, logger)
+	if err != nil {
+		return fmt.Errorf("install failed: %w", err)
+	}
+
+	apiserver := object.ObjMetadata{
+		Namespace: *kubeconfigArgs.Namespace,
+		Name:      "kjournal-apiserver",
+		GroupKind: schema.GroupKind{Group: "apps", Kind: "Deployment"},
+	}
+
+	logger.Waitingf("verifying installation")
+	if err := statusChecker.Assess(apiserver); err != nil {
+		return fmt.Errorf("install failed")
+	}
 
 	logger.Successf("install finished")
 	return nil

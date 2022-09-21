@@ -19,12 +19,14 @@ package install
 import "time"
 
 type Options struct {
+	AsKustomization bool
 	BaseURL         string
 	Version         string
 	Namespace       string
 	Registry        string
 	ImagePullSecret string
 	NetworkPolicy   bool
+	CertManager     bool
 	LogLevel        string
 	ManifestFile    string
 	Timeout         time.Duration
@@ -35,24 +37,17 @@ type Options struct {
 func MakeDefaultOptions() Options {
 	return Options{
 		Version:         "latest",
-		Namespace:       "flux-system",
-		Registry:        "ghcr.io/fluxcd",
+		Namespace:       "kjournal-system",
+		Registry:        "ghcr.io/raffis/kjournal",
 		ImagePullSecret: "",
 		NetworkPolicy:   true,
+		CertManager:     false,
+		AsKustomization: false,
 		LogLevel:        "info",
-		BaseURL:         "https://github.com/fluxcd/flux2/releases",
-		ManifestFile:    "gotk-components.yaml",
+		BaseURL:         "github.com/raffis/kjournal",
+		ManifestFile:    "kjournal.yaml",
 		Timeout:         time.Minute,
 		TargetPath:      "",
 		ClusterDomain:   "cluster.local",
 	}
-}
-
-func containsItemString(s []string, e string) bool {
-	for _, a := range s {
-		if a == e {
-			return true
-		}
-	}
-	return false
 }

@@ -20,7 +20,7 @@ package manifestgen
 // services, network policies, service accounts, cluster roles and cluster role bindings belonging to Flux.
 const (
 	PartOfLabelKey   = "app.kubernetes.io/part-of"
-	PartOfLabelValue = "flux"
+	PartOfLabelValue = "kjournal"
 	InstanceLabelKey = "app.kubernetes.io/instance"
 	VersionLabelKey  = "app.kubernetes.io/version"
 )

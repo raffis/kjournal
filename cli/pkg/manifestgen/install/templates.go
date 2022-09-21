@@ -47,29 +47,10 @@ resources:
 - ssh://git@github.com/raffis/kjournal//config/policies
 {{- end }}
 
+{{- if .CertManager }}
 components: 
 - ssh://git@github.com/raffis/kjournal//config/certmanager
-
-`
-var labelsTmpl = `---
-apiVersion: builtin
-kind: LabelTransformer
-metadata:
-  name: labels
-labels:
-fieldSpecs:
-  - path: metadata/labels
-    create: true
-`
-
-var namespaceTmpl = `---
-apiVersion: v1
-kind: Namespace
-metadata:
-  name: {{.Namespace}}
-  labels:
-    pod-security.kubernetes.io/warn: restricted
-    pod-security.kubernetes.io/warn-version: latest
+{{- end }}
 `
 
 func execTemplate(obj interface{}, tmpl, filename string) error {
@@ -100,24 +81,4 @@ func execTemplate(obj interface{}, tmpl, filename string) error {
 	}
 
 	return file.Sync()
-}
-
-func copyFile(src, dst string) error {
-	in, err := os.Open(src)
-	if err != nil {
-		return err
-	}
-	defer in.Close()
-
-	out, err := os.Create(dst)
-	if err != nil {
-		return err
-	}
-	defer out.Close()
-
-	_, err = io.Copy(out, in)
-	if err != nil {
-		return err
-	}
-	return out.Close()
 }
