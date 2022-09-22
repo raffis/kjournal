@@ -2,11 +2,13 @@ apiVersion: cert-manager.io/v1
 kind: Certificate
 metadata:
   name: apiserver
+  annotations:
+    kjournal/cluster-domain: svc.local
 spec:
   dnsNames:
   - $(SVC_NAME).$(NAMESPACE).svc
-  - $(SVC_NAME).$(NAMESPACE).svc.cluster.local
+  - $(SVC_NAME).$(NAMESPACE).svc.$(CLUSTER_DOMAIN)
   issuerRef:
     kind: Issuer
-    name: kjournal-selfsigned-issuer
+    name: $(ISSUER_NAME)
   secretName: apiserver

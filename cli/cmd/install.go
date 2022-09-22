@@ -36,6 +36,7 @@ type installFlags struct {
 	withCertManager     bool
 	withNetworkPolicies bool
 	withConfigTemplate  string
+	withServiceMonitor  bool
 	export              bool
 	version             string
 	manifestsPath       string
@@ -66,24 +67,28 @@ var installCmd = &cobra.Command{
 }
 
 func init() {
+	defaults := install.MakeDefaultOptions()
+
 	installCmd.PersistentFlags().StringVarP(&installArgs.withConfigTemplate, "with-config-template", "", "",
 		"specify a kjournal config template")
-	installCmd.PersistentFlags().BoolVarP(&installArgs.withCertManager, "with-certmanager", "", false,
+	installCmd.PersistentFlags().BoolVarP(&installArgs.withCertManager, "with-certmanager", "", defaults.CertManager,
 		"Enable certmanager support (recomended option)")
+	installCmd.PersistentFlags().BoolVarP(&installArgs.withServiceMonitor, "with-servicemonitor", "", defaults.ServiceMonitor,
+		"Enable prometheus-operator support (Deploys a ServiceMonitor)")
 	installCmd.PersistentFlags().BoolVarP(&installArgs.export, "export", "", false,
 		"write the install manifests to stdout and exit")
 	installCmd.PersistentFlags().StringVarP(&installArgs.version, "version", "", "",
 		"specify a specific kjournal version to install (by default the latest version is used)")
-	installCmd.PersistentFlags().BoolVarP(&installArgs.asKustomization, "as-kustomization", "k", false,
+	installCmd.PersistentFlags().BoolVarP(&installArgs.asKustomization, "as-kustomization", "k", defaults.AsKustomization,
 		"Print kustomization to stdout and exit")
-	installCmd.Flags().StringVar(&installArgs.registry, "registry", "",
+	installCmd.Flags().StringVar(&installArgs.registry, "registry", defaults.Registry,
 		"container registry where the toolkit images are published")
-	installCmd.Flags().StringVar(&installArgs.imagePullSecret, "image-pull-secret", "",
+	installCmd.Flags().StringVar(&installArgs.imagePullSecret, "image-pull-secret", defaults.ImagePullSecret,
 		"Kubernetes secret name used for pulling the toolkit images from a private registry")
-	installCmd.Flags().BoolVar(&installArgs.withNetworkPolicies, "network-policy", true,
+	installCmd.Flags().BoolVar(&installArgs.withNetworkPolicies, "network-policy", defaults.NetworkPolicy,
 		"deny ingress access to the toolkit controllers from other namespaces using network policies")
-	installCmd.Flags().StringVarP(&installArgs.manifestsPath, "manifests-base", "", "github.com/raffis/kjournal",
-		"deny ingress access to the toolkit controllers from other namespaces using network policies")
+	installCmd.Flags().StringVarP(&installArgs.manifestsPath, "manifests-base", "", defaults.ManifestFile,
+		"Path or URL to kustomize base")
 
 	rootCmd.AddCommand(installCmd)
 }
@@ -119,13 +124,14 @@ func installCmdRun(cmd *cobra.Command, args []string) error {
 		ImagePullSecret: installArgs.imagePullSecret,
 		NetworkPolicy:   installArgs.withNetworkPolicies,
 		CertManager:     installArgs.withCertManager,
+		ServiceMonitor:  installArgs.withServiceMonitor,
 		ManifestFile:    fmt.Sprintf("%s.yaml", *kubeconfigArgs.Namespace),
 	}
 
 	if installArgs.manifestsPath == "" {
 		opts.BaseURL = install.MakeDefaultOptions().BaseURL
 	}
-	fmt.Printf("%#v", opts)
+
 	manifest, err := install.Generate(opts, manifestsBase)
 	if err != nil {
 		return fmt.Errorf("install failed : %w", err)
