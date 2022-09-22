@@ -91,3 +91,11 @@ vars:
     apiVersion: v1
   fieldref:
     fieldpath: metadata.name
+- name: CLUSTER_DOMAIN
+  objref:
+    kind: Certificate
+    name: apiserver
+    group: cert-manager.io
+    apiVersion: v1
+  fieldref:
+    fieldpath: metadata.annotations.kjournal/cluster-domain
