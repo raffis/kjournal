@@ -5,7 +5,6 @@ on:
   push:
     branches:
       - main
-      - release-v1.0
 
 jobs:
   build:
@@ -16,7 +15,7 @@ jobs:
       - name: Setup Go
         uses: actions/setup-go@v2
         with:
-          go-version: 1.17.x
+          go-version: 1.18.x
       - name: Restore Go cache
         uses: actions/cache@v1
         with:
@@ -35,8 +34,6 @@ jobs:
         uses: fluxcd/pkg/actions/envtest@main
         with:
           version: "1.21.2"
-      - name: Setup Helm
-        uses: fluxcd/pkg/actions/helm@main
       - name: Run tests
         run: make test
       - name: Send go coverage report
@@ -52,38 +49,19 @@ jobs:
           fi
       - name: Build container image
         run: |
-          make docker-build IMG=test/mongodb-query-exporter:latest BUILD_PLATFORMS=linux/amd64 \
+          make docker-build IMG=raffis/kjournal-apiserver:latest BUILD_PLATFORMS=linux/amd64 \
             BUILD_ARGS="--cache-from=type=local,src=/tmp/.buildx-cache \
             --cache-to=type=local,dest=/tmp/.buildx-cache-new,mode=max"
       - name: Load test image
-        run: kind load docker-image test/mongodb-query-exporter:latest
-      - name: Deploy exporter
-        run: make deploy-test IMG=test/mongodb-query-exporter:latest
-      - name: Setup MongoDB
-        env:
-          MONGODB_VER: ${{ '10.29.2' }}
-        run: |
-          kubectl create ns mongodb
-          helm repo add bitnami https://charts.bitnami.com/bitnami
-          helm upgrade --wait -i mongodb bitnami/mongodb \
-          --version $MONGODB_VER \
-          --namespace mongodb \
-          --set auth.rootPassword=password \
-          --set persistence.enabled=false \
-          --set image.tag=${{matrix.mongodb}}
-      - name: Run tests
-        run: |
-          kubectl -n mongodb-system port-forward deployment/mongodb-query-exporter 9412:9412 &>/dev/null &
-          sleep 2
-          curl -v --fail http://localhost:9412/metrics  | grep total_mongodb_users
+        run: kind load docker-image raffis/kjournal-apiserver:latest
+      - name: Deploy
+        run: make deploy-test IMG=raffis/kjournal-apiserver:latest
       - name: Logs
         run: |
-          kubectl -n mongodb-system logs deploy/mongodb-query-exporter
+          kubectl -n kjournal-system logs deploy/kjournal-apiserver
       - name: Debug failure
         if: failure()
         run: |
-          kubectl -n kube-system describe pods
-          kubectl -n mongodb describe pods
-          kubectl -n mongodb-system describe pods
-          kubectl -n mongodb-system get all
-          kubectl -n mongodb-system logs deploy/mongodb-query-exporter
+          kubectl -n kjournal-system describe pods
+          kubectl -n kjournal-system get all
+          kubectl -n kjournal-system logs deploy/kjournal-apiserver
