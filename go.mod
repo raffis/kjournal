@@ -14,6 +14,8 @@ require (
 	sigs.k8s.io/apiserver-runtime v1.1.1
 )
 
+replace sigs.k8s.io/apiserver-runtime => github.com/raffis/apiserver-runtime v0.0.0-20220922204054-d3225fa68c88
+
 require (
 	github.com/NYTimes/gziphandler v1.1.1 // indirect
 	github.com/PuerkitoBio/purell v1.1.1 // indirect

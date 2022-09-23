@@ -5,31 +5,35 @@ Below you can find the steps for each of them.
 
 ## Install the pre-compiled binary
 
-### homebrew tap
+=== "Brew"
+    ```sh
+    brew install kjournal/tap/kjournal
+    ```
 
-```sh
-brew install kjournal/tap/kjournal
-```
+=== "Go"
+    ```sh
+    go install github.com/raffis/kjournal@latest
+    ```
 
-### krew 
+=== "Bash"
+    ```sh
+    curl -sfL https://goreleaser.com/static/run | bash
+    ```
+
+=== "Docker"
+    ```sh
+    docker pull ghcr.io/raffis/kjournal/cli
+    ```
+
+=== "deb / rpm / apk"
+    Download the `.deb`, `.rpm` or `.apk` packages from the [OSS releases page][releases] and install them with the appropriate tools.
 
 
+=== "Manual"
+    Download the pre-compiled binaries from the [OSS releases page][releases] and copy them to the desired location.
 
-### deb, rpm and apk packages
 
-Download the `.deb`, `.rpm` or `.apk` packages from the [OSS releases page][releases] and install them with the appropriate tools.
-
-### go install
-
-go install github.com/goreleaser/goreleaser@latest
-
-### bash script
-
-```sh
-curl -sfL https://goreleaser.com/static/run | bash
-```
-
-=== "Additional Options"
+## Additional Options
     You can also set the `VERSION` and `DISTRIBUTION` variables to specify
     a version instead of using latest and `pro` or `oss` distributions,
     respectively.
@@ -46,9 +50,6 @@ curl -sfL https://goreleaser.com/static/run | bash
     runs GoReleaser.
     It's purpose is to be used within scripts and CIs.
 
-### manually
-
-Download the pre-compiled binaries from the [OSS releases page][releases] and copy them to the desired location.
 
 
 ## Verifying the artifacts

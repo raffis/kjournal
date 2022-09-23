@@ -45,5 +45,5 @@ apis:
     payload: ["."]
   backend:
     elasticsearch:
-      timestampFields: ["@timestamp", "metadata.creationTimestamp"]
+      timestampFields: ["@timestamp", "metadata.creationTimestamp", "stageTimestamp"]
       index: "*"

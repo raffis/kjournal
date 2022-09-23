@@ -17,6 +17,7 @@ limitations under the License.
 package main
 
 import (
+	"fmt"
 	"net/http"
 
 	"k8s.io/klog/v2"
@@ -46,6 +47,7 @@ var (
 )
 
 func (m *httpWrap) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+	fmt.Printf("req %#v\n", r.RequestURI)
 	q := r.URL.Query()
 	fieldSelector := q.Get("fieldSelector")
 	q.Set("labelSelector", fieldSelector)

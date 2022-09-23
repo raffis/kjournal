@@ -22,8 +22,6 @@ import (
 	"k8s.io/apimachinery/pkg/watch"
 	"k8s.io/apiserver/pkg/registry/rest"
 	"k8s.io/klog/v2"
-
-	configv1alpha1 "github.com/raffis/kjournal/pkg/apis/config/v1alpha1"
 )
 
 var _ rest.Scoper = &elasticsearchREST{}
@@ -35,7 +33,7 @@ func NewElasticsearchREST(
 	groupResource schema.GroupResource,
 	codec runtime.Codec,
 	es *elasticsearch.Client,
-	apiBinding *configv1alpha1.API,
+	opts Options,
 	isNamespaced bool,
 	newFunc func() runtime.Object,
 	newListFunc func() runtime.Object,
@@ -44,7 +42,7 @@ func NewElasticsearchREST(
 		groupResource: groupResource,
 		codec:         codec,
 		es:            es,
-		apiBinding:    apiBinding,
+		opts:          opts,
 		metaAccessor:  meta.NewAccessor(),
 		isNamespaced:  isNamespaced,
 		newFunc:       newFunc,
@@ -81,7 +79,7 @@ type elasticsearchREST struct {
 	groupResource schema.GroupResource
 	codec         runtime.Codec
 	es            *elasticsearch.Client
-	apiBinding    *configv1alpha1.API
+	opts          Options
 	isNamespaced  bool
 	metaAccessor  meta.MetadataAccessor
 	newFunc       func() runtime.Object
@@ -98,6 +96,9 @@ func (r *elasticsearchREST) NewList() runtime.Object {
 
 func (r *elasticsearchREST) NamespaceScoped() bool {
 	return r.isNamespaced
+}
+
+func (r *elasticsearchREST) Destroy() {
 }
 
 func (r *elasticsearchREST) Get(
@@ -131,13 +132,13 @@ func (r *elasticsearchREST) Watch(ctx context.Context, options *metainternalvers
 	klog.InfoS("Start watch stream", "options", options)
 
 	stream := &stream{
-		refreshRate: r.apiBinding.Backend.Elasticsearch.RefreshRate,
+		refreshRate: r.opts.Backend.RefreshRate,
 		rest:        r,
-		ch:          make(chan watch.Event, 500),
+		ch:          make(chan watch.Event, r.opts.Backend.BulkSize),
 	}
 
 	go func() {
-		options.Limit = 500
+		options.Limit = r.opts.Backend.BulkSize
 		stream.Start(ctx, options)
 	}()
 
@@ -221,7 +222,7 @@ func (r *elasticsearchREST) fetch(
 	}
 
 	if _, ok := query["pit"]; !ok {
-		req = append(req, r.es.Search.WithIndex(r.apiBinding.Backend.Elasticsearch.Index))
+		req = append(req, r.es.Search.WithIndex(r.opts.Backend.Index))
 	}
 
 	if options.Limit != 0 {
@@ -263,12 +264,15 @@ func (r *elasticsearchREST) decodeFrom(obj esHit) (runtime.Object, error) {
 		return newObj, err
 	}
 
-	for k, fields := range r.apiBinding.FieldMap {
+	for k, fields := range r.opts.FieldMap {
 		for _, field := range fields {
 			if field == "." {
 				jsonParsed.SetP(obj.Source, k)
 			} else {
-				jsonParsed.SetP(jsonParsed.Path(field).Data(), k)
+				if v := jsonParsed.Path(field); v != nil {
+					jsonParsed.SetP(v.Data(), k)
+					break
+				}
 			}
 		}
 	}
@@ -278,7 +282,7 @@ func (r *elasticsearchREST) decodeFrom(obj esHit) (runtime.Object, error) {
 		return newObj, err
 	}
 
-	for _, field := range r.apiBinding.DropFields {
+	for _, field := range r.opts.DropFields {
 		jsonParsed.DeleteP(field)
 	}
 
@@ -311,7 +315,7 @@ func getListPrt(listObj runtime.Object) (reflect.Value, error) {
 
 	v, err := conversion.EnforcePtr(listPtr)
 	if err != nil || v.Kind() != reflect.Slice {
-		return reflect.Value{}, fmt.Errorf("need ptr to slice: %v", err)
+		return reflect.Value{}, fmt.Errorf("need ptr to slice: %w", err)
 	}
 
 	return v, nil

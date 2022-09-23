@@ -55,7 +55,7 @@ func QueryFromListOptions(ctx context.Context, options *metainternalversion.List
 }
 
 func (b *queryBuilder) fieldMapping(field string) []string {
-	if val, ok := b.rest.apiBinding.FieldMap[field]; ok {
+	if val, ok := b.rest.opts.FieldMap[field]; ok {
 		return val
 	}
 
@@ -78,9 +78,12 @@ func (b *queryBuilder) continueToken() *queryBuilder {
 }
 
 func (b *queryBuilder) sortByTimestampFields() *queryBuilder {
-	for _, tsField := range b.rest.apiBinding.Backend.Elasticsearch.TimestampFields {
+	for _, tsField := range b.rest.opts.Backend.TimestampFields {
 		b.query["sort"] = append(b.query["sort"].([]map[string]interface{}), map[string]interface{}{
-			tsField: "asc",
+			tsField: map[string]interface{}{
+				"order":         "asc",
+				"unmapped_type": "long",
+			},
 		})
 	}
 
@@ -97,7 +100,7 @@ func (b *queryBuilder) fieldSelectors() *queryBuilder {
 		q := b.query["query"].(map[string]interface{})["bool"].(map[string]interface{})[operator[0]].([]map[string]interface{})
 		fieldsMap := []string{req.Key()}
 
-		for field, fieldsTo := range b.rest.apiBinding.FieldMap {
+		for field, fieldsTo := range b.rest.opts.FieldMap {
 			for k, fieldTo := range fieldsTo {
 				lookupKey := strings.TrimLeft(strings.Replace(req.Key(), field, fieldTo, -1), ".")
 				if lookupKey != req.Key() {
@@ -144,7 +147,7 @@ func (b *queryBuilder) fieldSelectors() *queryBuilder {
 
 			should = append(should, shouldCondition)
 
-			for _, tsField := range b.rest.apiBinding.Backend.Elasticsearch.TimestampFields {
+			for _, tsField := range b.rest.opts.Backend.TimestampFields {
 				if !skipTimestampFilter && fieldTo == tsField {
 					skipTimestampFilter = true
 				}
@@ -164,11 +167,11 @@ func (b *queryBuilder) fieldSelectors() *queryBuilder {
 		q := b.query["query"].(map[string]interface{})["bool"].(map[string]interface{})["must"].([]map[string]interface{})
 		var should []map[string]interface{}
 
-		for _, tsField := range b.rest.apiBinding.Backend.Elasticsearch.TimestampFields {
+		for _, tsField := range b.rest.opts.Backend.TimestampFields {
 			should = append(should, map[string]interface{}{
 				"range": map[string]interface{}{
 					tsField: map[string]interface{}{
-						"gte": "now-5h",
+						"gte": b.rest.opts.DefaultTimeRange,
 					},
 				},
 			})
