@@ -1,8 +1,6 @@
 package v1alpha1
 
 import (
-	"time"
-
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -38,7 +36,8 @@ type ApiBackend struct {
 }
 
 type ApiBackendElasticsearch struct {
-	Index           string        `json:"index"`
-	RefreshRate     time.Duration `json:"refreshRate"`
-	TimestampFields []string      `json:"timestampFields"`
+	Index           string          `json:"index"`
+	RefreshRate     metav1.Duration `json:"refreshRate"`
+	TimestampFields []string        `json:"timestampFields"`
+	BulkSize        int64           `json:"bulkSize"`
 }

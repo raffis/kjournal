@@ -43,7 +43,6 @@ var (
 )
 
 func initConfig() (configv1alpha1.APIServerConfig, error) {
-
 	b, err := ioutil.ReadFile("/config.yaml")
 	if err != nil {
 		return conf, fmt.Errorf("failed to read apiserver config: %w", err)

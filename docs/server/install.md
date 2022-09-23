@@ -3,25 +3,25 @@
 However the pre-compiled apiserver binaries are also available in different ways or compilable from source. 
 Below you can find the steps for each of them.
 
-## Install the pre-compiled binary
+## Install the pre-compiled apiserver
 
-### helm chart
+=== "kjournal"
+    ```sh
+    kjournal install -n kjournal-system
+    ```
 
-```sh
-helm repo add kjournal https://raffis.github.io/kjournal
-helm upgrade --install kjournal kjournal/kjournal
-```
+=== "Helm"
+    ```sh
+    helm install kjournal oci://github.com/raffis/kjournal/helm
+    ```
 
-### kustomize
+=== "Kustomize"
+    ```sh
+    kustomize build github.com/raffis/kjournal//config/default | kubectl apply -f -
+    ```
 
-```sh
-helm repo add kjournal https://raffis.github.io/kjournal
-helm upgrade --install kjournal kjournal/kjournal
-```
-
-### manually
-
-Download the pre-compiled binaries from the [OSS releases page][releases] and copy them to the desired location.
+=== "Manual"
+    Download the pre-compiled binaries from the [OSS releases page][releases] and copy them to the desired location.
 
 
 ## Verifying the artifacts

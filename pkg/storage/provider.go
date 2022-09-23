@@ -29,10 +29,6 @@ type Provider interface {
 	Provide(obj resource.Object, scheme *runtime.Scheme, getter generic.RESTOptionsGetter) (rest.Storage, error)
 }
 
-type MappableObject interface {
-	WithFieldMap(map[string][]string)
-}
-
 type provider struct {
 	backend      *configv1alpha1.Backend
 	restProvider RestProvider
@@ -76,10 +72,6 @@ func (p *provider) Provide(obj resource.Object, scheme *runtime.Scheme, getter g
 
 	if apiBinding, err = p.apiRegistry.Get(key); err != nil {
 		return nil, fmt.Errorf("%w: no api binding found for %s", err, key)
-	}
-
-	if v, ok := obj.(MappableObject); ok {
-		v.WithFieldMap(apiBinding.FieldMap)
 	}
 
 	return p.restProvider(obj, scheme, getter, p.backend, apiBinding)

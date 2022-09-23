@@ -36,6 +36,23 @@ plugins:
   - minify:
       minify_html: true
 
+markdown_extensions:
+  - footnotes
+  - pymdownx.tabbed:
+      alternate_style: true 
+  - pymdownx.superfences:
+      custom_fences:
+        - name: mermaid
+          class: mermaid
+          format: !!python/name:pymdownx.superfences.fence_code_format
+  - admonition
+  - codehilite
+  - meta
+  - toc:
+      permalink: true
+  - pymdownx.tasklist:
+      custom_checkbox: true
+
 extra:
   social:
     - icon: fontawesome/brands/github-alt
@@ -54,7 +71,6 @@ nav:
   - server/quick-start.md
   - server/config.md
   - server/install.md
-  - server/config.md
   - Storage:
     - server/storage/elasticsearch.md
     - server/storage/other.md
@@ -75,15 +91,3 @@ nav:
   - api/core.kjournal.v1alpha1.md
 - Community:
   - contributing.md
-
-markdown_extensions:
-  - admonition
-  - codehilite
-  - meta
-  - toc:
-      permalink: true
-  - pymdownx.tabbed
-  - pymdownx.superfences
-  - pymdownx.tasklist:
-      custom_checkbox: true
-  - footnotes

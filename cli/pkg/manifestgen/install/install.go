@@ -28,7 +28,6 @@ func Generate(options Options, manifestsBase string) (*manifestgen.Manifest, err
 	if err != nil {
 		return nil, err
 	}
-	fmt.Printf("%#v", output)
 
 	/*if !strings.HasPrefix(options.BaseURL, "http") {
 		if err := build(options.BaseURL, output); err != nil {

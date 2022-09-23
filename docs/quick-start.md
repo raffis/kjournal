@@ -3,33 +3,63 @@
 !!! Note
     If you are a cluster admin a and want to deploy kjournal on your cluster(s), please refer to the apiserver quick start.
 
-With the kjournal cli you can fetch either container logs or audit events.
-[Install](cli/install) the cli on your machine.
+## Install CLI
+
+=== "Brew"
+    ```sh
+    brew install kjournal/tap/kjournal
+    ```
+
+=== "Go"
+    ```sh
+    go install github.com/raffis/kjournal@latest
+    ```
+
+=== "Bash"
+    ```sh
+    curl -sfL https://goreleaser.com/static/run | bash
+    ```
+
+=== "Docker"
+    ```sh
+    docker pull ghcr.io/raffis/kjournal/cli
+    ```
+
+=== "deb / rpm / apk"
+    Download the `.deb`, `.rpm` or `.apk` packages from the [OSS releases page][releases] and install them with the appropriate tools.
+
+
+=== "Manual"
+    Download the pre-compiled binaries from the [OSS releases page][releases] and copy them to the desired location.
+
+You will find in the CLI installation documentation more advanced options regarding the cli installation.
 
 ## Container logs
-To fetch all container logs originating from pods in the namespace `mynamespace` you can simply use the diary command.
-The command will start to display log streams for all containers prefixed and colored by pod and container names.
+To fetch container logs from a namespace you can simply use the `pods` command.
+The command will start to print log streams from all containers prefixed and colored by pod and container names.
+
+This will display all container logs from the namespace `mynamespace`.
 
 ```sh
-kjournal container -n mynamespace
+kjournal pods -n mynamespace
 ```
 
 You can quick filter by naming a pod or a pod prefix.
 
 Will stream logs from all pods starting with mypod-
 ```sh
-kjournal container -n mynamespace mypod-
+kjournal pods -n mynamespace mypod-
 ```
 
 ## Time window
-The kjournal-apiserver looks up logs from the last 24hours and starts stream from 24h ago. 
+The kjournal-apiserver looks up logs from the last 24 hours and starts stream from 24h ago. 
 The server default is configurable (see server configuration).
 You can change the window in which logs are looked up by using the `--since` flag.
 This works for all kjournal commands.
 
 This will stream logs starting from 7 days ago.
 ```sh
-kjournal container -n mynamespace mypod- --since 7d
+kjournal pods -n mynamespace mypod- --since 7d
 ```
 
 Alternatively you may use `--range [from]-[to]`. `--range 18h-23h` will feed logs
@@ -45,26 +75,14 @@ You can use the flag `--field-selector` which supports the same operators as `ku
 However on top of that kjournal also supports other operators including `>`,`<` or `in()`.
 
 ```sh
-kjournal container -n mynamespace mypod- --field-selector payload.myLogField=xxx
+kjournal pods -n mynamespace mypod- --field-selector payload.myLogField=xxx
 ```
 
 ## Audit events
 kjournal has built-in support for kubernetes audit events. 
 You can access audit event using the audit command.
 
-This will stream the entire audit log feed:
+This will stream the entire audit feed:
 ```sh
-kjournal audit -n mynamespace
-```
-
-You can list audit events for specific resource groups or a specific resource by name.
-
-Will stream events for all deployments.
-```sh
-kjournal audit deployments
-```
-
-Similary you can add a name for a specific deployment:
-```sh
-kjournal audit deployments/mydeployment
+kjournal audit
 ```

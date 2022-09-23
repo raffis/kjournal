@@ -11,7 +11,6 @@ During this tutorial you need the following tools. Make sure you have them up-to
 * kustomize
 * kind
 * git
-* curl
 * kjournal
 
 ## Fetch the repo
@@ -31,50 +30,13 @@ The apiserver is configured to log audit logs which is required if we want to qu
 kind create cluster --config config/kind-example/control-plane.yaml
 ```
 
-## Create dedicated logging namespace
+## Deploy kjournal and third party components
 
-We will deploy components into a namespace called logging during this tutorial.
-
-```sh
-kubectl create ns logging
-```
-
-## Deploy elasticsearch
-
-Install the elastic helm repository and deploy a single es node.
+Next we deploy elasticsearch, fluent-bit, kubernetes-event-exporter as well as the kjournal apiserver itself
+from an opinated kustomize overlay. 
 
 ```sh
-helm repo add elastic https://helm.elastic.co
-helm install elasticsearch elastic/elasticsearch -n logging --set replicas=1
-```
-
-## Deploy fluent-bit
-
-Install the fluent helm repository and deploy fluent-bit which will ship all container logs as well as kubernetes audit logs 
-to the elasticsearch instance we deployed just previously.
-
-
-```sh
-helm repo add fluent https://fluent.github.io/helm-charts
-helm install fluent-bit fluent/fluent-bit -n logging -f config/kind-example/fluent-bit-chart-values.yaml
-```
-
-## Test persisting logs
-
-At this point fluent-bit should already ship logs to elasticsearch.
-This should be verified before continue. 
-
-```sh
-kubectl -n logging port-forward svc/elasticsearch-master 9200 &
-curl localhost:9200/_search?pretty
-```
-
-If there are no documents something is wrong. Please inspect both fluent-bit and elasticsearch pods.
-
-## Deploy kjournal
-
-```sh
-kustomize build config/kind-example | kubectl -n logging apply -f -
+kustomize build config/kind-example --enable-helm | kubectl apply -f -
 ```
 
 ## Test kjournal
@@ -83,5 +45,5 @@ Last but not least we can test if kjournal works properly.
 This command will start a watch stream for all container logs in the kube-system namespace.
 
 ```sh
-kjournal diary -n kube-system -w
+kjournal pods -n kube-system -w
 ```

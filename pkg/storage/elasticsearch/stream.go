@@ -39,7 +39,7 @@ func (s *stream) errorAndAbort(err error) {
 
 func (s *stream) Start(ctx context.Context, options *metainternalversion.ListOptions) {
 	if s.usePIT {
-		res, err := s.rest.es.OpenPointInTime([]string{s.rest.apiBinding.Backend.Elasticsearch.Index}, "5m")
+		res, err := s.rest.es.OpenPointInTime([]string{s.rest.opts.Backend.Index}, "5m")
 		if err != nil {
 			s.errorAndAbort(err)
 			return
@@ -79,13 +79,13 @@ func (s *stream) Start(ctx context.Context, options *metainternalversion.ListOpt
 			}
 		}
 
-		if len(esResults.Hits.Hits) != 500 && s.refreshRate == 0 {
-			klog.Info("All objects consumed from pit")
+		if len(esResults.Hits.Hits) != int(s.rest.opts.Backend.BulkSize) && s.refreshRate == 0 {
+			klog.Info("All objects consumed from stream")
 			s.done <- true
 			break
 		}
 
-		if len(esResults.Hits.Hits) != 500 {
+		if len(esResults.Hits.Hits) != int(s.rest.opts.Backend.BulkSize) {
 			klog.InfoS("wait for next check", "sleep", s.refreshRate.String())
 			time.Sleep(s.refreshRate)
 		}
@@ -133,6 +133,7 @@ var _ rest.ResourceStreamer = &pitStream{}
 func (obj *pitStream) GetObjectKind() schema.ObjectKind {
 	return schema.EmptyObjectKind
 }
+
 func (obj *pitStream) DeepCopyObject() runtime.Object {
 	panic("rest.PITStream does not implement DeepCopyObject")
 }
@@ -142,7 +143,7 @@ func (s *pitStream) InputStream(ctx context.Context, apiVersion, acceptHeader st
 		usePIT:      true,
 		refreshRate: 0,
 		rest:        s.rest,
-		ch:          make(chan watch.Event, 500),
+		ch:          make(chan watch.Event, int(s.rest.opts.Backend.BulkSize)),
 		done:        make(chan bool),
 	}
 
@@ -151,7 +152,7 @@ func (s *pitStream) InputStream(ctx context.Context, apiVersion, acceptHeader st
 	}
 
 	go func() {
-		s.options.Limit = 500
+		s.options.Limit = s.rest.opts.Backend.BulkSize
 		stream.Start(s.context, s.options)
 	}()
 

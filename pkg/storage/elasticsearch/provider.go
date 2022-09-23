@@ -22,6 +22,7 @@ import (
 	"fmt"
 	"net/http"
 	"os"
+	"time"
 
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/serializer"
@@ -87,14 +88,68 @@ func getESClient(backend *configv1alpha1.Backend) (*elasticsearch.Client, error)
 	return es, nil
 }
 
+func MakeDefaultOptions() Options {
+	return Options{
+		Backend: OptionsBackend{
+			Index:           "*",
+			RefreshRate:     time.Millisecond * 500,
+			TimestampFields: []string{"@timestamp"},
+			BulkSize:        500,
+		},
+		DefaultTimeRange: "now-24h",
+	}
+}
+
+type Options struct {
+	FieldMap         map[string][]string
+	DropFields       []string
+	Filter           map[string]string
+	DefaultTimeRange string
+	Backend          OptionsBackend
+}
+
+type OptionsBackend struct {
+	Index           string
+	RefreshRate     time.Duration
+	TimestampFields []string
+	BulkSize        int64
+}
+
+func MakeOptionsFromConfig(apiBinding *configv1alpha1.API) Options {
+	options := MakeDefaultOptions()
+	options.FieldMap = apiBinding.FieldMap
+	options.DropFields = apiBinding.DropFields
+	options.Filter = apiBinding.Filter
+
+	if apiBinding.Backend.Elasticsearch.Index != "" {
+		options.Backend.Index = apiBinding.Backend.Elasticsearch.Index
+	}
+	if apiBinding.Backend.Elasticsearch.RefreshRate.Duration != 0 {
+		options.Backend.RefreshRate = apiBinding.Backend.Elasticsearch.RefreshRate.Duration
+	}
+	if apiBinding.Backend.Elasticsearch.TimestampFields != nil {
+		options.Backend.TimestampFields = apiBinding.Backend.Elasticsearch.TimestampFields
+	}
+	if apiBinding.Backend.Elasticsearch.BulkSize != 0 {
+		options.Backend.BulkSize = apiBinding.Backend.Elasticsearch.BulkSize
+	}
+	if apiBinding.DefaultTimeRange != "" {
+		options.DefaultTimeRange = apiBinding.DefaultTimeRange
+	}
+
+	return options
+}
+
 func newElasticsearchStorageProvider(obj resource.Object, scheme *runtime.Scheme, getter generic.RESTOptionsGetter, backend *configv1alpha1.Backend, apiBinding *configv1alpha1.API) (rest.Storage, error) {
+	opts := MakeOptionsFromConfig(apiBinding)
+
 	gr := obj.GetGroupVersionResource().GroupResource()
 	codec, _, err := srvstorage.NewStorageCodec(srvstorage.StorageCodecConfig{
 		StorageMediaType:  runtime.ContentTypeJSON,
 		StorageSerializer: serializer.NewCodecFactory(scheme),
 		StorageVersion:    scheme.PrioritizedVersionsForGroup(obj.GetGroupVersionResource().Group)[0],
 		MemoryVersion:     scheme.PrioritizedVersionsForGroup(obj.GetGroupVersionResource().Group)[0],
-		Config:            storagebackend.Config{}, // useless fields..
+		Config:            storagebackend.Config{},
 	})
 
 	if err != nil {
@@ -110,7 +165,7 @@ func newElasticsearchStorageProvider(obj resource.Object, scheme *runtime.Scheme
 		gr,
 		codec,
 		client,
-		apiBinding,
+		opts,
 		obj.NamespaceScoped(),
 		obj.New,
 		obj.NewList,
