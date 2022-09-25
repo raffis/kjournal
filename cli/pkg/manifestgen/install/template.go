@@ -26,7 +26,6 @@ labels:
 resources:
 - {{.BaseURL}}/namespace
 - {{.BaseURL}}/apiserver
-- {{.BaseURL}}/apiservice
 - {{.BaseURL}}/rbac
 {{- if .ServiceMonitor }}
 #- {{.BaseURL}}/components/prometheus
