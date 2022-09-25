@@ -71,6 +71,7 @@ nav:
   - server/quick-start.md
   - server/config.md
   - server/install.md
+  - server/uninstall.md
   - Storage:
     - server/storage/elasticsearch.md
     - server/storage/other.md
@@ -89,5 +90,6 @@ nav:
 - API:
   - api/config.kjournal.v1alpha1.md
   - api/core.kjournal.v1alpha1.md
-- Community:
-  - contributing.md
+- Development:
+  - development/CONTRIBUTING.md
+  - development/CODE_OF_CONDUCT.md
