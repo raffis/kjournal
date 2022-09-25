@@ -10,19 +10,51 @@ Below you can find the steps for each of them.
     kjournal install -n kjournal-system
     ```
 
-=== "Helm"
-    ```sh
-    helm install kjournal oci://github.com/raffis/kjournal/helm
-    ```
-
 === "Kustomize"
     ```sh
     kustomize build github.com/raffis/kjournal//config/default | kubectl apply -f -
     ```
 
+=== "Helm"
+    ```sh
+    helm updgrade kjournal --install oci://github.com/raffis/kjournal/helm
+    ```
+
 === "Manual"
     Download the pre-compiled binaries from the [OSS releases page][releases] and copy them to the desired location.
 
+!!! Warning
+    It is recommended to enable certmanager support on any production cluster. See bellow. 
+
+
+## Certmanager support
+
+It is recommended to enable certmanger support for setting up a trusted certificate between the kubernetes apiserver
+and the kjournal apiserver. By default the kuberntes apiserver trusts kjournal without validating the certificate.
+
+=== "kjournal"
+    ```sh
+    kjournal install -n kjournal-system --with-certmanager
+    ```
+
+=== "Helm"
+    ```sh
+    helm upgrade kjournal --install oci://github.com/raffis/kjournal/helm --set certmanager.enabled=true
+    ```
+
+=== "Kustomize"
+    ```sh
+    cat <<EOT >> kustomization.yaml
+    apiVersion: kustomize.config.k8s.io/v1beta1
+    kind: Kustomization
+    resources:
+    - github.com/raffis/kjournal//config/default
+    - github.com/raffis/kjournal//config/rbac
+
+    components:
+    - github.com/raffis/kjournal//config/components/certmanager
+    EOT && kustomize build | kubectl apply -f -
+    ```
 
 ## Verifying the artifacts
 

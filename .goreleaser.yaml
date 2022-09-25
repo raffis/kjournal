@@ -3,7 +3,7 @@ project_name: kjournal
 builds:
   - id: "cli"
     dir: cli
-    main: ./cmd/kjournal/
+    main: ./cmd/
     binary: kjournal-cli
     goos:
       - linux
