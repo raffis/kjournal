@@ -55,8 +55,10 @@ func QueryFromListOptions(ctx context.Context, options *metainternalversion.List
 }
 
 func (b *queryBuilder) fieldMapping(field string) []string {
-	if val, ok := b.rest.opts.FieldMap[field]; ok {
-		return val
+	for _, fieldMap := range b.rest.opts.FieldMap {
+		if fieldMap.Field == field {
+			return fieldMap.Lookup
+		}
 	}
 
 	return []string{field}
@@ -100,9 +102,9 @@ func (b *queryBuilder) fieldSelectors() *queryBuilder {
 		q := b.query["query"].(map[string]interface{})["bool"].(map[string]interface{})[operator[0]].([]map[string]interface{})
 		fieldsMap := []string{req.Key()}
 
-		for field, fieldsTo := range b.rest.opts.FieldMap {
-			for k, fieldTo := range fieldsTo {
-				lookupKey := strings.TrimLeft(strings.Replace(req.Key(), field, fieldTo, -1), ".")
+		for _, fieldMap := range b.rest.opts.FieldMap {
+			for k, fieldTo := range fieldMap.Lookup {
+				lookupKey := strings.TrimLeft(strings.Replace(req.Key(), fieldMap.Field, fieldTo, -1), ".")
 				if lookupKey != req.Key() {
 					fieldsMap[k] = lookupKey
 					break

@@ -264,27 +264,55 @@ func (r *elasticsearchREST) decodeFrom(obj esHit) (runtime.Object, error) {
 		return newObj, err
 	}
 
-	for k, fields := range r.opts.FieldMap {
-		for _, field := range fields {
+	for _, fieldMap := range r.opts.FieldMap {
+		for _, field := range fieldMap.Lookup {
 			if field == "." {
-				jsonParsed.SetP(obj.Source, k)
+
+				if len(fieldMap.Drop) > 0 {
+					for _, field := range fieldMap.Drop {
+						jsonParsed.DeleteP(field)
+					}
+				}
+
+				d := jsonParsed.Data()
+				a := *d
+
+				/*
+					jsonParsed, err := gabs.ParseJSON(obj.Source)
+					if err != nil {
+						return newObj, err
+					}*/
+
+				jsonParsed.SetP(jsonParsed.String(), fieldMap.Field)
+
 			} else {
 				if v := jsonParsed.Path(field); v != nil {
-					jsonParsed.SetP(v.Data(), k)
+					data := v.Data()
+					fmt.Printf("field map %#v\n", fieldMap)
+					if len(fieldMap.Drop) > 0 {
+						fieldParsed, err := gabs.ParseJSON(v.Bytes())
+						if err != nil {
+							return newObj, err
+						}
+
+						for _, field := range fieldMap.Drop {
+							fieldParsed.DeleteP(field)
+						}
+
+						data = fieldParsed.Data()
+						fmt.Printf("NEW DATA %#v\n", data)
+					}
+
+					fmt.Printf("set field %#v to %#v\n", fieldMap.Field, data)
+					_, err := jsonParsed.SetP(data, fieldMap.Field)
+					fmt.Printf("err %#v\n", err)
 					break
 				}
 			}
 		}
 	}
 
-	jsonParsed, err = gabs.ParseJSON(jsonParsed.Bytes())
-	if err != nil {
-		return newObj, err
-	}
-
-	for _, field := range r.opts.DropFields {
-		jsonParsed.DeleteP(field)
-	}
+	fmt.Printf("end result :%#v\n", string(jsonParsed.Bytes()))
 
 	decodedObj, _, err := r.codec.Decode(jsonParsed.Bytes(), nil, newObj)
 	if err != nil {

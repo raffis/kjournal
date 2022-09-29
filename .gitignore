@@ -28,5 +28,6 @@ cli/kjournal
 dist
 site
 apiserver.local.config
+config/release
 config/certificates
 /config/**/charts

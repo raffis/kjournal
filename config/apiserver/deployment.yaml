@@ -18,7 +18,7 @@ spec:
         apiserver: "true"
     spec:
       containers:
-      - name: apiserver
+      - name: kjournal-apiserver
         image: kjournal-apiserver:latest
         imagePullPolicy: Never
         volumeMounts:
@@ -52,14 +52,14 @@ spec:
         - containerPort: 8443
           name: https
           protocol: TCP
-        readinessProbe:
-          httpGet:
-            path: /readyz
-            port: https
-        livenessProbe:
-          httpGet:
-            path: /healthz
-            port: https
+        #readinessProbe:
+        #  httpGet:
+        #    path: /readyz
+        #    port: https
+        #livenessProbe:
+        #  httpGet:
+        #    path: /healthz
+        #    port: https
       serviceAccountName: apiserver
       volumes:
       - name: tmp

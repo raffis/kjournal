@@ -38,11 +38,11 @@ import (
 	"github.com/raffis/kjournal/pkg/storage"
 )
 
-var esClient *elasticsearch.Client
-
 func init() {
 	storage.Providers.Add("elasticsearch", newElasticsearchStorageProvider)
 }
+
+var esClient *elasticsearch.Client
 
 func getESClient(backend *configv1alpha1.Backend) (*elasticsearch.Client, error) {
 	if esClient != nil {
@@ -100,9 +100,14 @@ func MakeDefaultOptions() Options {
 	}
 }
 
+type FieldMap struct {
+	Field  string
+	Lookup []string
+	Drop   []string
+}
+
 type Options struct {
-	FieldMap         map[string][]string
-	DropFields       []string
+	FieldMap         []FieldMap
 	Filter           map[string]string
 	DefaultTimeRange string
 	Backend          OptionsBackend
@@ -117,8 +122,14 @@ type OptionsBackend struct {
 
 func MakeOptionsFromConfig(apiBinding *configv1alpha1.API) Options {
 	options := MakeDefaultOptions()
-	options.FieldMap = apiBinding.FieldMap
-	options.DropFields = apiBinding.DropFields
+	for _, v := range apiBinding.FieldMap {
+		options.FieldMap = append(options.FieldMap, FieldMap{
+			Field:  v.Field,
+			Lookup: v.Lookup,
+			Drop:   v.Drop,
+		})
+	}
+
 	options.Filter = apiBinding.Filter
 
 	if apiBinding.Backend.Elasticsearch.Index != "" {

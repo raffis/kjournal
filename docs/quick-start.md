@@ -17,17 +17,13 @@
 
 === "Bash"
     ```sh
-    curl -sfL https://goreleaser.com/static/run | bash
+    curl -sfL https://raw.githubusercontent.com/raffis/kjournal/main/cli/install/kjournal.sh | bash
     ```
 
 === "Docker"
     ```sh
-    docker pull ghcr.io/raffis/kjournal/cli
+    docker pull ghcr.io/raffis/kjournal/cli:latest
     ```
-
-=== "deb / rpm / apk"
-    Download the `.deb`, `.rpm` or `.apk` packages from the [OSS releases page][releases] and install them with the appropriate tools.
-
 
 === "Manual"
     Download the pre-compiled binaries from the [OSS releases page][releases] and copy them to the desired location.

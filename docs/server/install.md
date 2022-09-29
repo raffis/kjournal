@@ -1,6 +1,7 @@
 # Install
 
-However the pre-compiled apiserver binaries are also available in different ways or compilable from source. 
+The kjournal apiserver can be deployed using you favourite continous delivery utitlities or you may build and deploy from the
+source code.
 Below you can find the steps for each of them.
 
 ## Install the pre-compiled apiserver
@@ -17,7 +18,7 @@ Below you can find the steps for each of them.
 
 === "Helm"
     ```sh
-    helm updgrade kjournal --install oci://github.com/raffis/kjournal/helm
+    helm upgrade kjournal --install oci://github.com/raffis/kjournal/helm
     ```
 
 === "Manual"
@@ -56,6 +57,35 @@ and the kjournal apiserver. By default the kuberntes apiserver trusts kjournal w
     EOT && kustomize build | kubectl apply -f -
     ```
 
+## Prometheus support
+
+kjournal has support for the prometheus-operator or using prometheus scraping via annotations.
+
+=== "kjournal"
+    ```sh
+    kjournal install -n kjournal-system --with-prometheus=operator/annotations
+    ```
+
+=== "Helm"
+    ```sh
+    helm upgrade kjournal --install oci://github.com/raffis/kjournal/helm --set serviceMonitor.enabled=true
+    ```
+
+=== "Kustomize"
+    ```sh
+    cat <<EOT >> kustomization.yaml
+    apiVersion: kustomize.config.k8s.io/v1beta1
+    kind: Kustomization
+    resources:
+    - github.com/raffis/kjournal//config/default
+    - github.com/raffis/kjournal//config/rbac
+
+    components:
+    - github.com/raffis/kjournal//config/components/prometheus
+    EOT && kustomize build | kubectl apply -f -
+    ```
+
+
 ## Verifying the artifacts
 
 ### binaries
@@ -93,49 +123,7 @@ COSIGN_EXPERIMENTAL=1 cosign verify goreleaser/goreleaser
 !!! info
     The `.pem` and `.sig` files are the image `name:tag`, replacing `/` and `:` with `-`.
 
-## Running with Docker
-
-You can also use it within a Docker container.
-To do that, you'll need to execute something more-or-less like the examples below.
-
-Registries:
-
-- [`goreleaser/goreleaser`](https://hub.docker.com/r/goreleaser/goreleaser)
-- [`ghcr.io/goreleaser/goreleaser`](https://github.com/goreleaser/goreleaser/pkgs/container/goreleaser)
-
-Example usage:
-
-```sh
-docker run --rm --privileged \
-    -v $PWD:/go/src/github.com/user/repo \
-    -v /var/run/docker.sock:/var/run/docker.sock \
-    -w /go/src/github.com/user/repo \
-    -e GITHUB_TOKEN \
-    -e DOCKER_USERNAME \
-    -e DOCKER_PASSWORD \
-    -e DOCKER_REGISTRY \
-    goreleaser/goreleaser release
-```
-
-!!! info
-    Currently, the provided docker image does not support
-    the generation of snapcraft packages.
-
-Note that the image will almost always have the last stable Go version.
-
-The `DOCKER_REGISTRY` environment variable can be left empty when you are
-releasing to the public docker registry.
-
-If you need more things, you are encouraged to keep your own image. You can
-always use GoReleaser's [own Dockerfile][dockerfile] as an example though
-and iterate from that.
-
-[dockerfile]: https://github.com/goreleaser/goreleaser/blob/main/Dockerfile
-[releases]: https://github.com/goreleaser/goreleaser/releases
-[pro-releases]: https://github.com/goreleaser/goreleaser-pro/releases
-[cosign]: https://github.com/sigstore/cosign
-
-## Compiling from source
+## Compile and install from source
 
 Here you have two options:
 
@@ -147,24 +135,21 @@ If you just want to build from source for whatever reason, follow these steps:
 **clone:**
 
 ```sh
-git clone https://github.com/goreleaser/goreleaser
-cd goreleaser
+git clone https://github.com/raffis/kjournal
+cd kjournal
 ```
 
-**get the dependencies:**
+**build image:**
 
 ```sh
-go mod tidy
+make docker-build
 ```
 
-**build:**
+**deploy:**
 
 ```sh
-go build -o goreleaser .
+make deploy
 ```
 
-**verify it works:**
-
-```sh
-./goreleaser --version
-```
+!!! Note
+    `make deploy` uses kustomize under the hood to apply the overlay `config/default` with the just built image.

@@ -14,6 +14,7 @@ type APIServerConfig struct {
 
 type Backend struct {
 	Elasticsearch *BackendElasticsearch `json:"elasticsearch"`
+	GCloud        *BackendGCloud        `json:"gcloud"`
 }
 
 type BackendElasticsearch struct {
@@ -22,13 +23,22 @@ type BackendElasticsearch struct {
 	CACert           string   `json:"cacert"`
 }
 
+type BackendGCloud struct {
+	APIKey string `json:"apiKey"`
+}
+
 type API struct {
-	Resource         string              `json:"resource"`
-	FieldMap         map[string][]string `json:"fieldMap"`
-	DropFields       []string            `json:"dropFields"`
-	Filter           map[string]string   `json:"filter"`
-	Backend          ApiBackend          `json:"backend"`
-	DefaultTimeRange string              `json:"defaultTimeRange"`
+	Resource         string            `json:"resource"`
+	FieldMap         []FieldMap        `json:"fieldMap"`
+	Filter           map[string]string `json:"filter"`
+	Backend          ApiBackend        `json:"backend"`
+	DefaultTimeRange string            `json:"defaultTimeRange"`
+}
+
+type FieldMap struct {
+	Field  string   `json:"field"`
+	Lookup []string `json:"lookup"`
+	Drop   []string `json:"drop"`
 }
 
 type ApiBackend struct {

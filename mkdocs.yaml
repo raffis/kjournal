@@ -64,8 +64,8 @@ nav:
 - how-it-works.md
 - resources.md
 - Prerequisites:
-  - prerequisites/audit.md
   - prerequisites/ship.md
+  - prerequisites/audit.md
   - prerequisites/event-exporter.md
 - Server:
   - server/quick-start.md

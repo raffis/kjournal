@@ -1,24 +1,24 @@
-FROM alpine:3.16 as builder
+FROM golang:1.18 as builder
 
-RUN apk add --no-cache ca-certificates curl
+WORKDIR /workspace
+# Copy the Go Modules manifests
+COPY go.mod go.mod
+COPY go.sum go.sum
+# cache deps before building and copying source so that we don't need to re-download as much
+# and so that source changes don't invalidate our downloaded layer
+RUN go mod download
 
-ARG ARCH=linux/amd64
-ARG KUBECTL_VER=1.24.1
+# Copy the go source
+COPY internal internal
+COPY pkg pkg
+COPY cmd cmd
 
-RUN curl -sL https://storage.googleapis.com/kubernetes-release/release/v${KUBECTL_VER}/bin/${ARCH}/kubectl \
-    -o /usr/local/bin/kubectl && chmod +x /usr/local/bin/kubectl && \
-    kubectl version --client=true
+# Build
+RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -a -o kjournal cmd/*
 
 FROM alpine:3.16 as kjournal-cli
+WORKDIR /
+COPY --from=builder /workspace/kjournal /usr/bin/
+USER 65532:65532
 
-# Create minimal nsswitch.conf file to prioritize the usage of /etc/hosts over DNS queries.
-# https://github.com/gliderlabs/docker-alpine/issues/367#issuecomment-354316460
-RUN [ ! -e /etc/nsswitch.conf ] && echo 'hosts: files dns' > /etc/nsswitch.conf
-
-RUN apk add --no-cache ca-certificates
-
-COPY --from=builder /usr/local/bin/kubectl /usr/local/bin/
-COPY --chmod=755 kjournal /usr/local/bin/
-
-USER 65534:65534
-ENTRYPOINT [ "kjournal" ]
+ENTRYPOINT ["/usr/bin/kjournal"]

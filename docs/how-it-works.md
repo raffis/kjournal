@@ -21,8 +21,9 @@ graph LR
 A kubernetes native solution to serve logs as a kubernetes API. It may bee seen as an extension to the integrated logs API endpoint.
 However the goal for kjournal is to expose logs from the longterm log storage back to kubernetes api consumers.
 Logs should be searchable, watchable and consumable in a kubernete style manner.
+Likewise log endpoints must RBAC protected as and consumable via a kubernetes signed authentication token.
 
-## No goals
+## Non goals
 It is **not** the job of kjournal to feed the kubernetes logs into your longterm storage solution.
 For this part various tooling exists. The job of kjournal is rather the other way around.
 kjournal itself does **not** store any data. It serves logs from a backing storage.
