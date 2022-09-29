@@ -1,64 +1,20 @@
-package elasticsearch
+package gcloud
 
-import (
-	"context"
-	"encoding/json"
-	"strings"
-
-	metainternalversion "k8s.io/apimachinery/pkg/apis/meta/internalversion"
-	"k8s.io/apimachinery/pkg/selection"
-	"k8s.io/apiserver/pkg/endpoints/request"
-)
-
-var operatorMap = map[selection.Operator][]string{
-	selection.Equals:       {"must", "match_phrase"},
-	selection.DoubleEquals: {"must", "match_phrase"},
-	selection.NotEquals:    {"must_not", "match_phrase"},
-	selection.GreaterThan:  {"must", "range"},
-	selection.LessThan:     {"must", "range"},
-	selection.DoesNotExist: {"must_not", "exists"},
-	selection.Exists:       {"must", "exists"},
-}
-
+/*
 type queryBuilder struct {
 	ctx     context.Context
 	options *metainternalversion.ListOptions
-	rest    *elasticsearchREST
+	rest    *gcloudREST
 	query   map[string]interface{}
 }
 
-func QueryFromListOptions(ctx context.Context, options *metainternalversion.ListOptions, rest *elasticsearchREST) map[string]interface{} {
-	q := queryBuilder{
-		rest:    rest,
-		ctx:     ctx,
-		options: options,
-		query: map[string]interface{}{
-			"_source": map[string]interface{}{
-				"excludes": []interface{}{"kind", "apiVersion"},
-			},
-			"sort": []map[string]interface{}{},
-			"query": map[string]interface{}{
-				"bool": map[string]interface{}{
-					"must":     []map[string]interface{}{},
-					"must_not": []map[string]interface{}{},
-				},
-			},
-		},
-	}
+func QueryFromListOptions(ctx context.Context, options *metainternalversion.ListOptions, rest *gcloudREST) map[string]interface{} {
 
-	q.continueToken().
-		sortByTimestampFields().
-		fieldSelectors().
-		namespaceFilter()
-
-	return q.query
 }
 
 func (b *queryBuilder) fieldMapping(field string) []string {
-	for _, fieldMap := range b.rest.opts.FieldMap {
-		if fieldMap.Field == field {
-			return fieldMap.Lookup
-		}
+	if val, ok := b.rest.opts.FieldMap[field]; ok {
+		return val
 	}
 
 	return []string{field}
@@ -102,9 +58,9 @@ func (b *queryBuilder) fieldSelectors() *queryBuilder {
 		q := b.query["query"].(map[string]interface{})["bool"].(map[string]interface{})[operator[0]].([]map[string]interface{})
 		fieldsMap := []string{req.Key()}
 
-		for _, fieldMap := range b.rest.opts.FieldMap {
-			for k, fieldTo := range fieldMap.Lookup {
-				lookupKey := strings.TrimLeft(strings.Replace(req.Key(), fieldMap.Field, fieldTo, -1), ".")
+		for field, fieldsTo := range b.rest.opts.FieldMap {
+			for k, fieldTo := range fieldsTo {
+				lookupKey := strings.TrimLeft(strings.Replace(req.Key(), field, fieldTo, -1), ".")
 				if lookupKey != req.Key() {
 					fieldsMap[k] = lookupKey
 					break
@@ -219,3 +175,4 @@ func (b *queryBuilder) namespaceFilter() *queryBuilder {
 	b.query["query"].(map[string]interface{})["bool"].(map[string]interface{})["must"] = q
 	return b
 }
+*/

@@ -1,4 +1,3 @@
-# Build the manager binary
 FROM golang:1.18 as builder
 
 WORKDIR /workspace
@@ -16,7 +15,7 @@ COPY pkg pkg
 COPY cmd cmd
 
 # Build
-RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -a -o apiserver cmd/*
+RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -o apiserver cmd/*
 
 # Use distroless as minimal base image to package the manager binary
 # Refer to https://github.com/GoogleContainerTools/distroless for more details

@@ -87,8 +87,8 @@ setup_tmp() {
 
 # Find version from Github metadata
 get_release_version() {
-    if [[ -n "${KJOURNAL_VERSION}" ]]; then
-      SUFFIX_URL="tags/v${KJOURNAL_VERSION}"
+    if [[ -n "${VERSION}" ]]; then
+      SUFFIX_URL="tags/v${VERSION}"
     else
       SUFFIX_URL="latest"
     fi
@@ -98,9 +98,9 @@ get_release_version() {
     info "Downloading metadata ${METADATA_URL}"
     download "${TMP_METADATA}" "${METADATA_URL}"
 
-    VERSION_KJOURNAL=$(grep '"tag_name":' "${TMP_METADATA}" | sed -E 's/.*"([^"]+)".*/\1/' | cut -c 2-)
-    if [[ -n "${VERSION_KJOURNAL}" ]]; then
-        info "Using ${VERSION_KJOURNAL} as release"
+    VERSION=$(grep '"tag_name":' "${TMP_METADATA}" | sed -E 's/.*"([^"]+)".*/\1/' | cut -c 2-)
+    if [[ -n "${VERSION}" ]]; then
+        info "Using ${VERSION} as release"
     else
         fatal "Unable to determine release version"
     fi
@@ -162,24 +162,24 @@ vercomp () {
 
 # Download hash from Github URL
 download_hash() {
-    HASH_URL="https://github.com/${GITHUB_REPO}/releases/download/v${VERSION_KJOURNAL}/kjournal_${VERSION_KJOURNAL}_checksums.txt"
+    HASH_URL="https://github.com/${GITHUB_REPO}/releases/download/v${VERSION}/kjournal_${VERSION}_checksums.txt"
     # NB: support the checksum filename format prior to v0.6.0
     set +e
-    vercomp ${VERSION_KJOURNAL} 0.6.0
+    vercomp ${VERSION} 0.6.0
     if [[ $? -eq 2 ]]; then
-        HASH_URL="https://github.com/${GITHUB_REPO}/releases/download/v${VERSION_KJOURNAL}/kjournal_${VERSION_KJOURNAL}_checksums.txt"
+        HASH_URL="https://github.com/${GITHUB_REPO}/releases/download/v${VERSION}/kjournal_${VERSION}_checksums.txt"
     fi
     set -e
 
     info "Downloading hash ${HASH_URL}"
     download "${TMP_HASH}" "${HASH_URL}"
-    HASH_EXPECTED=$(grep " kjournal_${VERSION_KJOURNAL}_${OS}_${ARCH}.tar.gz$" "${TMP_HASH}")
+    HASH_EXPECTED=$(grep " kjournal_${VERSION}_${OS}_${ARCH}.tar.gz$" "${TMP_HASH}")
     HASH_EXPECTED=${HASH_EXPECTED%%[[:blank:]]*}
 }
 
 # Download binary from Github URL
 download_binary() {
-    BIN_URL="https://github.com/${GITHUB_REPO}/releases/download/v${VERSION_KJOURNAL}/kjournal_${VERSION_KJOURNAL}_${OS}_${ARCH}.tar.gz"
+    BIN_URL="https://github.com/${GITHUB_REPO}/releases/download/v${VERSION}/kjournal_${VERSION}_${OS}_${ARCH}.tar.gz"
     info "Downloading binary ${BIN_URL}"
     download "${TMP_BIN}" "${BIN_URL}"
 }

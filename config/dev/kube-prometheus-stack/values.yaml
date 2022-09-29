@@ -1,0 +1,15 @@
+defaultRules:
+  create: false
+
+alertmanager:
+  enabled: false
+
+prometheusOperator:
+  tls:
+    enabled: false
+  admissionWebhooks:
+    enabled: false
+
+grafana:
+  testFramework:
+    enabled: false

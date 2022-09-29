@@ -1,0 +1,25 @@
+apiVersion: config.kjournal/v1alpha1
+kind: APIServerConfig
+
+backend:
+  gcloud:
+    apiKey: AIzaSyA-Xn8u-kbzQZLusBK5pSDVqxAO3fQ9gOM
+
+apis:
+- resource: containerlogs
+  fieldMap:
+    metadata.namespace: [Resource.Labels.namespace_name]
+    metadata.creationTimestamp: ["Timestamp"]
+    pod: [Resource.Labels.pod_name]
+    container: [Resource.Labels.container_name]
+    payload: ["TextPayload", "ProtoPayload", "JonPayload"]
+    metadata.labels: [Labels]
+  backend:
+
+- resource: events
+  backend:
+
+- resource: auditevents
+  backend:
+
+- resource: logs

@@ -19,12 +19,15 @@ package main
 import (
 	"fmt"
 	"net/http"
+	_ "net/http/pprof"
+	"runtime"
 
 	"k8s.io/klog/v2"
 	"sigs.k8s.io/apiserver-runtime/pkg/builder"
 
 	// +kubebuilder:scaffold:resource-imports
 
+	"github.com/pyroscope-io/client/pyroscope"
 	adapterv1alpha1 "github.com/raffis/kjournal/internal/apis/core/v1alpha1"
 	"github.com/raffis/kjournal/pkg/apis/core/v1alpha1"
 	"github.com/spf13/cobra"
@@ -57,6 +60,38 @@ func (m *httpWrap) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 }
 
 func main() {
+	runtime.SetMutexProfileFraction(5)
+	runtime.SetBlockProfileRate(5)
+
+	pyroscope.Start(pyroscope.Config{
+		ApplicationName: "simple.golang.app",
+
+		// replace this with the address of pyroscope server
+		ServerAddress: "http://pyroscope:4040",
+
+		// you can disable logging by setting this to nil
+		Logger: pyroscope.StandardLogger,
+
+		// optionally, if authentication is enabled, specify the API key:
+		// AuthToken: os.Getenv("PYROSCOPE_AUTH_TOKEN"),
+
+		ProfileTypes: []pyroscope.ProfileType{
+			// these profile types are enabled by default:
+			pyroscope.ProfileCPU,
+			pyroscope.ProfileAllocObjects,
+			pyroscope.ProfileAllocSpace,
+			pyroscope.ProfileInuseObjects,
+			pyroscope.ProfileInuseSpace,
+
+			// these profile types are optional:
+			pyroscope.ProfileGoroutines,
+			pyroscope.ProfileMutexCount,
+			pyroscope.ProfileMutexDuration,
+			pyroscope.ProfileBlockCount,
+			pyroscope.ProfileBlockDuration,
+		},
+	})
+
 	cmd, err := builder.APIServer.
 		// +kubebuilder:scaffold:resource-register
 		WithResourceAndHandler(&v1alpha1.Log{}, storageMapper(&v1alpha1.Log{})).

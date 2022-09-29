@@ -17,7 +17,7 @@ Below you can find the steps for each of them.
 
 === "Bash"
     ```sh
-    curl -sfL https://goreleaser.com/static/run | bash
+    curl -sfL https://raw.githubusercontent.com/raffis/kjournal/main/cli/install/kjournal.sh | bash
     ```
 
 === "Docker"
@@ -25,32 +25,52 @@ Below you can find the steps for each of them.
     docker pull ghcr.io/raffis/kjournal/cli
     ```
 
-=== "deb / rpm / apk"
-    Download the `.deb`, `.rpm` or `.apk` packages from the [OSS releases page][releases] and install them with the appropriate tools.
+### Specific version
 
+Due server compatibility reasons (or any other) you may want to install anoher version rather than the latest.
+Here version `v0.0.1` gets installed.
 
-=== "Manual"
-    Download the pre-compiled binaries from the [OSS releases page][releases] and copy them to the desired location.
-
-
-## Additional Options
-    You can also set the `VERSION` and `DISTRIBUTION` variables to specify
-    a version instead of using latest and `pro` or `oss` distributions,
-    respectively.
-
-    You can also pass flags and args to GoReleaser:
-
-    ```bash
-    curl -sfL https://goreleaser.com/static/run |
-      VERSION=__VERSION__ DISTRIBUTION=oss bash -s -- check
+=== "Brew"
+    ```sh
+    brew install kjournal/tap/kjournal@v0.0.1
     ```
 
-!!! tip
-    This script does not install anything, it just downloads, verifies and
-    runs GoReleaser.
-    It's purpose is to be used within scripts and CIs.
+=== "Go"
+    ```sh
+    go install github.com/raffis/kjournal@v0.0.1
+    ```
+
+=== "Bash"
+    ```sh
+    curl -sfL https://raw.githubusercontent.com/raffis/kjournal/main/cli/install/kjournal.sh | VERSION=0.0.1 bash
+    ```
+
+=== "Docker"
+    ```sh
+    docker pull ghcr.io/raffis/kjournal/cli:v0.0.1
+    ```
 
 
+## Enable shell completion
+
+=== "Bash"
+    ```sh
+    kjournal shell-completion bash
+    ```
+
+=== "Fish"
+    ```sh
+    kjournal shell-completion fish
+    ```
+
+## Bash Additional Options
+You can also set the `VERSION`, `OS`,  and `ARCH` variables to specify
+a version instead of using latest.
+
+```bash
+curl -sfL https://raw.githubusercontent.com/raffis/kjournal/main/cli/install/kjournal.sh |
+    VERSION=__VERSION__  bash -s -- check
+```
 
 ## Verifying the artifacts
 
