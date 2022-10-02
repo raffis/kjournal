@@ -58,9 +58,19 @@ Here version `v0.0.1` gets installed.
     kjournal shell-completion bash
     ```
 
+=== "zsh"
+    ```sh
+    kjournal shell-completion zsh
+    ```
+
 === "Fish"
     ```sh
     kjournal shell-completion fish
+    ```
+
+=== "Fish"
+    ```sh
+    kjournal shell-completion powershell
     ```
 
 ## Bash Additional Options

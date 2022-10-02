@@ -8,25 +8,10 @@ backend:
 
 apis:
 - resource: containerlogs
-  fieldMap:
-    metadata.namespace: [kubernetes.namespace_name]
-    metadata.creationTimestamp: ["@timestamp"]
-    pod: [kubernetes.pod_name]
-    container: [kubernetes.container_name]
-    payload: ["."]
-    metadata.labels: [kubernetes.labels]
-    metadata.annotations.docker_id: [kubernetes.docker_id]
-    metadata.annotations.host: [kubernetes.host]
-    metadata.annotations.pod_id: [kubernetes.pod_id]
-
-  dropFields:
-  - payload.@timestamp
-  - payload.kubernetes
-
   backend:
     elasticsearch:
-      index: logstash-*
-      timestampFields: ["@timestamp"]
+      index: container-*
+      timestampFields: ["metadata.creationTimestamp"]
 
 - resource: events
   backend:

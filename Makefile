@@ -57,22 +57,29 @@ test: generate fmt vet envtest ## Run tests.
 
 .PHONY: kind-test
 kind-test: docker-build
-# apiserver-boot  build container --targets apiserver --image kjournal:latest &&
 	kind load docker-image ${IMG} --name kjournal && kubectl -n logging rollout restart deployment/kjournal-apiserver && stern -n logging kjournal
 
 ##@ Build
 
+.PHONY: prepare-embeds
+prepare-embed:
+	rm -rf cli/cmd/config
+	mkdir -p cli/cmd/config
+	cp -rpv config/{apiserver,components,prometheus,namespace,rbac} cli/cmd/config/
+
 .PHONY: build
 build: generate fmt vet ## Build apiserver binary.
-	go build -o bin/apiserver cmd/*
+	CGO_ENABLED=0 go build -o bin/apiserver cmd/*
 
 .PHONY: run
 run: generate fmt vet ## Run apiserver from your host.
 	go run cmd/*
 
 .PHONY: docker-build
-docker-build: test ## Build docker image with the apiserver.
-	docker build -t ${IMG} .
+docker-build: build ## Build docker image with the apiserver.
+	cp bin/apiserver kjournal-apiserver
+	docker build -f Dockerfile.release -t ${IMG} .
+	rm kjournal-apiserver
 
 .PHONY: docker-push
 docker-push: ## Push docker image with the apiserver.
@@ -92,10 +99,15 @@ gen-crd-api-reference-docs: ## Download gen-crd-api-reference-docs locally if ne
 apiserver-cmdref: build  ## Build apiserver command line reference
 	./bin/apiserver cmdref -d docs/server/cmdref
 
+.PHONY: helm-docs
+helm-docs:
+	helm-docs -c chart/
+
 .PHONY: gen-docs
-gen-docs: api-docs apiserver-cmdref mkdocs  ## Build docs using mkdocs
+gen-docs: api-docs apiserver-cmdref helm-docs mkdocs  ## Build docs using mkdocs
 	cp README.md docs/index.md
 	cp CONTRIBUTING.md docs/contributing.md
+	cp chart/kjournal/README.md docs/server/methods/helm.md
 	mkdocs build
 
 .PHONY: mkdocs

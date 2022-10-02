@@ -24,10 +24,7 @@
     ```sh
     docker pull ghcr.io/raffis/kjournal/cli:latest
     ```
-
-=== "Manual"
-    Download the pre-compiled binaries from the [OSS releases page][releases] and copy them to the desired location.
-
+    
 You will find in the CLI installation documentation more advanced options regarding the cli installation.
 
 ## Container logs
