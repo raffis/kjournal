@@ -9,25 +9,19 @@ backend:
 apis:
 - resource: containerlogs
   fieldMap:
-  - field: metadata.namespace
-    lookup: [kubernetes.namespace_name]
-  - field: metadata.creationTimestamp
-    lookup: ["@timestamp"]
-  - field: pod
-    lookup: [kubernetes.pod_name]
-  - field: container
-    lookup: [kubernetes.container_name]
-  - field: metadata.labels
-    lookup: [kubernetes.labels]
-  - field: metadata.annotations.host
-    lookup: [kubernetes.host]
-  - field: metadata.annotations.pod_id
-    lookup: [kubernetes.pod_id]
-  - field: payload
-    lookup: ["."]
-    drop: 
-    - "@timestamp"
-    - kubernetes
+    metadata.namespace: [kubernetes.namespace_name]
+    metadata.creationTimestamp: ["@timestamp"]
+    pod: [kubernetes.pod_name]
+    container: [kubernetes.container_name]
+    payload: ["."]
+    metadata.labels: [kubernetes.labels]
+    metadata.annotations.docker_id: [kubernetes.docker_id]
+    metadata.annotations.host: [kubernetes.host]
+    metadata.annotations.pod_id: [kubernetes.pod_id]
+
+  dropFields:
+  - payload.@timestamp
+  - payload.kubernetes
 
   backend:
     elasticsearch:
@@ -48,10 +42,8 @@ apis:
 
 - resource: logs
   fieldMap:
-  - field: metadata.creationTimestamp
-    lookup: ["@timestamp", "metadata.creationTimestamp", "stageTimestamp"]
-  - field: payload
-    lookup: ["."]
+    metadata.creationTimestamp: ["@timestamp", "metadata.creationTimestamp", "stageTimestamp"]
+    payload: ["."]
   backend:
     elasticsearch:
       timestampFields: ["@timestamp", "metadata.creationTimestamp"]

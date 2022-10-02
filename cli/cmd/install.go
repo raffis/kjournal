@@ -115,6 +115,14 @@ func installCmdRun(cmd *cobra.Command, args []string) error {
 	}
 
 	manifestsBase := ""
+	if version == VERSION {
+		manifestsBase = "./"
+		err := writeEmbeddedManifests(tmpDir)
+		if err != nil {
+			return fmt.Errorf("install failed : %w", err)
+		}
+	}
+
 	opts := install.Options{
 		BaseURL:         installArgs.manifestsPath,
 		AsKustomization: installArgs.asKustomization,

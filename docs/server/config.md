@@ -5,48 +5,40 @@ Besides each resource may have custom configuration related to the backend confi
 
 Example config:
 
-```yaml
-apiVersion: config.kjournal/v1alpha1
-kind: APIServerConfig
+=== "v1alpha1"
+  ```yaml
+  apiVersion: config.kjournal/v1alpha1
+  kind: APIServerConfig
 
-backend: 
-  elasticsearch:
-    url:
-    - http://elasticsearch-master:9200
-
-apis:
-- resource: containerlogs
-  fieldMap:
-    metadata.namespace: [kubernetes.namespace_name]
-    metadata.creationTimestamp: ["@timestamp"]
-    pod: [kubernetes.pod_name]
-    container: [kubernetes.container_name]
-    payload: ["."]
-  dropFields:
-  - payload.@timestamp
-  - payload.kubernetes
-  backend:
+  backend: 
     elasticsearch:
-      index: logstash-*
+      url:
+      - http://elasticsearch-master:9200
 
-- resource: events
-  backend:
-    elasticsearch:
-        index: k8sevents-*
+  apis:
+  - resource: containerlogs
+    backend:
+      elasticsearch:
+        index: container-*
 
-- resource: auditevents
-  backend:
-    elasticsearch:
-        index: k8saudit-*
+  - resource: events
+    backend:
+      elasticsearch:
+          index: k8sevents-*
 
-- resource: logs
-  fieldMap:
-    metadata.creationTimestamp: ["@timestamp"]
-    payload: ["."]
-  backend:
-    elasticsearch:
-      index: "*"
-```
+  - resource: auditevents
+    backend:
+      elasticsearch:
+          index: k8saudit-*
+
+  - resource: logs
+    fieldMap:
+      metadata.creationTimestamp: ["@timestamp"]
+      payload: ["."]
+    backend:
+      elasticsearch:
+        index: "*"
+  ```
 
 ## Apis
 
@@ -54,7 +46,24 @@ Each resource can be customized including how your long-term storage logs are ma
 
 ### Field maps
 
-A field map can be used to map a kjournal api field to the stored field in your backend storage using dotted paths.
+A field map can be used to map a kjournal api to the way the log messages are structured in the long term storage.
+There might be multiple reasons you want do define a fieldmap for kjournal rather than changing the log structure at ingest time.
+For instance to support backwards compatibility or there might be other services using the current log structre.
+
+The field map basicaly consists one or multiple field maps:
+
+```yaml
+fieldMap:
+  kjournal-api-field: [source-field-1, source-field-2]
+  ...
+```
+!!! Note
+    You don't need to define fields which are already at the correct path for the kjournal API.
+
+
+!!! Note
+    You can define one or multiple source fields. The first source field found from the storage will be mapped to the output document.
+    The fields after are ignored.
 
 ```yaml
 resource: containerlogs
@@ -67,6 +76,65 @@ The above mapping will decode the stored log into a `containerlogs.v1alpha1.core
 
 !!! Note
     You can use `.` which represents the object root. For example `payload: "."` means that the entire stored object will be mapped to the `payload` field and not just a specific path.
+
+#### Example how to use field mapping
+
+```mermaid
+graph LR
+  A[<b>storage-document</b></br>kubernetes.namespace_name: default</br>kubernetes.pod_name: sd]
+  B[<b>field-mapper</b></br>]
+  C[<b>kjournal-api</b></br>]
+  
+  A --> B;
+  B --> C;
+
+  style A text-align:left
+```
+
+The config to support this use case would be as follow:
+=== "v1alpha1"
+  ```yaml
+  apiVersion: config.kjournal/v1alpha1
+  kind: APIServerConfig
+
+  backend: 
+    elasticsearch:
+      url:
+      - http://elasticsearch-master:9200
+
+  apis:
+  - resource: containerlogs
+    fieldMap:
+      metadata.namespace: [kubernetes.namespace_name]
+      metadata.creationTimestamp: ["@timestamp"]
+      pod: [kubernetes.pod_name]
+      container: [kubernetes.container_name]
+      payload: ["."]
+    dropFields:
+    - payload.@timestamp
+    - payload.kubernetes
+    backend:
+      elasticsearch:
+        index: logstash-*
+
+  - resource: events
+    backend:
+      elasticsearch:
+          index: k8sevents-*
+
+  - resource: auditevents
+    backend:
+      elasticsearch:
+          index: k8saudit-*
+
+  - resource: logs
+    fieldMap:
+      metadata.creationTimestamp: ["@timestamp"]
+      payload: ["."]
+    backend:
+      elasticsearch:
+        index: "*"
+  ```
 
 ### Remove fields
 

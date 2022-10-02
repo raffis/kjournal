@@ -193,7 +193,29 @@ string
 <td>
 <code>refreshRate</code><br>
 <em>
-time.Duration
+<a href="https://godoc.org/k8s.io/apimachinery/pkg/apis/meta/v1#Duration">
+Kubernetes meta/v1.Duration
+</a>
+</em>
+</td>
+<td>
+</td>
+</tr>
+<tr>
+<td>
+<code>timestampFields</code><br>
+<em>
+[]string
+</em>
+</td>
+<td>
+</td>
+</tr>
+<tr>
+<td>
+<code>bulkSize</code><br>
+<em>
+int64
 </em>
 </td>
 <td>
@@ -225,6 +247,18 @@ time.Duration
 <em>
 <a href="#config.kjournal/v1alpha1.BackendElasticsearch">
 BackendElasticsearch
+</a>
+</em>
+</td>
+<td>
+</td>
+</tr>
+<tr>
+<td>
+<code>gcloud</code><br>
+<em>
+<a href="#config.kjournal/v1alpha1.BackendGCloud">
+BackendGCloud
 </a>
 </em>
 </td>
@@ -274,6 +308,36 @@ bool
 <tr>
 <td>
 <code>cacert</code><br>
+<em>
+string
+</em>
+</td>
+<td>
+</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+<h3 id="config.kjournal/v1alpha1.BackendGCloud">BackendGCloud
+</h3>
+<p>
+(<em>Appears on:</em>
+<a href="#config.kjournal/v1alpha1.Backend">Backend</a>)
+</p>
+<div class="md-typeset__scrollwrap">
+<div class="md-typeset__table">
+<table>
+<thead>
+<tr>
+<th>Field</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>
+<code>apiKey</code><br>
 <em>
 string
 </em>

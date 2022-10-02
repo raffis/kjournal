@@ -18,6 +18,8 @@ builds:
   - amd64
   - arm
   - arm64
+  env:
+  - CGO_ENABLED=0
 
 archives:
 - id: cli

@@ -28,17 +28,12 @@ type BackendGCloud struct {
 }
 
 type API struct {
-	Resource         string            `json:"resource"`
-	FieldMap         []FieldMap        `json:"fieldMap"`
-	Filter           map[string]string `json:"filter"`
-	Backend          ApiBackend        `json:"backend"`
-	DefaultTimeRange string            `json:"defaultTimeRange"`
-}
-
-type FieldMap struct {
-	Field  string   `json:"field"`
-	Lookup []string `json:"lookup"`
-	Drop   []string `json:"drop"`
+	Resource         string              `json:"resource"`
+	FieldMap         map[string][]string `json:"fieldMap"`
+	DropFields       []string            `json:"dropFields"`
+	Filter           map[string]string   `json:"filter"`
+	Backend          ApiBackend          `json:"backend"`
+	DefaultTimeRange string              `json:"defaultTimeRange"`
 }
 
 type ApiBackend struct {

@@ -37,6 +37,7 @@ plugins:
       minify_html: true
 
 markdown_extensions:
+  - tables
   - footnotes
   - pymdownx.tabbed:
       alternate_style: true 
@@ -72,6 +73,8 @@ nav:
   - server/config.md
   - server/install.md
   - server/uninstall.md
+  - Methods:
+    - server/methods/helm.md
   - Storage:
     - server/storage/elasticsearch.md
     - server/storage/other.md

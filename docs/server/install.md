@@ -18,15 +18,31 @@ Below you can find the steps for each of them.
 
 === "Helm"
     ```sh
-    helm upgrade kjournal --install oci://github.com/raffis/kjournal/helm
+    helm upgrade kjournal --install oci://github.com/raffis/charts/kjournal
     ```
 
-=== "Manual"
-    Download the pre-compiled binaries from the [OSS releases page][releases] and copy them to the desired location.
+    You may find addtional documentation regarding support chart values in the chart documentation [here](methods/helm).
 
 !!! Warning
     It is recommended to enable certmanager support on any production cluster. See bellow. 
 
+
+## Install a specific version of the pre-compiled apiserver
+
+=== "kjournal"
+    ```sh
+    kjournal install -n kjournal-system --version 0.0.1
+    ```
+
+=== "Kustomize"
+    ```sh
+    kustomize build github.com/raffis/kjournal?ref=v0.0.1//config/default | kubectl apply -f -
+    ```
+
+=== "Helm"
+    ```sh
+    helm upgrade kjournal --install oci://github.com/raffis/charts/kjournal --version 0.0.1
+    ```
 
 ## Certmanager support
 

@@ -5,11 +5,10 @@
 [![Coverage Status](https://coveralls.io/repos/github/raffis/kjournal/badge.svg?branch=master)](https://coveralls.io/github/raffis/kjournal?branch=master)
 [![Artifact HUB](https://img.shields.io/endpoint?url=https://artifacthub.io/badge/repository/kjournal)](https://artifacthub.io/packages/search?repo=kjournal)
 
-kjournal closes the gap between long-term log storage and your client. kjournal is a kubernetes api server 
-which makes your longterm log storage available as vanilla kubernetes api.
+kjournal closes the gap between long-term log storage and your client. kjournal is a simple and lightweight kubernetes api server 
+which makes your longterm log storage available as consumable readonly kubernetes api.
 With kjournal you can easily access container logs from old (and current pods) as well as other long-term logs including out of the box 
-support for kubernetes audit events.
-Want to access logs with kubectl or kjournal cli? We got you!
+support for kubernetes audit logs and v1.events.
 
 ## Documention
 

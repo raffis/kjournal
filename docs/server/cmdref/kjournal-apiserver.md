@@ -60,13 +60,13 @@ kjournal-apiserver [flags]
       --client-ca-file string                                   If set, any request presenting a client certificate signed by one of the authorities in the client-ca-file is authenticated with an identity corresponding to the CommonName of the client certificate.
       --config string                                           Path to kjournal config
       --contention-profiling                                    Enable lock contention profiling, if profiling is enabled
-      --default-watch-cache-size int                            Default watch cache size. If zero, watch cache will be disabled for resources that do not have a default watch size set. (default 100)
       --delete-collection-workers int                           Number of workers spawned for DeleteCollection call. These are used to speed up namespace cleanup. (default 1)
       --disable-admission-plugins strings                       admission plugins that should be disabled although they are in the default enabled plugins list (NamespaceLifecycle, MutatingAdmissionWebhook, ValidatingAdmissionWebhook). Comma-delimited list of admission plugins: MutatingAdmissionWebhook, NamespaceLifecycle, ValidatingAdmissionWebhook. The order of plugins in this flag does not matter.
       --egress-selector-config-file string                      File with apiserver egress selector configuration.
       --enable-admission-plugins strings                        admission plugins that should be enabled in addition to default enabled ones (NamespaceLifecycle, MutatingAdmissionWebhook, ValidatingAdmissionWebhook). Comma-delimited list of admission plugins: MutatingAdmissionWebhook, NamespaceLifecycle, ValidatingAdmissionWebhook. The order of plugins in this flag does not matter.
       --enable-garbage-collector                                Enables the generic garbage collector. MUST be synced with the corresponding flag of the kube-controller-manager. (default true)
       --encryption-provider-config string                       The file containing configuration for encryption providers to be used for storing secrets in etcd
+      --etcd-readycheck-timeout duration                        The timeout to use when checking etcd readiness (default 2s)
       --feature-gates mapStringBool                             A set of key=value pairs that describe feature gates for alpha/experimental features. Options are:
                                                                 APIListChunking=true|false (BETA - default=true)
                                                                 APIPriorityAndFairness=true|false (BETA - default=true)
@@ -75,13 +75,12 @@ kjournal-apiserver [flags]
                                                                 APIServerTracing=true|false (ALPHA - default=false)
                                                                 AllAlpha=true|false (ALPHA - default=false)
                                                                 AllBeta=true|false (BETA - default=false)
-                                                                CustomResourceValidationExpressions=true|false (ALPHA - default=false)
-                                                                EfficientWatchResumption=true|false (BETA - default=true)
-                                                                OpenAPIEnums=true|false (ALPHA - default=false)
-                                                                OpenAPIV3=true|false (ALPHA - default=false)
+                                                                CustomResourceValidationExpressions=true|false (BETA - default=true)
+                                                                KMSv2=true|false (ALPHA - default=false)
+                                                                OpenAPIEnums=true|false (BETA - default=true)
+                                                                OpenAPIV3=true|false (BETA - default=true)
                                                                 RemainingItemCount=true|false (BETA - default=true)
-                                                                RemoveSelfLink=true|false (BETA - default=true)
-                                                                ServerSideFieldValidation=true|false (ALPHA - default=false)
+                                                                ServerSideFieldValidation=true|false (BETA - default=true)
                                                                 StorageVersionAPI=true|false (ALPHA - default=false)
                                                                 StorageVersionHash=true|false (BETA - default=true)
   -h, --help                                                    help for kjournal-apiserver
@@ -109,7 +108,7 @@ kjournal-apiserver [flags]
       --tls-sni-cert-key namedCertKey                           A pair of x509 certificate and private key file paths, optionally suffixed with a list of domain patterns which are fully qualified domain names, possibly with prefixed wildcard segments. The domain patterns also allow IP addresses, but IPs should only be used if the apiserver has visibility to the IP address requested by a client. If no domain patterns are provided, the names of the certificate are extracted. Non-wildcard matches trump over wildcard matches, explicit domain patterns trump over extracted names. For multiple key/certificate pairs, use the --tls-sni-cert-key multiple times. Examples: "example.crt,example.key" or "foo.crt,foo.key:*.foo.com,foo.com". (default [])
       --tracing-config-file string                              File with apiserver tracing configuration.
       --watch-cache                                             Enable watch caching in the apiserver (default true)
-      --watch-cache-sizes strings                               Watch cache size settings for some resources (pods, nodes, etc.), comma separated. The individual setting format: resource[.group]#size, where resource is lowercase plural (no version), group is omitted for resources of apiVersion v1 (the legacy core API) and included for others, and size is a number. It takes effect when watch-cache is enabled. Some resources (replicationcontrollers, endpoints, nodes, pods, services, apiservices.apiregistration.k8s.io) have system defaults set by heuristics, others default to default-watch-cache-size
+      --watch-cache-sizes strings                               Watch cache size settings for some resources (pods, nodes, etc.), comma separated. The individual setting format: resource[.group]#size, where resource is lowercase plural (no version), group is omitted for resources of apiVersion v1 (the legacy core API) and included for others, and size is a number. This option is only meaningful for resources built into the apiserver, not ones defined by CRDs or aggregated from external servers, and is only consulted if the watch-cache is enabled. The only meaningful size setting to supply here is zero, which means to disable watch caching for the associated resource; all non-zero values are equivalent and mean to not disable watch caching for that resource
 ```
 
 ### SEE ALSO

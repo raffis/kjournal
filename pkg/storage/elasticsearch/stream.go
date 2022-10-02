@@ -87,7 +87,7 @@ func (s *stream) Start(ctx context.Context, options *metainternalversion.ListOpt
 
 		if len(esResults.Hits.Hits) != int(s.rest.opts.Backend.BulkSize) {
 			klog.InfoS("wait for next check", "sleep", s.refreshRate.String())
-			//	time.Sleep(s.refreshRate)
+			time.Sleep(s.refreshRate)
 		}
 
 		// The continue token represents teh last sort value from the last hit.

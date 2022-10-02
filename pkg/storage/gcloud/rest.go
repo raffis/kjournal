@@ -6,13 +6,10 @@ import (
 	"errors"
 	"fmt"
 	"reflect"
-	"time"
 
 	"cloud.google.com/go/logging"
 	"cloud.google.com/go/logging/logadmin"
 	"github.com/Jeffail/gabs"
-	mrpb "google.golang.org/genproto/googleapis/api/monitoredres"
-	logpb "google.golang.org/genproto/googleapis/logging/v2"
 
 	"k8s.io/apimachinery/pkg/api/meta"
 	metainternalversion "k8s.io/apimachinery/pkg/apis/meta/internalversion"
@@ -160,42 +157,19 @@ func (r *gcloudREST) List(
 	return newListObj, nil
 }
 
-type logEntry struct {
-	Timestamp      time.Time
-	Severity       logging.Severity
-	Payload        interface{}
-	Labels         map[string]string
-	InsertID       string
-	Operation      *logpb.LogEntryOperation
-	LogName        string
-	Resource       *mrpb.MonitoredResource
-	Trace          string
-	SpanID         string
-	TraceSampled   bool
-	SourceLocation *logpb.LogEntrySourceLocation
-}
-
 func (r *gcloudREST) decodeFrom(obj *logging.Entry) (runtime.Object, error) {
 	newObj := r.newFunc()
-	clean := &logEntry{
-		Timestamp: obj.Timestamp,
-		//Payload:   obj.Payload,
-		Labels: obj.Labels,
-	}
-
-	asJSON, err := json.Marshal(clean)
+	asJSON, err := json.Marshal(obj)
 	if err != nil {
 		return newObj, err
 	}
-
-	//fmt.Printf("T. %#v\n", string(asJSON))
 
 	jsonParsed, err := gabs.ParseJSON(asJSON)
 	if err != nil {
 		return newObj, err
 	}
 
-	/*for k, fields := range r.opts.FieldMap {
+	for k, fields := range r.opts.FieldMap {
 		for _, field := range fields {
 			if field == "." {
 				jsonParsed.SetP(asJSON, k)
@@ -206,45 +180,16 @@ func (r *gcloudREST) decodeFrom(obj *logging.Entry) (runtime.Object, error) {
 				}
 			}
 		}
-	}*/
-
-	for _, fieldMap := range r.opts.FieldMap {
-		for _, field := range fieldMap.Lookup {
-			if field == "." {
-				jsonParsed.SetP(asJSON, fieldMap.Field)
-			} else {
-				if v := jsonParsed.Path(field); v != nil {
-					data := v.Data()
-					if len(fieldMap.Drop) > 0 {
-						fieldParsed, err := gabs.ParseJSON(v.Bytes())
-						if err != nil {
-							return newObj, err
-						}
-
-						for _, field := range fieldMap.Drop {
-							fieldParsed.DeleteP(field)
-						}
-
-						data = fieldParsed.Data()
-					}
-
-					jsonParsed.SetP(data, fieldMap.Field)
-					break
-				}
-			}
-		}
 	}
 
-	/*jsonParsed, err = gabs.ParseJSON(jsonParsed.Bytes())
+	jsonParsed, err = gabs.ParseJSON(jsonParsed.Bytes())
 	if err != nil {
 		return newObj, err
-	}*/
+	}
 
-	/*	for _, field := range r.opts.DropFields {
-			jsonParsed.DeleteP(field)
-		}
-	*/
-	//fmt.Printf("T. %#v\n", string(jsonParsed.Bytes()))
+	for _, field := range r.opts.DropFields {
+		jsonParsed.DeleteP(field)
+	}
 
 	decodedObj, _, err := r.codec.Decode(jsonParsed.Bytes(), nil, newObj)
 	if err != nil {

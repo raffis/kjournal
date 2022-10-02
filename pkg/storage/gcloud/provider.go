@@ -79,14 +79,9 @@ func MakeDefaultOptions() Options {
 	}
 }
 
-type FieldMap struct {
-	Field  string
-	Lookup []string
-	Drop   []string
-}
-
 type Options struct {
-	FieldMap         []FieldMap
+	FieldMap         map[string][]string
+	DropFields       []string
 	Filter           map[string]string
 	DefaultTimeRange string
 	Backend          OptionsBackend
@@ -101,13 +96,8 @@ type OptionsBackend struct {
 
 func MakeOptionsFromConfig(apiBinding *configv1alpha1.API) Options {
 	options := MakeDefaultOptions()
-	for _, v := range apiBinding.FieldMap {
-		options.FieldMap = append(options.FieldMap, FieldMap{
-			Field:  v.Field,
-			Lookup: v.Lookup,
-			Drop:   v.Drop,
-		})
-	}
+	options.FieldMap = apiBinding.FieldMap
+	options.DropFields = apiBinding.DropFields
 	options.Filter = apiBinding.Filter
 
 	if apiBinding.Backend.Elasticsearch.Index != "" {

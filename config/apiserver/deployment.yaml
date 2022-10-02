@@ -24,8 +24,6 @@ spec:
         volumeMounts:
         - name: tmp
           mountPath: /tmp
-        command:
-        - "./apiserver"
         args:
         - "--audit-log-path=-"
         - "--feature-gates=APIPriorityAndFairness=false"
@@ -35,7 +33,7 @@ spec:
         - --cert-dir=/tmp
         resources:
           requests:
-            cpu: "300m"
+            cpu: "100m"
             memory: 20Mi
           limits:
             cpu: "1"
