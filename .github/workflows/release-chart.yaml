@@ -19,9 +19,21 @@ jobs:
           git config user.name "$GITHUB_ACTOR"
           git config user.email "$GITHUB_ACTOR@users.noreply.github.com"
 
-      - name: Run chart-releaser
-        uses: helm/chart-releaser-action@v1.3.0
+      - name: Install Helm
+        uses: azure/setup-helm@v1
+
+      - name: Install yq
+        uses: chrisdickinson/setup-yq@latest
         with:
-          charts_dir: ./chart
-        env:
-          CR_TOKEN: "${{ secrets.GITHUB_TOKEN }}"
+          yq-version: v4.24.5
+          
+      - name: Package helm charts
+        run: |
+          chartVersion=$(helm show chart "${{ inputs.path }}" | yq e '.version')
+          appVersion=$(helm show chart "${{ inputs.path }}" | yq e '.version')
+          helm package chart/kjournal --version=$chartVersion --app-version=$appVersion -d chart
+
+      - name: Publish helm charts to Github Container Registry
+        run: |
+          repository=$(echo "${{ github.repository_owner }}" | tr [:upper:] [:lower:])
+          helm push ${{ github.workspace }}/chart/kjournal-*.tgz oci://ghcr.io/$repository/charts

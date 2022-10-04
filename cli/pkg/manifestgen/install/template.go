@@ -24,22 +24,22 @@ labels:
     app.kubernetes.io/part-of: kjournal
 
 resources:
-- {{.BaseURL}}/namespace
-- {{.BaseURL}}/apiserver
-- {{.BaseURL}}/rbac
+- {{.Base}}/namespace
+- {{.Base}}/apiserver
+- {{.Base}}/rbac
 {{- if .ServiceMonitor }}
-#- {{.BaseURL}}/components/prometheus
+#- {{.Base}}/components/prometheus
 {{- end }}
 {{- if .NetworkPolicy }}
-#- {{.BaseURL}}/policies
+#- {{.Base}}/policies
 {{- end }}
 
 components: 
 {{- if .ConfigTemplate }}
-- {{.BaseURL}}/components/config-templates/{{.ConfigTemplate}}
+- {{.Base}}/components/config-templates/{{.ConfigTemplate}}
 {{- end }}
 {{- if .CertManager }}
-- {{.BaseURL}}/components/certmanager
+- {{.Base}}/components/certmanager
 
 patchesStrategicMerge:
 - |

@@ -11,13 +11,13 @@ var completionZshCmd = &cobra.Command{
 	Use:   "zsh",
 	Short: "Generates zsh completion scripts",
 	Example: `To load completion run
-. <(kjournal shell-completion zsh)
+. <(kjournal completion zsh)
 To configure your zsh shell to load completions for each session add to your zshrc
 # ~/.zshrc or ~/.profile
-command -v kjournal >/dev/null && . <(kjournal shell-completion zsh)
+command -v kjournal >/dev/null && . <(kjournal completion zsh)
 or write a cached file in one of the completion directories in your ${fpath}:
 echo "${fpath// /\n}" | grep -i completion
-kjournal shell-completion zsh > _kjournal
+kjournal completion zsh > _kjournal
 mv _kjournal ~/.oh-my-zsh/completions  # oh-my-zsh
 mv _kjournal ~/.zprezto/modules/completion/external/src/  # zprezto`,
 	Run: func(cmd *cobra.Command, args []string) {

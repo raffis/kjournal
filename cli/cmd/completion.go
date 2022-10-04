@@ -25,7 +25,7 @@ import (
 )
 
 var completionCmd = &cobra.Command{
-	Use:   "shell-completion",
+	Use:   "completion",
 	Short: "Generates completion scripts for various shells",
 	Long:  "The completion sub-command generates completion scripts for various shells",
 }

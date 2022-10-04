@@ -56,7 +56,7 @@ and the kjournal apiserver. By default the kuberntes apiserver trusts kjournal w
 
 === "Helm"
     ```sh
-    helm upgrade kjournal --install oci://github.com/raffis/kjournal/helm --set certmanager.enabled=true
+    helm upgrade kjournal --install oci://ghcr.io/raffis/kjournal/helm --set certmanager.enabled=true
     ```
 
 === "Kustomize"
@@ -84,7 +84,7 @@ kjournal has support for the prometheus-operator or using prometheus scraping vi
 
 === "Helm"
     ```sh
-    helm upgrade kjournal --install oci://github.com/raffis/kjournal/helm --set serviceMonitor.enabled=true
+    helm upgrade kjournal --install oci://ghcr.io/raffis/kjournal/helm --set serviceMonitor.enabled=true
     ```
 
 === "Kustomize"
@@ -101,18 +101,17 @@ kjournal has support for the prometheus-operator or using prometheus scraping vi
     EOT && kustomize build | kubectl apply -f -
     ```
 
-
 ## Verifying the artifacts
 
-### binaries
+### Binaries
 
-All artifacts are checksummed and the checksum file is signed with [cosign][].
+All artifacts are checksummed and the checksum file is signed with [cosign](https://github.com/sigstore/cosign).
 
 1. Download the files you want, and the `checksums.txt`, `checksum.txt.pem` and `checksums.txt.sig` files from the [releases][releases] page:
     ```sh
-    wget https://github.com/goreleaser/goreleaser/releases/download/__VERSION__/checksums.txt
-    wget https://github.com/goreleaser/goreleaser/releases/download/__VERSION__/checksums.txt.sig
-    wget https://github.com/goreleaser/goreleaser/releases/download/__VERSION__/checksums.txt.pem
+    wget https://github.com/raffis/kjournal/releases/download/__VERSION__/checksums.txt
+    wget https://github.com/raffis/kjournal/releases/download/__VERSION__/checksums.txt.sig
+    wget https://github.com/raffis/kjournal/releases/download/__VERSION__/checksums.txt.pem
     ```
 1. Verify the signature:
     ```sh
@@ -126,14 +125,14 @@ All artifacts are checksummed and the checksum file is signed with [cosign][].
     sha256sum --ignore-missing -c checksums.txt
     ```
 
-### docker images
+### Container images
 
-Our Docker images are signed with [cosign][].
+Likewise are the container images signed with [cosign](https://github.com/sigstore/cosign).
 
 Verify the signatures:
 
 ```sh
-COSIGN_EXPERIMENTAL=1 cosign verify goreleaser/goreleaser
+cosign verify ghcr.io/raffis/kjournal/apiserver
 ```
 
 !!! info

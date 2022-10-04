@@ -1,6 +1,6 @@
 
 # Image URL to use all building/pushing image targets
-IMG ?= kjournal-apiserver:latest
+IMG ?= kjournal/apiserver:latest
 # ENVTEST_K8S_VERSION refers to the version of kubebuilder assets to be downloaded by envtest binary.
 ENVTEST_K8S_VERSION = 1.23
 
@@ -56,8 +56,14 @@ test: generate fmt vet envtest ## Run tests.
 	KUBEBUILDER_ASSETS="$(shell $(ENVTEST) use $(ENVTEST_K8S_VERSION) -p path)" go test ./... -coverprofile cover.out
 
 .PHONY: kind-test
-kind-test: docker-build
+kind-test: docker-build ## Deploy to kind and tail log.
 	kind load docker-image ${IMG} --name kjournal && kubectl -n logging rollout restart deployment/kjournal-apiserver && stern -n logging kjournal
+
+.PHONY: kind-deploy
+kind-test: docker-build deploy ## Deploy to kind
+	kind load docker-image ${IMG} --name kjournal
+	kubectl -n kjournal-system rollout restart deployment/kjournal-apiserver
+
 
 ##@ Build
 
