@@ -26,6 +26,7 @@ cli/kjournal
 *~
 
 dist
+cli/audit
 site
 apiserver.local.config
 config/release

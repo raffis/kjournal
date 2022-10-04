@@ -87,6 +87,15 @@ func (b *queryBuilder) sortByTimestampFields() *queryBuilder {
 		})
 	}
 
+	for _, uidField := range b.fieldMapping("metadata.uid") {
+		b.query["sort"] = append(b.query["sort"].([]map[string]interface{}), map[string]interface{}{
+			uidField: map[string]interface{}{
+				"order":         "asc",
+				"unmapped_type": "long",
+			},
+		})
+	}
+
 	return b
 }
 

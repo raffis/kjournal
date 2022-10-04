@@ -38,7 +38,8 @@ func Generate(options Options, manifestsBase string) (*manifestgen.Manifest, err
 	if manifestsBase == "" {
 		manifestsBase, err = manifestgen.MkdirTempAbs("", options.Namespace)
 		if err != nil {
-			return nil, fmt.Errorf("temp dir error: %w", err)
+			return nil, fm
+			t.Errorf("temp dir error: %w", err)
 		}
 		defer os.RemoveAll(manifestsBase)
 		output, err = securejoin.SecureJoin(manifestsBase, options.ManifestFile)
@@ -75,7 +76,7 @@ func Generate(options Options, manifestsBase string) (*manifestgen.Manifest, err
 
 // GetLatestVersion calls the GitHub API and returns the latest released version.
 func GetLatestVersion() (string, error) {
-	ghURL := "https://api.github.com/repos/fluxcd/flux2/releases/latest"
+	ghURL := "https://api.github.com/repos/raffis/kjournal/releases/latest"
 	c := http.DefaultClient
 	c.Timeout = 15 * time.Second
 

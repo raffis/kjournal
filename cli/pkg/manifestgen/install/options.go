@@ -4,7 +4,7 @@ import "time"
 
 type Options struct {
 	AsKustomization bool
-	BaseURL         string
+	Base            string
 	Version         string
 	Namespace       string
 	Registry        string
@@ -32,7 +32,7 @@ func MakeDefaultOptions() Options {
 		ServiceMonitor:  false,
 		AsKustomization: false,
 		LogLevel:        "info",
-		BaseURL:         "github.com/raffis/kjournal//config",
+		Base:            "github.com/raffis/kjournal//config",
 		ManifestFile:    "kjournal.yaml",
 		Timeout:         time.Minute,
 		TargetPath:      "",

@@ -146,3 +146,8 @@ signs:
   - "${artifact}"
   artifacts: checksum
   output: true
+
+docker_signs:
+- artifacts: images
+  env:
+  - COSIGN_PASSWORD=

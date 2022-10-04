@@ -39,13 +39,14 @@ type installFlags struct {
 	withServiceMonitor  bool
 	export              bool
 	version             string
-	manifestsPath       string
+	base                string
 	asKustomization     bool
 	registry            string
 	imagePullSecret     string
 }
 
 var installArgs installFlags
+var defaults install.Options
 
 var installCmd = &cobra.Command{
 	Use:   "install",
@@ -67,7 +68,7 @@ var installCmd = &cobra.Command{
 }
 
 func init() {
-	defaults := install.MakeDefaultOptions()
+	defaults = install.MakeDefaultOptions()
 
 	installCmd.PersistentFlags().StringVarP(&installArgs.withConfigTemplate, "with-config-template", "", "",
 		"specify a kjournal config template")
@@ -87,7 +88,7 @@ func init() {
 		"Kubernetes secret name used for pulling the toolkit images from a private registry")
 	installCmd.Flags().BoolVar(&installArgs.withNetworkPolicies, "network-policy", defaults.NetworkPolicy,
 		"deny ingress access to the toolkit controllers from other namespaces using network policies")
-	installCmd.Flags().StringVarP(&installArgs.manifestsPath, "manifests-base", "", defaults.ManifestFile,
+	installCmd.Flags().StringVarP(&installArgs.base, "base", "", defaults.Base,
 		"Path or URL to kustomize base")
 
 	rootCmd.AddCommand(installCmd)
@@ -115,16 +116,19 @@ func installCmdRun(cmd *cobra.Command, args []string) error {
 	}
 
 	manifestsBase := ""
-	if version == VERSION {
-		manifestsBase = "./"
+	if version == VERSION || version == "" {
+		//manifestsBase = "./"
 		err := writeEmbeddedManifests(tmpDir)
 		if err != nil {
 			return fmt.Errorf("install failed : %w", err)
 		}
+
+		installArgs.base = "./config"
+		manifestsBase = tmpDir
 	}
 
 	opts := install.Options{
-		BaseURL:         installArgs.manifestsPath,
+		Base:            installArgs.base,
 		AsKustomization: installArgs.asKustomization,
 		Version:         version,
 		Namespace:       *kubeconfigArgs.Namespace,
@@ -136,9 +140,13 @@ func installCmdRun(cmd *cobra.Command, args []string) error {
 		ManifestFile:    fmt.Sprintf("%s.yaml", *kubeconfigArgs.Namespace),
 	}
 
-	if installArgs.manifestsPath == "" {
-		opts.BaseURL = install.MakeDefaultOptions().BaseURL
+	if opts.Namespace == "" {
+		opts.Namespace = defaults.Namespace
 	}
+
+	/*if installArgs.manifestsPath == "" {
+		opts.BaseURL = install.MakeDefaultOptions().BaseURL
+	}*/
 
 	manifest, err := install.Generate(opts, manifestsBase)
 	if err != nil {
