@@ -3,6 +3,7 @@ kind: Kustomization
 namespace: dev-tools
 
 resources:
+- namespace.yaml
 - kube-prometheus-stack
 - pyroscope
 - certmanager
