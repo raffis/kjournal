@@ -27,7 +27,7 @@ type queryBuilder struct {
 	query   map[string]interface{}
 }
 
-func QueryFromListOptions(ctx context.Context, options *metainternalversion.ListOptions, rest *elasticsearchREST) map[string]interface{} {
+func queryFromListOptions(ctx context.Context, options *metainternalversion.ListOptions, rest *elasticsearchREST) map[string]interface{} {
 	q := queryBuilder{
 		rest:    rest,
 		ctx:     ctx,

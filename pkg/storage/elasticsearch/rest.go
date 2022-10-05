@@ -167,7 +167,7 @@ func (r *elasticsearchREST) List(
 		return stream, nil
 	}
 
-	query := QueryFromListOptions(ctx, options, r)
+	query := queryFromListOptions(ctx, options, r)
 
 	var hit esHit
 	esResults, err := r.fetch(ctx, query, options)
