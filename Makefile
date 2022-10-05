@@ -146,8 +146,6 @@ undeploy: ## Undeploy apiserver from the K8s cluster specified in ~/.kube/config
 CONTROLLER_GEN = controller-gen
 .PHONY: controller-gen
 controller-gen: ## Download controller-gen locally if necessary.
-	which controller-gen
-	find / -name controller-gen
 	$(call go-install-tool,$(CONTROLLER_GEN),sigs.k8s.io/controller-tools/cmd/controller-gen@v0.8.0)
 
 KUSTOMIZE = $(shell pwd)/bin/kustomize

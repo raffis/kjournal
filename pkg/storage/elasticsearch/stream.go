@@ -52,7 +52,7 @@ func (s *stream) Start(ctx context.Context, options *metainternalversion.ListOpt
 	}
 
 	for {
-		query := QueryFromListOptions(ctx, options, s.rest)
+		query := queryFromListOptions(ctx, options, s.rest)
 		if s.pit.ID != "" {
 			query["pit"] = map[string]interface{}{
 				"id":         s.pit.ID,
