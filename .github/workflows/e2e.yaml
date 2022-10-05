@@ -55,9 +55,15 @@ jobs:
             BUILD_ARGS="--cache-from=type=local,src=/tmp/.buildx-cache \
             --cache-to=type=local,dest=/tmp/.buildx-cache-new,mode=max"
       - id: profiles
-        run: echo "::set-output name=matrix::$(ls config/tests | jq -R -s -c 'split("\n")[:-1]')"
+        name: Determine test profiles
+        run: |
+          profiles=$(ls config/tests | jq -R -s -c 'split("\n")[:-1]')
+          echo $profiles
+          echo "::set-output name=matrix::$profiles"
+
   tests:
     runs-on: ubuntu-latest
+    needs: [build]
     strategy:
       matrix:
         profile: ${{ fromJson(needs.build.outputs.profiles) }}
