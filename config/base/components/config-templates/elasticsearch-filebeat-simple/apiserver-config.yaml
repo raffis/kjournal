@@ -3,20 +3,20 @@ kind: APIServerConfig
 
 backend:
   elasticsearch:
-    url: ${ELASTICSEARCH_URI}
+    url: 
+    - ${ELASTICSEARCH_URI}
 
 apis:
 - resource: containerlogs
   fieldMap:
-    metadata.namespace: [kubernetes.namespace_name]
+    metadata.namespace: [kubernetes.namespace]
     metadata.creationTimestamp: ["@timestamp"]
-    pod: [kubernetes.pod_name]
-    container: [kubernetes.container_name]
+    pod: [kubernetes.pod.name]
+    container: [kubernetes.container.name]
     payload: ["."]
     metadata.labels: [kubernetes.labels]
-    metadata.annotations.docker_id: [kubernetes.docker_id]
-    metadata.annotations.host: [kubernetes.host]
-    metadata.annotations.pod_id: [kubernetes.pod_id]
+    metadata.annotations.host: [kubernetes.node.name]
+    metadata.annotations.pod_id: [kubernetes.pod.uid]
 
   dropFields:
   - payload.@timestamp

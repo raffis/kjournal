@@ -8,7 +8,7 @@ import (
 	"path"
 )
 
-//go:embed config
+//go:embed config/base
 var embeddedManifests embed.FS
 
 func writeEmbeddedManifests(dir string) error {
