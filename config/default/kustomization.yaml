@@ -6,14 +6,13 @@ namePrefix: kjournal-
 
 labels:
 - pairs:
-    app.kubernetes.io/instance: logging
+    app.kubernetes.io/instance: kjournal-system
     app.kubernetes.io/part-of: kjournal
 
 resources:
-- ../apiserver
-- ../rbac
+- ../base/apiserver
+- ../base/rbac
+- ../base/namespace
 
-components:
-- elasticsearch-kjournal
-#- gcloud
-#- ../components/certmanager
+#components:
+#- ../base/components/certmanager

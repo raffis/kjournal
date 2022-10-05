@@ -9,6 +9,8 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
+    outputs:
+      profiles: ${{ steps.profiles.outputs.matrix }}    
     steps:
       - name: Checkout
         uses: actions/checkout@v2
@@ -52,8 +54,16 @@ jobs:
           make docker-build BUILD_PLATFORMS=linux/amd64 \
             BUILD_ARGS="--cache-from=type=local,src=/tmp/.buildx-cache \
             --cache-to=type=local,dest=/tmp/.buildx-cache-new,mode=max"
+      - id: profiles
+        run: echo "::set-output name=matrix::$(ls config/tests | jq -R -s -c 'split("\n")[:-1]')"
+  tests:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        profile: ${{ fromJson(needs.build.outputs.profiles) }}
+    steps:
       - name: Deploy
-        run: make kind-deploy
+        run: make kind-deploy KIND_TEST_PROFILE=${{ matrix.profile }}
       - name: Logs
         run: |
           kubectl -n kjournal-system logs deploy/kjournal-apiserver

@@ -4,6 +4,8 @@ IMG ?= kjournal/apiserver:latest
 # ENVTEST_K8S_VERSION refers to the version of kubebuilder assets to be downloaded by envtest binary.
 ENVTEST_K8S_VERSION = 1.23
 
+KIND_TEST_PROFILE=elasticsearchv7-fluentbit-kjournal-structured
+
 # Get the currently used golang install path (in GOPATH/bin, unless GOBIN is set)
 ifeq (,$(shell go env GOBIN))
 GOBIN=$(shell go env GOPATH)/bin
@@ -55,15 +57,15 @@ vet: ## Run go vet against code.
 test: generate fmt vet envtest ## Run tests.
 	KUBEBUILDER_ASSETS="$(shell $(ENVTEST) use $(ENVTEST_K8S_VERSION) -p path)" go test ./... -coverprofile cover.out
 
-.PHONY: kind-test
-kind-test: docker-build ## Deploy to kind and tail log.
-	kind load docker-image ${IMG} --name kjournal && kubectl -n logging rollout restart deployment/kjournal-apiserver && stern -n logging kjournal
-
 .PHONY: kind-deploy
-kind-test: docker-build deploy ## Deploy to kind
+kind-deploy: docker-build ## Deploy to kind.
 	kind load docker-image ${IMG} --name kjournal
+	kustomize build config/tests/${KIND_TEST_PROFILE} --enable-helm | kubectl apply -f -
 	kubectl -n kjournal-system rollout restart deployment/kjournal-apiserver
 
+.PHONY: kind-debug
+kind-debug: kind-deploy ## Deploy to kind and tail log
+	stern -n kjournal-system kjournal
 
 ##@ Build
 

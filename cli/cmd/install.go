@@ -123,7 +123,7 @@ func installCmdRun(cmd *cobra.Command, args []string) error {
 			return fmt.Errorf("install failed : %w", err)
 		}
 
-		installArgs.base = "./config"
+		installArgs.base = "./config/base"
 		manifestsBase = tmpDir
 	}
 
