@@ -112,7 +112,6 @@ func main() {
 	}
 
 	if err := rootCmd.Execute(); err != nil {
-
 		if err, ok := err.(*RequestError); ok {
 			if err.StatusCode == 1 {
 				logger.Warningf("%v", err)
