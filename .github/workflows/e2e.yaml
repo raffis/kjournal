@@ -68,7 +68,7 @@ jobs:
         with:
           go-version: 1.18.x
       - name: Setup Kubernetes
-        uses: engineerd/setup-kind@eb0371b1c9fd37b92d7474a26196f078514de7bf #v0.5.0
+        uses: engineerd/setup-kind@aa272fe2a7309878ffc2a81c56cfe3ef108ae7d0 #v0.5.0
         with:
           name: kjournal
           version: v0.11.1
