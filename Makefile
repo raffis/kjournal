@@ -62,10 +62,11 @@ kind-deploy: docker-build ## Deploy to kind.
 	kind load docker-image ${IMG} --name kjournal
 	kustomize build config/tests/${KIND_TEST_PROFILE} --enable-helm | kubectl apply -f -
 	kubectl -n kjournal-system rollout restart deployment/kjournal-apiserver
+	kubectl -n kjournal-system wait pods --all --for=condition=ready
 
 .PHONY: kind-debug
 kind-debug: kind-deploy ## Deploy to kind and tail log
-	stern -n kjournal-system kjournal
+	kubectl -n kjournal-system logs -l api=kjournal -f
 
 ##@ Build
 
