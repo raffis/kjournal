@@ -14,11 +14,6 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Configure Git
-        run: |
-          git config user.name "$GITHUB_ACTOR"
-          git config user.email "$GITHUB_ACTOR@users.noreply.github.com"
-
       - name: Install Helm
         uses: azure/setup-helm@v1
 
@@ -26,7 +21,10 @@ jobs:
         uses: chrisdickinson/setup-yq@latest
         with:
           yq-version: v4.24.5
-          
+
+      - name: Login to Github Container Registry using helm
+        run: echo ${{ secrets.GITHUB_TOKEN }} | helm registry login ghcr.io --username ${{ github.actor }} --password-stdin
+
       - name: Package helm charts
         run: |
           chartVersion=$(helm show chart chart/kjournal | yq e '.version')
