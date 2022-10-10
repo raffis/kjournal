@@ -31,10 +31,10 @@ jobs:
           version: "1.21.2"
       - name: Run tests
         run: make test
-      #- name: Send go coverage report
-      #  uses: shogo82148/actions-goveralls@v1
-      #  with:
-      #    path-to-profile: coverage.out
+      - name: Send go coverage report
+        uses: shogo82148/actions-goveralls@v1
+        with:
+          path-to-profile: coverage.out
       - name: Check if working tree is dirty
         run: |
           if [[ $(git diff --stat) != '' ]]; then
@@ -42,11 +42,6 @@ jobs:
             echo 'run make test and commit changes'
             exit 1
           fi
-      - name: Build container image
-        run: |
-          make docker-build BUILD_PLATFORMS=linux/amd64 \
-            BUILD_ARGS="--cache-from=type=local,src=/tmp/.buildx-cache \
-            --cache-to=type=local,dest=/tmp/.buildx-cache-new,mode=max"
       - id: profiles
         name: Determine test profiles
         run: |
@@ -75,6 +70,11 @@ jobs:
           image: kindest/node:v1.21.1@sha256:69860bda5563ac81e3c0057d654b5253219618a22ec3a346306239bba8cfa1a6
       - name: Setup Kustomize
         uses: fluxcd/pkg/actions/kustomize@main
+      - name: Build container image
+        run: |
+          make docker-build BUILD_PLATFORMS=linux/amd64 \
+            BUILD_ARGS="--cache-from=type=local,src=/tmp/.buildx-cache \
+            --cache-to=type=local,dest=/tmp/.buildx-cache-new,mode=max"
       - name: Deploy
         run: make kind-deploy KIND_TEST_PROFILE=${{ matrix.profile }}
       - name: Logs
