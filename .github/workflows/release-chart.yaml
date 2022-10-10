@@ -29,8 +29,8 @@ jobs:
           
       - name: Package helm charts
         run: |
-          chartVersion=$(helm show chart "${{ inputs.path }}" | yq e '.version')
-          appVersion=$(helm show chart "${{ inputs.path }}" | yq e '.version')
+          chartVersion=$(helm show chart chart/kjournal | yq e '.version')
+          appVersion=$(helm show chart chart/kjournal | yq e '.version')
           helm package chart/kjournal --version=$chartVersion --app-version=$appVersion -d chart
 
       - name: Publish helm charts to Github Container Registry
