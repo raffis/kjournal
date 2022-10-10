@@ -38,9 +38,9 @@ func Generate(options Options, manifestsBase string) (*manifestgen.Manifest, err
 	if manifestsBase == "" {
 		manifestsBase, err = manifestgen.MkdirTempAbs("", options.Namespace)
 		if err != nil {
-			return nil, fm
-			t.Errorf("temp dir error: %w", err)
+			return nil, err
 		}
+
 		defer os.RemoveAll(manifestsBase)
 		output, err = securejoin.SecureJoin(manifestsBase, options.ManifestFile)
 		if err != nil {
