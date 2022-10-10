@@ -28,11 +28,15 @@ import (
 	_ "k8s.io/client-go/plugin/pkg/client/auth"
 )
 
-var VERSION = "0.0.0-dev.0"
+const (
+	version = "0.0.0-dev"
+	commit  = "none"
+	date    = "unknown"
+)
 
 var rootCmd = &cobra.Command{
 	Use:           "kjournal",
-	Version:       VERSION,
+	Version:       version,
 	SilenceUsage:  true,
 	SilenceErrors: true,
 	Short:         "Command line utility for accessing long-term (kubernetes) logs",
@@ -98,7 +102,7 @@ func NewRootFlags() rootFlags {
 	rf := rootFlags{
 		pollInterval: 2 * time.Second,
 	}
-	//rf.defaults.Version = "v" + VERSION
+
 	return rf
 }
 
