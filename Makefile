@@ -61,11 +61,12 @@ test: generate fmt vet envtest ## Run tests.
 kind-deploy: docker-build ## Deploy to kind.
 	kind load docker-image ${IMG} --name kjournal
 	kustomize build config/tests/${KIND_TEST_PROFILE} --enable-helm | kubectl apply -f -
-	kubectl -n kjournal-system rollout restart deployment/kjournal-apiserver
-	kubectl -n kjournal-system wait pods --all --for=condition=ready --timeout=120s
+	kubectl -n kjournal-system wait deployments --all --for=condition=available --timeout=120s
+	kubectl -n kjournal-system get pods | grep -v 'test\|NAME' | cut -d ' ' -f1 | xargs kubectl wait pods -n kjournal-system --all --for=condition=ready
 
 .PHONY: kind-debug
 kind-debug: kind-deploy ## Deploy to kind and tail log
+	kubectl -n kjournal-system rollout restart deployment/kjournal-apiserver
 	kubectl -n kjournal-system logs -l api=kjournal -f
 
 ##@ Build
