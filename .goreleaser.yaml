@@ -7,8 +7,8 @@ builds:
   binary: kjournal-cli
   goos:
   - linux
-  - darwin
-  - windows    
+#  - darwin
+#  - windows    
 - id: apiserver
   main: ./cmd
   binary: kjournal-apiserver
