@@ -62,7 +62,7 @@ kind-deploy: docker-build ## Deploy to kind.
 	kind load docker-image ${IMG} --name kjournal
 	kustomize build config/tests/${KIND_TEST_PROFILE} --enable-helm | kubectl apply -f -
 	kubectl -n kjournal-system wait deployments --all --for=condition=available --timeout=120s
-	kubectl -n kjournal-system get pods | grep -v 'test\|NAME' | cut -d ' ' -f1 | xargs kubectl wait pods -n kjournal-system --all --for=condition=ready
+	kubectl -n kjournal-system get pods | grep -v 'test\|NAME' | cut -d ' ' -f1 | xargs kubectl wait pods -n kjournal-system --all --for=condition=ready  --timeout=120s
 
 .PHONY: kind-debug
 kind-debug: kind-deploy ## Deploy to kind and tail log

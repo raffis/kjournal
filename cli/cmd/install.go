@@ -105,18 +105,18 @@ func installCmdRun(cmd *cobra.Command, args []string) error {
 
 	defer os.RemoveAll(tmpDir)
 
-	version := installArgs.version
-	if version == "" {
+	installVersion := installArgs.version
+	if installVersion == "" {
 		latest, err := install.GetLatestVersion()
 		if err != nil {
 			return err
 		}
 
-		version = latest
+		installVersion = latest
 	}
 
 	manifestsBase := ""
-	if version == VERSION || version == "" {
+	if installVersion == version || installVersion == "" {
 		//manifestsBase = "./"
 		err := writeEmbeddedManifests(tmpDir)
 		if err != nil {
@@ -130,7 +130,7 @@ func installCmdRun(cmd *cobra.Command, args []string) error {
 	opts := install.Options{
 		Base:            installArgs.base,
 		AsKustomization: installArgs.asKustomization,
-		Version:         version,
+		Version:         installVersion,
 		Namespace:       *kubeconfigArgs.Namespace,
 		Registry:        installArgs.registry,
 		ImagePullSecret: installArgs.imagePullSecret,
