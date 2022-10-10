@@ -55,14 +55,14 @@ vet: ## Run go vet against code.
 
 .PHONY: test
 test: generate fmt vet envtest ## Run tests.
-	KUBEBUILDER_ASSETS="$(shell $(ENVTEST) use $(ENVTEST_K8S_VERSION) -p path)" go test ./... -coverprofile cover.out
+	KUBEBUILDER_ASSETS="$(shell $(ENVTEST) use $(ENVTEST_K8S_VERSION) -p path)" go test ./... -coverprofile coverage.out
 
 .PHONY: kind-deploy
 kind-deploy: docker-build ## Deploy to kind.
 	kind load docker-image ${IMG} --name kjournal
 	kustomize build config/tests/${KIND_TEST_PROFILE} --enable-helm | kubectl apply -f -
 	kubectl -n kjournal-system rollout restart deployment/kjournal-apiserver
-	kubectl -n kjournal-system wait pods --all --for=condition=ready
+	kubectl -n kjournal-system wait pods --all --for=condition=ready --timeout=120s
 
 .PHONY: kind-debug
 kind-debug: kind-deploy ## Deploy to kind and tail log
