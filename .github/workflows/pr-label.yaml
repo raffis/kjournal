@@ -1,5 +1,8 @@
-name: size-label
-on: pull_request
+name: pr-label
+
+on:
+  pull_request:
+
 jobs:
   size-label:
     runs-on: ubuntu-latest
