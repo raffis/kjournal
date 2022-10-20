@@ -3,6 +3,7 @@ package elasticsearch
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"strings"
 
 	metainternalversion "k8s.io/apimachinery/pkg/apis/meta/internalversion"
@@ -20,6 +21,7 @@ var operatorMap = map[selection.Operator][]string{
 	selection.Exists:       {"must", "exists"},
 }
 
+type queryBuilderFunc func() error
 type queryBuilder struct {
 	ctx     context.Context
 	options *metainternalversion.ListOptions
@@ -27,7 +29,7 @@ type queryBuilder struct {
 	query   map[string]interface{}
 }
 
-func queryFromListOptions(ctx context.Context, options *metainternalversion.ListOptions, rest *elasticsearchREST) map[string]interface{} {
+func queryFromListOptions(ctx context.Context, options *metainternalversion.ListOptions, rest *elasticsearchREST) (map[string]interface{}, error) {
 	q := queryBuilder{
 		rest:    rest,
 		ctx:     ctx,
@@ -46,12 +48,15 @@ func queryFromListOptions(ctx context.Context, options *metainternalversion.List
 		},
 	}
 
-	q.continueToken().
-		sortByTimestampFields().
-		fieldSelectors().
-		namespaceFilter()
+	builders := []queryBuilderFunc{q.continueToken, q.sortByTimestampFields, q.fieldSelectors, q.namespaceFilter}
 
-	return q.query
+	for _, builder := range builders {
+		if err := builder(); err != nil {
+			return q.query, err
+		}
+	}
+
+	return q.query, nil
 }
 
 func (b *queryBuilder) fieldMapping(field string) []string {
@@ -62,22 +67,22 @@ func (b *queryBuilder) fieldMapping(field string) []string {
 	return []string{field}
 }
 
-func (b *queryBuilder) continueToken() *queryBuilder {
+func (b *queryBuilder) continueToken() error {
 	if b.options.Continue == "" {
-		return b
+		return nil
 	}
 
 	var searchAfter []interface{}
 	err := json.Unmarshal([]byte(b.options.Continue), &searchAfter)
 	if err != nil {
-		return b
+		return fmt.Errorf("failed to decode continue token: %w", err)
 	}
 
 	b.query["search_after"] = searchAfter
-	return b
+	return nil
 }
 
-func (b *queryBuilder) sortByTimestampFields() *queryBuilder {
+func (b *queryBuilder) sortByTimestampFields() error {
 	for _, tsField := range b.rest.opts.Backend.TimestampFields {
 		b.query["sort"] = append(b.query["sort"].([]map[string]interface{}), map[string]interface{}{
 			tsField: map[string]interface{}{
@@ -96,10 +101,10 @@ func (b *queryBuilder) sortByTimestampFields() *queryBuilder {
 		})
 	}
 
-	return b
+	return nil
 }
 
-func (b *queryBuilder) fieldSelectors() *queryBuilder {
+func (b *queryBuilder) fieldSelectors() error {
 	var skipTimestampFilter bool
 	requirements, _ := b.options.LabelSelector.Requirements()
 
@@ -196,12 +201,12 @@ func (b *queryBuilder) fieldSelectors() *queryBuilder {
 
 	}
 
-	return b
+	return nil
 }
 
-func (b *queryBuilder) namespaceFilter() *queryBuilder {
+func (b *queryBuilder) namespaceFilter() error {
 	if !b.rest.isNamespaced {
-		return b
+		return nil
 	}
 
 	ns, _ := request.NamespaceFrom(b.ctx)
@@ -224,5 +229,5 @@ func (b *queryBuilder) namespaceFilter() *queryBuilder {
 	})
 
 	b.query["query"].(map[string]interface{})["bool"].(map[string]interface{})["must"] = q
-	return b
+	return nil
 }

@@ -52,7 +52,11 @@ func (s *stream) Start(ctx context.Context, options *metainternalversion.ListOpt
 	}
 
 	for {
-		query := queryFromListOptions(ctx, options, s.rest)
+		query, err := queryFromListOptions(ctx, options, s.rest)
+		if err != nil {
+			return
+		}
+
 		if s.pit.ID != "" {
 			query["pit"] = map[string]interface{}{
 				"id":         s.pit.ID,

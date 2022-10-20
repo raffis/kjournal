@@ -46,11 +46,11 @@ Each resource can be customized including how your long-term storage logs are ma
 
 ### Field maps
 
-A field map can be used to map a kjournal api to the way the log messages are structured in the long term storage.
-There might be multiple reasons you want do define a fieldmap for kjournal rather than changing the log structure at ingest time.
-For instance to support backwards compatibility or there might be other services using the current log structre.
+A field map can be used to map a kjournal api to the long term storage representation of messages.
+There might be multiple reasons you may need do define a fieldmap for kjournal rather than changing the log structure at ingest time.
+For instance to support backwards compatibility or there might be other services using the current log structure.
 
-The field map basicaly consists one or multiple field maps:
+The field map basicaly consists of one or more field maps:
 
 ```yaml
 fieldMap:

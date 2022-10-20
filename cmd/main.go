@@ -31,6 +31,13 @@ import (
 	adapterv1alpha1 "github.com/raffis/kjournal/internal/apis/core/v1alpha1"
 	"github.com/raffis/kjournal/pkg/apis/core/v1alpha1"
 	"github.com/spf13/cobra"
+	k8sversion "k8s.io/apimachinery/pkg/version"
+)
+
+const (
+	version = "0.0.0-dev"
+	commit  = "none"
+	date    = "unknown"
 )
 
 type apiServerFlags struct {
@@ -105,6 +112,14 @@ func main() {
 
 			server.Handler.FullHandlerChain = &httpWrap{
 				w: wrap,
+			}
+
+			return server
+		}).
+		WithServerFns(func(server *builder.GenericAPIServer) *builder.GenericAPIServer {
+			server.Version = &k8sversion.Info{
+				GitCommit: commit,
+				BuildDate: date,
 			}
 
 			return server
