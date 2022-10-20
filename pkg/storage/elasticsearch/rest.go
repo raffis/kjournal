@@ -63,15 +63,17 @@ type esResults struct {
 	Took     int64  `json:"took"`
 	TimedOut bool   `json:"timed_out"`
 	PitID    string `json:"pit_id"`
-	Hits     struct {
-		Hits     []esHit `json:"hits"`
-		Took     float64 `json:"took"`
-		MaxScore float64 `json:"max_score"`
-		Total    struct {
-			Value    int64  `json:"value"`
-			Relation string `json:"relation"`
-		} `json:"total"`
-	} `json:"hits"`
+	Hits     esHits `json:"hits"`
+}
+
+type esHits struct {
+	Hits     []esHit `json:"hits"`
+	Took     float64 `json:"took"`
+	MaxScore float64 `json:"max_score"`
+	Total    struct {
+		Value    int64  `json:"value"`
+		Relation string `json:"relation"`
+	} `json:"total"`
 }
 
 type elasticsearchREST struct {
@@ -167,7 +169,10 @@ func (r *elasticsearchREST) List(
 		return stream, nil
 	}
 
-	query := queryFromListOptions(ctx, options, r)
+	query, err := queryFromListOptions(ctx, options, r)
+	if err != nil {
+		return newListObj, err
+	}
 
 	var hit esHit
 	esResults, err := r.fetch(ctx, query, options)
