@@ -50,6 +50,25 @@ Here version `v0.0.1` gets installed.
     docker pull ghcr.io/raffis/kjournal/cli:v0.0.1
     ```
 
+## Compatibility with apiserver
+
+The kjornal cli gurantees compatibility for three minor versions with the apiserver.
+The previous minor release, the same and a newer apiserver.
+That said this guarantees full compatibility, a bigger version gap will likely still work.
+
+Example:
+
+| cli       | apiserver | Fully compatible
+| v1.1.0    | v1.0.0    | `yes`
+| v1.1.0    | v1.1.0    | `yes`
+| v1.1.0    | v1.2.0    | `yes`
+| v1.1.0    | v1.3.0    | `no`
+| v1.0.0    | v1.2.0    | `no`
+
+
+!!! Note
+    Releases from 0.x do not offer any compatibility guarantees between different versions of the cli and the apiserver.
+
 
 ## Enable shell completion
 

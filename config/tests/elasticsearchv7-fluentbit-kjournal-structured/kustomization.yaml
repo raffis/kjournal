@@ -4,6 +4,7 @@ namespace: kjournal-system
 
 resources: 
 - ../../default
+- ../base
 - ./fluent-bit
 - ./elasticsearch
 - ./kubernetes-event-exporter

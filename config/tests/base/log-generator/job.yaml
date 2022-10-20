@@ -1,0 +1,17 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: log-generator
+spec:
+  template:
+    spec:
+      containers:
+      - name: generator
+        image: bash
+        command:
+        - bash
+        - -c 
+        - |
+          echo '{"foobar": "foobar", "message": "dummy log message"}'
+      restartPolicy: Never
+  backoffLimit: 1

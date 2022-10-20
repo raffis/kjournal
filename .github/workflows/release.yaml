@@ -14,9 +14,6 @@ permissions:
   id-token: write # needed for keyless signing
   packages: write # needed for ghcr access
 
-env:
-  APP: kjournal
-
 jobs:
   build:
     name: Build
@@ -33,7 +30,7 @@ jobs:
         if: startsWith(github.ref, 'refs/tags/v')
         run: |
           mkdir -p deploy/release
-          kustomize build ./config/base/apiserver > ./deploy/release/${{ env.APP }}.apiserver.yaml
+          kustomize build ./config/base/apiserver > ./deploy/release/kjournal.apiserver.yaml
       - uses: anchore/sbom-action/download-syft@v0
       - name: Create release and SBOM
         if: startsWith(github.ref, 'refs/tags/v')

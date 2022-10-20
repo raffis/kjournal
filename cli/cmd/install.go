@@ -50,19 +50,19 @@ var defaults install.Options
 
 var installCmd = &cobra.Command{
 	Use:   "install",
-	Short: "Install install install",
-	Long:  "The install command fetchs install from namespaced resources",
-	Example: `  # Stream all install install from the namespace mynamespace
-  kjournal install -n mynamespace
+	Short: "Deploy the kournal apiserver to kubernetes",
+	Long:  "Deploys the kjournal to kubernetes",
+	Example: `  # Deploy the apiserver to kjournal-system
+  kjournal install -n kjournal-system
   
-  # Stream install from the last 48 hours
-  kjournal install -n mynamespace --since 48h
+  # Output manifests instead deploying
+  kjournal install -n kjournal-system --export
   
-  # Stream install for all deployments
-  kjournal install -n mynamespace deployments
+  # Deploy with certmanager and prometheus operator support
+  kjournal install -n kjournal-system --with-certmanager --with-servicemonitor
   
-  # Stream install for a pod named abc
-  kjournal install -n mynamespace pods/abc`,
+  # Specify a specific version
+  kjournal install -n kjournal-system --version=v0.0.1`,
 	//ValidArgsFunction: resourceNamesCompletionFunc(installv1.GroupVersion.WithKind(corev1alpha1.EventKind)),
 	RunE: installCmdRun,
 }
