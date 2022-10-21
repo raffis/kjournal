@@ -54,6 +54,14 @@ fmt: ## Run go fmt against code.
 vet: ## Run go vet against code.
 	go vet ./...
 
+.PHONY: golangci-lint
+golint: ## Download golint locally if necessary.
+	$(call go-install-tool,$(CONTROLLER_GEN),github.com/golangci/golangci-lint/cmd/golangci-lint@v1.49.0)
+
+.PHONY: lint
+lint: golangci-lint ## Run golangci-lint against code.
+	golangci-lint run ./...
+
 .PHONY: test
 #test: generate fmt vet envtest ## Run tests.
 test:
@@ -64,12 +72,17 @@ kind-deploy: docker-build ## Deploy to kind.
 	kind load docker-image ${IMG} --name kjournal
 	kustomize build config/tests/${KIND_TEST_PROFILE} --enable-helm | kubectl apply -f -
 	kubectl -n kjournal-system wait deployments --all --for=condition=available --timeout=120s
-	kubectl -n kjournal-system get pods | grep -v 'test\|NAME\|fluent' | cut -d ' ' -f1 | xargs kubectl wait pods -n kjournal-system --all --for=condition=ready  --timeout=120s
+	kubectl -n kjournal-system get pods | grep -v 'test\|NAME\|fluent\|log-generator' | cut -d ' ' -f1 | xargs kubectl wait pods -n kjournal-system --all --for=condition=ready  --timeout=120s
 
 .PHONY: kind-debug
 kind-debug: kind-deploy ## Deploy to kind and tail log
 	kubectl -n kjournal-system rollout restart deployment/kjournal-apiserver
+	kubectl -n kjournal-system get pods | grep -v 'test\|NAME\|fluent\|log-generator' | cut -d ' ' -f1 | xargs kubectl wait pods -n kjournal-system --all --for=condition=ready  --timeout=120s
 	kubectl -n kjournal-system logs -l api=kjournal -f
+
+.PHONY: kind-dev-tools
+kind-dev-tools: kind-dev-tools ## Deploy dev-tools to kind.
+	kustomize config/dev-tools | kubectl apply -f -
 
 ##@ Build
 

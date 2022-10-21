@@ -188,8 +188,6 @@ func (get getCommand) listObjects(cmd *cobra.Command, args []string) error {
 		},
 	)
 
-	fmt.Printf("printFlags.OutputFormat %#v\n", p)
-
 	if *printFlags.OutputFormat != "" {
 		err = p.PrintObj(res, os.Stdout)
 		if err != nil {

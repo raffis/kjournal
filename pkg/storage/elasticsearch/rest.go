@@ -50,32 +50,6 @@ func NewElasticsearchREST(
 	}
 }
 
-type esHit struct {
-	Index   string          `json:"_index"`
-	DocType string          `json:"_type"`
-	ID      string          `json:"_id"`
-	Sort    []interface{}   `json:"sort"`
-	Score   float64         `json:"_score"`
-	Source  json.RawMessage `json:"_source"`
-}
-
-type esResults struct {
-	Took     int64  `json:"took"`
-	TimedOut bool   `json:"timed_out"`
-	PitID    string `json:"pit_id"`
-	Hits     esHits `json:"hits"`
-}
-
-type esHits struct {
-	Hits     []esHit `json:"hits"`
-	Took     float64 `json:"took"`
-	MaxScore float64 `json:"max_score"`
-	Total    struct {
-		Value    int64  `json:"value"`
-		Relation string `json:"relation"`
-	} `json:"total"`
-}
-
 type elasticsearchREST struct {
 	rest.TableConvertor
 	groupResource schema.GroupResource
@@ -257,7 +231,7 @@ func (r *elasticsearchREST) fetch(
 		return esResults, err
 	}
 
-	klog.InfoS("elasticsearch query result arrived", "duration", time.Duration(esResults.Took*int64(time.Millisecond)).String(), "timed-out", esResults.TimedOut, "number-of-hits", len(esResults.Hits.Hits))
+	klog.InfoS("elasticsearch query result arrived", "duration", time.Duration(esResults.Took*int64(time.Millisecond)).String(), "timed-out", esResults.TimedOut, "number-of-hits", len(esResults.Hits.Hits), "shards", esResults.Shards)
 	return esResults, err
 }
 
