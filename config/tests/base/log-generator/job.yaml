@@ -3,6 +3,7 @@ kind: Job
 metadata:
   name: log-generator
 spec:
+  ttlSecondsAfterFinished: 0
   template:
     spec:
       containers:
