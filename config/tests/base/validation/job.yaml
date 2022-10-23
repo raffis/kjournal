@@ -1,0 +1,26 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: validation 
+spec:
+  ttlSecondsAfterFinished: 0
+  template:
+    spec:
+      containers:
+      - name: kjournal-cli
+        image: kjournal/cli:latest
+        imagePullPolicy: Never
+        command:
+        - /bin/ash
+        - /tests.sh
+        volumeMounts:
+        - mountPath: /tests.sh
+          name: tests
+          subPath: tests.sh
+      serviceAccount: validation
+      restartPolicy: Never
+      volumes:
+      - name: tests
+        configMap:
+          name: tests
+  backoffLimit: 1

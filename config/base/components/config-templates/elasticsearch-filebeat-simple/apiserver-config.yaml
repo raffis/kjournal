@@ -9,7 +9,7 @@ backend:
 apis:
 - resource: containerlogs
   fieldMap:
-    metadata.namespace: [kubernetes.namespace]
+    metadata.namespace: [kubernetes.namespace.keyword]
     metadata.creationTimestamp: ["@timestamp"]
     pod: [kubernetes.pod.name]
     container: [kubernetes.container.name]

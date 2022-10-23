@@ -161,10 +161,16 @@ func (get getCommand) listObjects(cmd *cobra.Command, args []string) error {
 		return err
 	}
 
-	err = r.
-		Param("limit", getArgs.chunkSize).
-		Do(ctx).
-		Into(res)
+	r.Param("limit", getArgs.chunkSize)
+	logger.Debugf("request uri", "uri", r.URL().String())
+
+	response := r.Do(ctx)
+	var httpCode int
+	response.StatusCode(&httpCode)
+
+	logger.Debugf("apiserver response received", "code", httpCode)
+
+	err = response.Into(res)
 
 	if err != nil {
 		return err

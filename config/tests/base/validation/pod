@@ -1,0 +1,22 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: validation 
+spec:
+  selector:
+    matchLabels:
+      validation: kjournal
+  template:
+    metadata:
+      labels:
+        validation: kjournal
+    spec:
+      serviceAccountName: validation
+      containers:
+      - name: kjournal-cli
+        image: kjournal/cli:latest
+        imagePullPolicy: Never
+        command:
+        - ash
+        - -c 
+        - sleep 3700
