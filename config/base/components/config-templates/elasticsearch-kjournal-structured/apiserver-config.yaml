@@ -8,6 +8,9 @@ backend:
 
 apis:
 - resource: containerlogs
+  fieldMap:
+    metadata.uid: [metadata.uid.keyword]
+    metadata.namespace: [metadata.namespace.keyword]
   backend:
     elasticsearch:
       index: "*"

@@ -9,7 +9,7 @@ type stderrLogger struct {
 	stderr io.Writer
 }
 
-func (l stderrLogger) Actionf(format string, a ...interface{}) {
+func (l stderrLogger) Debugf(format string, a ...interface{}) {
 	fmt.Fprintln(l.stderr, `►`, fmt.Sprintf(format, a...))
 }
 

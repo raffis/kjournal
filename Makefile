@@ -77,7 +77,7 @@ kind-deploy: docker-build ## Deploy to kind.
 .PHONY: kind-debug
 kind-debug: kind-deploy ## Deploy to kind and tail log
 	kubectl -n kjournal-system rollout restart deployment/kjournal-apiserver
-	kubectl -n kjournal-system get pods | grep -v 'test\|NAME\|fluent\|log-generator' | cut -d ' ' -f1 | xargs kubectl wait pods -n kjournal-system --all --for=condition=ready  --timeout=120s
+	kubectl -n kjournal-system rollout status deployment/kjournal-apiserver
 	kubectl -n kjournal-system logs -l api=kjournal -f
 
 .PHONY: kind-dev-tools

@@ -34,6 +34,10 @@ docker-build: build ## Build docker image with the cli.
 	docker build -f Dockerfile.release -t ${IMG} .
 	rm kjournal-cli
 
+.PHONY: kind-load
+kind-load: docker-build ## Load image into kind.
+	kind load docker-image ${IMG} --name kjournal
+
 .PHONY: docker-push
 docker-push: ## Push docker image with the cli.
 	docker push ${IMG}
