@@ -39,7 +39,7 @@ jobs:
         run: |
           docker save --output apiserver.tar kjournal/cli:latest
       - name: Upload image
-        uses: actions/upload-artifact@v2
+        uses: actions/upload-artifact@v3
         with:
           name: cli
           path: cli.tar        
@@ -88,7 +88,7 @@ jobs:
         run: |
           docker save --output apiserver.tar kjournal/apiserver:latest
       - name: Upload image
-        uses: actions/upload-artifact@v2
+        uses: actions/upload-artifact@v3
         with:
           name: apiserver
           path: apiserver.tar        
