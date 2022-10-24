@@ -130,7 +130,7 @@ jobs:
           docker load --input /tmp/cli.tar
           docker image ls -a
       - name: Setup Kustomize
-        uses: karancode/kustomize-github-action@b676f37033bddb725ab648f513c6758906d850ea # v1.2.4
+        uses: imranismail/setup-kustomize@6691bdeb1b0a3286fb7f70fd1423c10e81e5375f # v2.0.0
       - name: Deploy
         run: make kind-deploy KIND_TEST_PROFILE=${{ matrix.profile }}
       - name: Logs
