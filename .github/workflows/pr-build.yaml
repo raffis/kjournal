@@ -143,6 +143,6 @@ jobs:
       - name: Debug failure
         if: failure()
         run: |
+          kubectl -n kjournal-system get pods
           kubectl -n kjournal-system describe pods
-          kubectl -n kjournal-system get all
           kubectl -n kjournal-system logs deploy/kjournal-apiserver

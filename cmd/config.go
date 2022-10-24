@@ -34,7 +34,6 @@ import (
 
 	"github.com/raffis/kjournal/pkg/storage"
 	_ "github.com/raffis/kjournal/pkg/storage/elasticsearch"
-	_ "github.com/raffis/kjournal/pkg/storage/gcloud"
 )
 
 var (
