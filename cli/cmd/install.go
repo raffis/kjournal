@@ -165,7 +165,7 @@ func installCmdRun(cmd *cobra.Command, args []string) error {
 	}
 
 	logger.Successf("manifests build completed")
-	logger.Actionf("installing components in %s namespace", *kubeconfigArgs.Namespace)
+	logger.Infof("installing components in %s namespace", *kubeconfigArgs.Namespace)
 
 	kubeConfig, err := kubeconfigArgs.ToRESTConfig()
 	if err != nil {

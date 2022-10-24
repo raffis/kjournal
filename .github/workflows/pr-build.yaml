@@ -11,13 +11,13 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
-        uses: actions/checkout@v2
+        uses: actions/checkout@2541b1294d2704b0964813337f33b291d3f8596b #v3
       - name: Setup Go
-        uses: actions/setup-go@v2
+        uses: actions/setup-go@c4a742cab115ed795e34d4513e2cf7d472deb55f #v3.3.1
         with:
           go-version: 1.18.x
       - name: Restore Go cache
-        uses: actions/cache@v1
+        uses: actions/cache@9b0c1fce7a93df8e3bb8926b0d6e9d89e92f20a7 #v3.0.11
         with:
           path: /home/runner/work/_temp/_github_home/go/pkg/mod
           key: ${{ runner.os }}-go-${{ hashFiles('**/go.sum') }}
@@ -39,7 +39,7 @@ jobs:
         run: |
           docker save --output apiserver.tar kjournal/cli:latest
       - name: Upload image
-        uses: actions/upload-artifact@v2
+        uses: actions/upload-artifact@83fd05a356d7e2593de66fc9913b3002723633cb #v3.1.1
         with:
           name: cli
           path: cli.tar        
@@ -50,13 +50,13 @@ jobs:
       profiles: ${{ steps.profiles.outputs.matrix }}    
     steps:
       - name: Checkout
-        uses: actions/checkout@v2
+        uses: actions/checkout@2541b1294d2704b0964813337f33b291d3f8596b #v3
       - name: Setup Go
-        uses: actions/setup-go@v2
+        uses: actions/setup-go@c4a742cab115ed795e34d4513e2cf7d472deb55f #v3.3.1
         with:
           go-version: 1.18.x
       - name: Restore Go cache
-        uses: actions/cache@v1
+        uses: actions/cache@9b0c1fce7a93df8e3bb8926b0d6e9d89e92f20a7 #v3.0.11
         with:
           path: /home/runner/work/_temp/_github_home/go/pkg/mod
           key: ${{ runner.os }}-go-${{ hashFiles('**/go.sum') }}
@@ -88,7 +88,7 @@ jobs:
         run: |
           docker save --output apiserver.tar kjournal/apiserver:latest
       - name: Upload image
-        uses: actions/upload-artifact@v2
+        uses: actions/upload-artifact@83fd05a356d7e2593de66fc9913b3002723633cb #v3.1.1
         with:
           name: apiserver
           path: apiserver.tar        
@@ -107,7 +107,7 @@ jobs:
         profile: ${{ fromJson(needs.apiserver.outputs.profiles) }}
     steps:
       - name: Checkout
-        uses: actions/checkout@v2
+        uses: actions/checkout@2541b1294d2704b0964813337f33b291d3f8596b #v3
       - name: Setup Kubernetes
         uses: engineerd/setup-kind@aa272fe2a7309878ffc2a81c56cfe3ef108ae7d0 #v0.5.0
         with:

@@ -25,7 +25,12 @@ vet:
 test:
 	go test ./... -v -coverprofile coverage.out
 
-build:
+manifests:
+	rm -rfv cmd/config
+	mkdir cmd/config
+	cp -Rpv ../config/base cmd/config/
+
+build: manifests
 	CGO_ENABLED=0 go build -o ./bin/kjournal ./cmd
 
 .PHONY: docker-build
