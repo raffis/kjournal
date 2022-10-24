@@ -37,7 +37,7 @@ jobs:
             --cache-to=type=local,dest=/tmp/.buildx-cache-new,mode=max"
       - name: Create image tarball
         run: |
-          docker save --output apiserver.tar kjournal/cli:latest
+          docker save --output cli.tar kjournal/cli:latest
       - name: Upload image
         uses: actions/upload-artifact@83fd05a356d7e2593de66fc9913b3002723633cb #v3.1.1
         with:
@@ -115,12 +115,12 @@ jobs:
           version: v0.11.1
           image: kindest/node:v1.21.1@sha256:69860bda5563ac81e3c0057d654b5253219618a22ec3a346306239bba8cfa1a6
       - name: Download apiserver
-        uses: actions/download-artifact@v2
+        uses: actions/download-artifact@9782bd6a9848b53b110e712e20e42d89988822b7 #v3.0.1
         with:
           name: apiserver
           path: /tmp
       - name: Download cli
-        uses: actions/download-artifact@v2
+        uses: actions/download-artifact@9782bd6a9848b53b110e712e20e42d89988822b7 #v3.0.1
         with:
           name: cli
           path: /tmp
@@ -130,7 +130,7 @@ jobs:
           docker load --input /tmp/cli.tar
           docker image ls -a
       - name: Setup Kustomize
-        uses: fluxcd/pkg/actions/kustomize@main
+        uses: karancode/kustomize-github-action@b676f37033bddb725ab648f513c6758906d850ea # v1.2.4
       - name: Deploy
         run: make kind-deploy KIND_TEST_PROFILE=${{ matrix.profile }}
       - name: Logs
