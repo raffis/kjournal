@@ -15,6 +15,7 @@ apis:
     elasticsearch:
       index: "*"
       timestampFields: ["metadata.creationTimestamp"]
+      uidFields: [metadata.uid.keyword]
 
 - resource: events
   backend:

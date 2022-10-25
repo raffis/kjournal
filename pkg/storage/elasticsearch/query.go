@@ -59,12 +59,12 @@ func queryFromListOptions(ctx context.Context, options *metainternalversion.List
 	return q.query, nil
 }
 
-func (b *queryBuilder) fieldMapping(field string) []string {
+func (b *queryBuilder) fieldMapping(field string, defaultMap []string) []string {
 	if val, ok := b.rest.opts.FieldMap[field]; ok {
 		return val
 	}
 
-	return []string{field}
+	return defaultMap
 }
 
 func (b *queryBuilder) continueToken() error {
@@ -92,7 +92,7 @@ func (b *queryBuilder) sortByTimestampFields() error {
 		})
 	}
 
-	for _, uidField := range b.fieldMapping("metadata.uid") {
+	for _, uidField := range b.fieldMapping("metadata.uid", []string{}) {
 		b.query["sort"] = append(b.query["sort"].([]map[string]interface{}), map[string]interface{}{
 			uidField: map[string]interface{}{
 				"order":         "asc",
@@ -210,7 +210,7 @@ func (b *queryBuilder) namespaceFilter() error {
 	}
 
 	ns, _ := request.NamespaceFrom(b.ctx)
-	nsFields := b.fieldMapping("metadata.namespace")
+	nsFields := b.fieldMapping("metadata.namespace", []string{"metadata.namespace"})
 	q := b.query["query"].(map[string]interface{})["bool"].(map[string]interface{})["must"].([]map[string]interface{})
 	var should []map[string]interface{}
 
