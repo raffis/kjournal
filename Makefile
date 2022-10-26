@@ -74,7 +74,7 @@ kind-deploy: docker-build ## Deploy to kind.
 	kind load docker-image ${IMG} --name kjournal
 	make kind-load -C cli
 	kustomize build config/tests/${KIND_TEST_PROFILE} --enable-helm | kubectl apply -f -	
-	kubectl -n kjournal-system wait --for=condition=complete --timeout=120s job/validation
+	kubectl -n kjournal-system wait --for=condition=complete --timeout=180s job/validation
 	#kubectl -n kjournal-system wait deployments --all --for=condition=available --timeout=120s
 	#kubectl -n kjournal-system get pods | grep -v 'test\|NAME\|fluent\|log-generator' | cut -d ' ' -f1 | xargs kubectl wait pods -n kjournal-system --all --for=condition=ready  --timeout=120s
 

@@ -23,4 +23,4 @@ spec:
       - name: tests
         configMap:
           name: tests
-  backoffLimit: 1
+  backoffLimit: 0
