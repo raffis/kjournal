@@ -144,5 +144,7 @@ jobs:
         if: failure()
         run: |
           kubectl -n kjournal-system get pods
+          kubectl get apiservice v1alpha1.core.kjournal
           kubectl -n kjournal-system describe pods
           kubectl -n kjournal-system logs deploy/kjournal-apiserver
+          kubectl get containerlogs -n kjournal-system --field-selector payload.foobar=foobar -o json

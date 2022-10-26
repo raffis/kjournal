@@ -1,6 +1,6 @@
 #!/bin/ash
 
-export timeout=180
+export timeout=250
 export retry=3
 
 echo "# Find logs from log-generator in no stream mode succeeds"
