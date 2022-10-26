@@ -76,7 +76,7 @@ func TestList(t *testing.T) {
 					},
 				},
 			},
-			expectedESRequest: `{"_source":{"excludes":["kind","apiVersion"]},"query":{"bool":{"must":[{"bool":{"should":null}},{"bool":{"should":[{"match_phrase":{"metadata.namespace":""}}]}}],"must_not":[]}},"sort":[{"metadata.uid":{"order":"asc","unmapped_type":"long"}}]}
+			expectedESRequest: `{"_source":{"excludes":["kind","apiVersion"]},"query":{"bool":{"must":[{"bool":{"should":null}},{"bool":{"should":[{"match_phrase":{"metadata.namespace":""}}]}}],"must_not":[]}},"sort":[]}
 `,
 			expectedResult: &DummyList{
 				Items: []Dummy{
@@ -108,7 +108,7 @@ func TestList(t *testing.T) {
 					},
 				},
 			},
-			expectedESRequest: `{"_source":{"excludes":["kind","apiVersion"]},"query":{"bool":{"must":[{"bool":{"should":null}},{"bool":{"should":[{"match_phrase":{"metadata.namespace":""}}]}}],"must_not":[]}},"sort":[{"metadata.uid":{"order":"asc","unmapped_type":"long"}}]}
+			expectedESRequest: `{"_source":{"excludes":["kind","apiVersion"]},"query":{"bool":{"must":[{"bool":{"should":null}},{"bool":{"should":[{"match_phrase":{"metadata.namespace":""}}]}}],"must_not":[]}},"sort":[]}
 `,
 			expectedResult: &DummyList{
 				ListMeta: v1.ListMeta{
@@ -143,7 +143,7 @@ func TestList(t *testing.T) {
 					},
 				},
 			},
-			expectedESRequest: `{"_source":{"excludes":["kind","apiVersion"]},"query":{"bool":{"must":[{"bool":{"should":null}},{"bool":{"should":[{"match_phrase":{"metadata.namespace":""}}]}}],"must_not":[]}},"search_after":["sortFieldA"],"sort":[{"metadata.uid":{"order":"asc","unmapped_type":"long"}}]}
+			expectedESRequest: `{"_source":{"excludes":["kind","apiVersion"]},"query":{"bool":{"must":[{"bool":{"should":null}},{"bool":{"should":[{"match_phrase":{"metadata.namespace":""}}]}}],"must_not":[]}},"search_after":["sortFieldA"],"sort":[]}
 `,
 			expectedResult: &DummyList{
 				Items: []Dummy{
@@ -187,7 +187,7 @@ func TestList(t *testing.T) {
 					FieldSelector: fields.Everything(),
 				}
 			},
-			expectedESRequest: `{"_source":{"excludes":["kind","apiVersion"]},"query":{"bool":{"must":[{"bool":{"should":[{"range":{"fieldA":{"lt":"1"}}}]}},{"bool":{"should":[{"range":{"fieldA":{"gt":"1"}}}]}},{"bool":{"should":[{"match_phrase":{"fieldA":"fieldB"}}]}},{"bool":{"should":[{"match_phrase":{"fieldA":"fieldB"}}]}},{"bool":{"should":[null]}},{"bool":{"should":null}},{"bool":{"should":[{"match_phrase":{"metadata.namespace":""}}]}}],"must_not":[{"bool":{"should":[{"match_phrase":{"fieldA":"fieldB"}}]}},{"bool":{"should":[{"exists":{"field":"fieldA"}}]}}]}},"sort":[{"metadata.uid":{"order":"asc","unmapped_type":"long"}}]}
+			expectedESRequest: `{"_source":{"excludes":["kind","apiVersion"]},"query":{"bool":{"must":[{"bool":{"should":[{"range":{"fieldA":{"lt":"1"}}}]}},{"bool":{"should":[{"range":{"fieldA":{"gt":"1"}}}]}},{"bool":{"should":[{"match_phrase":{"fieldA":"fieldB"}}]}},{"bool":{"should":[{"match_phrase":{"fieldA":"fieldB"}}]}},{"bool":{"should":[null]}},{"bool":{"should":null}},{"bool":{"should":[{"match_phrase":{"metadata.namespace":""}}]}}],"must_not":[{"bool":{"should":[{"match_phrase":{"fieldA":"fieldB"}}]}},{"bool":{"should":[{"exists":{"field":"fieldA"}}]}}]}},"sort":[]}
 `,
 		},
 		{
@@ -205,7 +205,7 @@ func TestList(t *testing.T) {
 					FieldSelector: fields.Everything(),
 				}
 			},
-			expectedESRequest: `{"_source":{"excludes":["kind","apiVersion"]},"query":{"bool":{"must":[{"bool":{"should":[{"range":{"toFieldA":{"lt":"1"}}}]}},{"bool":{"should":[{"range":{"toFieldA":{"gt":"1"}}}]}},{"bool":{"should":[{"match_phrase":{"toFieldA":"fieldB"}}]}},{"bool":{"should":[{"match_phrase":{"toFieldA":"fieldB"}}]}},{"bool":{"should":[null]}},{"bool":{"should":null}},{"bool":{"should":[{"match_phrase":{"metadata.namespace":""}}]}}],"must_not":[{"bool":{"should":[{"match_phrase":{"toFieldA":"fieldB"}}]}},{"bool":{"should":[{"exists":{"field":"toFieldA"}}]}}]}},"sort":[{"metadata.uid":{"order":"asc","unmapped_type":"long"}}]}
+			expectedESRequest: `{"_source":{"excludes":["kind","apiVersion"]},"query":{"bool":{"must":[{"bool":{"should":[{"range":{"toFieldA":{"lt":"1"}}}]}},{"bool":{"should":[{"range":{"toFieldA":{"gt":"1"}}}]}},{"bool":{"should":[{"match_phrase":{"toFieldA":"fieldB"}}]}},{"bool":{"should":[{"match_phrase":{"toFieldA":"fieldB"}}]}},{"bool":{"should":[null]}},{"bool":{"should":null}},{"bool":{"should":[{"match_phrase":{"metadata.namespace":""}}]}}],"must_not":[{"bool":{"should":[{"match_phrase":{"toFieldA":"fieldB"}}]}},{"bool":{"should":[{"exists":{"field":"toFieldA"}}]}}]}},"sort":[]}
 `,
 		},
 		{
@@ -227,7 +227,7 @@ func TestList(t *testing.T) {
 					FieldSelector: fields.Everything(),
 				}
 			},
-			expectedESRequest: `{"_source":{"excludes":["kind","apiVersion"]},"query":{"bool":{"must":[{"bool":{"should":[{"range":{"timestampField":{"gte":"now-24h"}}}]}},{"bool":{"should":[{"match_phrase":{"metadata.namespace":""}}]}}],"must_not":[]}},"sort":[{"timestampField":{"order":"asc","unmapped_type":"long"}},{"metadata.uid":{"order":"asc","unmapped_type":"long"}}]}
+			expectedESRequest: `{"_source":{"excludes":["kind","apiVersion"]},"query":{"bool":{"must":[{"bool":{"should":[{"range":{"timestampField":{"gte":"now-24h"}}}]}},{"bool":{"should":[{"match_phrase":{"metadata.namespace":""}}]}}],"must_not":[]}},"sort":[{"timestampField":{"order":"asc","unmapped_type":"long"}}]}
 `,
 		},
 		{
@@ -246,7 +246,7 @@ func TestList(t *testing.T) {
 					FieldSelector: fields.Everything(),
 				}
 			},
-			expectedESRequest: `{"_source":{"excludes":["kind","apiVersion"]},"query":{"bool":{"must":[{"bool":{"should":[{"range":{"timestampField":{"lt":"1"}}}]}},{"bool":{"should":[{"match_phrase":{"metadata.namespace":""}}]}}],"must_not":[]}},"sort":[{"timestampField":{"order":"asc","unmapped_type":"long"}},{"metadata.uid":{"order":"asc","unmapped_type":"long"}}]}
+			expectedESRequest: `{"_source":{"excludes":["kind","apiVersion"]},"query":{"bool":{"must":[{"bool":{"should":[{"range":{"timestampField":{"lt":"1"}}}]}},{"bool":{"should":[{"match_phrase":{"metadata.namespace":""}}]}}],"must_not":[]}},"sort":[{"timestampField":{"order":"asc","unmapped_type":"long"}}]}
 `,
 		},
 		{
@@ -277,7 +277,7 @@ func TestList(t *testing.T) {
 					},
 				},
 			},
-			expectedESRequest: `{"_source":{"excludes":["kind","apiVersion"]},"query":{"bool":{"must":[{"bool":{"should":[{"range":{"timestampField":{"gte":"now-24h"}}}]}},{"bool":{"should":[{"match_phrase":{"metadata.namespace":""}}]}}],"must_not":[]}},"sort":[{"timestampField":{"order":"asc","unmapped_type":"long"}},{"metadata.uid":{"order":"asc","unmapped_type":"long"}}]}
+			expectedESRequest: `{"_source":{"excludes":["kind","apiVersion"]},"query":{"bool":{"must":[{"bool":{"should":[{"range":{"timestampField":{"gte":"now-24h"}}}]}},{"bool":{"should":[{"match_phrase":{"metadata.namespace":""}}]}}],"must_not":[]}},"sort":[{"timestampField":{"order":"asc","unmapped_type":"long"}}]}
 `,
 			expectedResult: &DummyList{
 				Items: []Dummy{

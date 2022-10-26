@@ -1,3 +1,5 @@
+config/tests/loki-promtail-simple/
+
 # Binaries for programs and plugins
 *.exe
 *.exe~
