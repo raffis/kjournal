@@ -9,5 +9,4 @@ configMapGenerator:
 resources: 
 - sa.yaml
 - rolebinding.yaml
-#- pod
 - job.yaml
