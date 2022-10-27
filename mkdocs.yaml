@@ -36,6 +36,24 @@ plugins:
   - minify:
       minify_html: true
 
+markdown_extensions:
+  - tables
+  - footnotes
+  - pymdownx.tabbed:
+      alternate_style: true 
+  - pymdownx.superfences:
+      custom_fences:
+        - name: mermaid
+          class: mermaid
+          format: !!python/name:pymdownx.superfences.fence_code_format
+  - admonition
+  - codehilite
+  - meta
+  - toc:
+      permalink: true
+  - pymdownx.tasklist:
+      custom_checkbox: true
+
 extra:
   social:
     - icon: fontawesome/brands/github-alt
@@ -45,35 +63,36 @@ nav:
 - Home: index.md
 - quick-start.md
 - how-it-works.md
+- resources.md
 - Prerequisites:
-  - prerequisites/audit.md
   - prerequisites/ship.md
+  - prerequisites/audit.md
+  - prerequisites/event-exporter.md
 - Server:
+  - server/quick-start.md
+  - server/config.md
   - server/install.md
+  - server/uninstall.md
+  - Methods:
+    - server/methods/helm.md
   - Storage:
     - server/storage/elasticsearch.md
     - server/storage/other.md
+  - Command Line Usage:
+      - server/cmdref/kjournal-apiserver.md
 - CLI:
   - cli/install.md
   - Command Line Usage:
       - cli/cmdref/kjournal.md
       - cli/cmdref/kjournal_audit.md
+      - cli/cmdref/kjournal_clusteraudit.md
       - cli/cmdref/kjournal_diary.md
       - cli/cmdref/kjournal_version.md
+- Tutorials:
+  - tutorials/kind.md
 - API:
-  - api/container.v1beta1.md
-  - api/audit.v1.md
-- Community:
-  - CONTRIBUTING.md
-
-markdown_extensions:
-  - admonition
-  - codehilite
-  - meta
-  - toc:
-      permalink: true
-  - pymdownx.tabbed
-  - pymdownx.superfences
-  - pymdownx.tasklist:
-      custom_checkbox: true
-  - footnotes
+  - api/config.kjournal.v1alpha1.md
+  - api/core.kjournal.v1alpha1.md
+- Development:
+  - development/CONTRIBUTING.md
+  - development/CODE_OF_CONDUCT.md

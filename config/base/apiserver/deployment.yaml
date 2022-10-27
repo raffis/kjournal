@@ -1,0 +1,64 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: apiserver
+  labels:
+    api: kjournal
+    apiserver: "true"
+spec:
+  selector:
+    matchLabels:
+      api: kjournal
+      apiserver: "true"
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        api: kjournal
+        apiserver: "true"
+    spec:
+      containers:
+      - name: kjournal-apiserver
+        image: kjournal/apiserver:latest
+        imagePullPolicy: Never
+        volumeMounts:
+        - name: tmp
+          mountPath: /tmp
+        args:
+        - "--audit-log-path=-"
+        - "--feature-gates=APIPriorityAndFairness=false"
+        - "--audit-log-maxage=0"
+        - "--audit-log-maxbackup=0"
+        - --secure-port=8443
+        - --cert-dir=/tmp
+        resources:
+          requests:
+            cpu: "100m"
+            memory: 20Mi
+          limits:
+            cpu: "1"
+            memory: 200Mi
+        securityContext:
+          allowPrivilegeEscalation: false
+          readOnlyRootFilesystem: true
+          runAsNonRoot: true
+          capabilities:
+            drop: ["ALL"]
+          seccompProfile:
+            type: RuntimeDefault
+        ports:
+        - containerPort: 8443
+          name: https
+          protocol: TCP
+        #readinessProbe:
+        #  httpGet:
+        #    path: /readyz
+        #    port: https
+        #livenessProbe:
+        #  httpGet:
+        #    path: /healthz
+        #    port: https
+      serviceAccountName: apiserver
+      volumes:
+      - name: tmp
+        emptyDir: {}

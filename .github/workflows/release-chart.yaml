@@ -10,18 +10,28 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
-        uses: actions/checkout@v2
+        uses: actions/checkout@2541b1294d2704b0964813337f33b291d3f8596b #v3
         with:
           fetch-depth: 0
 
-      - name: Configure Git
-        run: |
-          git config user.name "$GITHUB_ACTOR"
-          git config user.email "$GITHUB_ACTOR@users.noreply.github.com"
+      - name: Install Helm
+        uses: azure/setup-helm@b5b231a831f96336bbfeccc1329990f0005c5bb1 #v3.3
 
-      - name: Run chart-releaser
-        uses: helm/chart-releaser-action@v1.3.0
+      - name: Install yq
+        uses: chrisdickinson/setup-yq@69aa9efdf7a9240129b103a65373c05cbc375679  #v1.0.0
         with:
-          charts_dir: ./chart
-        env:
-          CR_TOKEN: "${{ secrets.GITHUB_TOKEN }}"
+          yq-version: v4.24.5
+
+      - name: Login to Github Container Registry using helm
+        run: echo ${{ secrets.GITHUB_TOKEN }} | helm registry login ghcr.io --username ${{ github.actor }} --password-stdin
+
+      - name: Package helm charts
+        run: |
+          chartVersion=$(helm show chart chart/kjournal | yq e '.version')
+          appVersion=$(helm show chart chart/kjournal | yq e '.version')
+          helm package chart/kjournal --version=$chartVersion --app-version=$appVersion -d chart
+
+      - name: Publish helm charts to Github Container Registry
+        run: |
+          repository=$(echo "${{ github.repository_owner }}" | tr [:upper:] [:lower:])
+          helm push ${{ github.workspace }}/chart/kjournal-*.tgz oci://ghcr.io/$repository/charts

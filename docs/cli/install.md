@@ -5,63 +5,113 @@ Below you can find the steps for each of them.
 
 ## Install the pre-compiled binary
 
-### homebrew tap
-
-```sh
-brew install kjournal/tap/kjournal
-```
-
-### krew 
-
-
-
-### deb, rpm and apk packages
-
-Download the `.deb`, `.rpm` or `.apk` packages from the [OSS releases page][releases] and install them with the appropriate tools.
-
-### go install
-
-go install github.com/goreleaser/goreleaser@latest
-
-### bash script
-
-```sh
-curl -sfL https://goreleaser.com/static/run | bash
-```
-
-=== "Additional Options"
-    You can also set the `VERSION` and `DISTRIBUTION` variables to specify
-    a version instead of using latest and `pro` or `oss` distributions,
-    respectively.
-
-    You can also pass flags and args to GoReleaser:
-
-    ```bash
-    curl -sfL https://goreleaser.com/static/run |
-      VERSION=__VERSION__ DISTRIBUTION=oss bash -s -- check
+=== "Brew"
+    ```sh
+    brew install kjournal/tap/kjournal
     ```
 
-!!! tip
-    This script does not install anything, it just downloads, verifies and
-    runs GoReleaser.
-    It's purpose is to be used within scripts and CIs.
+=== "Go"
+    ```sh
+    go install github.com/raffis/kjournal@latest
+    ```
 
-### manually
+=== "Bash"
+    ```sh
+    curl -sfL https://raw.githubusercontent.com/raffis/kjournal/main/cli/install/kjournal.sh | bash
+    ```
 
-Download the pre-compiled binaries from the [OSS releases page][releases] and copy them to the desired location.
+=== "Docker"
+    ```sh
+    docker pull ghcr.io/raffis/kjournal/cli
+    ```
 
+### Specific version
+
+Due server compatibility reasons (or any other) you may want to install anoher version rather than the latest.
+Here version `v0.0.1` gets installed.
+
+=== "Brew"
+    ```sh
+    brew install kjournal/tap/kjournal@v0.0.1
+    ```
+
+=== "Go"
+    ```sh
+    go install github.com/raffis/kjournal@v0.0.1
+    ```
+
+=== "Bash"
+    ```sh
+    curl -sfL https://raw.githubusercontent.com/raffis/kjournal/main/cli/install/kjournal.sh | VERSION=0.0.1 bash
+    ```
+
+=== "Docker"
+    ```sh
+    docker pull ghcr.io/raffis/kjournal/cli:v0.0.1
+    ```
+
+## Compatibility with apiserver
+
+The kjornal cli gurantees compatibility for three minor versions with the apiserver.
+The previous minor release, the same and a newer apiserver.
+That said this guarantees full compatibility, a bigger version gap will likely still work.
+
+Example:
+
+| cli       | apiserver | Fully compatible
+| v1.1.0    | v1.0.0    | `yes`
+| v1.1.0    | v1.1.0    | `yes`
+| v1.1.0    | v1.2.0    | `yes`
+| v1.1.0    | v1.3.0    | `no`
+| v1.0.0    | v1.2.0    | `no`
+
+
+!!! Note
+    Releases from 0.x do not offer any compatibility guarantees between different versions of the cli and the apiserver.
+
+
+## Enable shell completion
+
+=== "Bash"
+    ```sh
+    kjournal completion bash
+    ```
+
+=== "zsh"
+    ```sh
+    kjournal completion zsh
+    ```
+
+=== "Fish"
+    ```sh
+    kjournal completion fish
+    ```
+
+=== "Fish"
+    ```sh
+    kjournal completion powershell
+    ```
+
+## Bash Additional Options
+You can also set the `VERSION`, `OS`,  and `ARCH` variables to specify
+a version instead of using latest.
+
+```bash
+curl -sfL https://raw.githubusercontent.com/raffis/kjournal/main/cli/install/kjournal.sh |
+    VERSION=__VERSION__  bash -s -- check
+```
 
 ## Verifying the artifacts
 
-### binaries
+### Binaries
 
-All artifacts are checksummed and the checksum file is signed with [cosign][].
+All artifacts are checksummed and the checksum file is signed with [cosign](https://github.com/sigstore/cosign).
 
 1. Download the files you want, and the `checksums.txt`, `checksum.txt.pem` and `checksums.txt.sig` files from the [releases][releases] page:
     ```sh
-    wget https://github.com/goreleaser/goreleaser/releases/download/__VERSION__/checksums.txt
-    wget https://github.com/goreleaser/goreleaser/releases/download/__VERSION__/checksums.txt.sig
-    wget https://github.com/goreleaser/goreleaser/releases/download/__VERSION__/checksums.txt.pem
+    wget https://github.com/raffis/kjournal/releases/download/__VERSION__/checksums.txt
+    wget https://github.com/raffis/kjournal/releases/download/__VERSION__/checksums.txt.sig
+    wget https://github.com/raffis/kjournal/releases/download/__VERSION__/checksums.txt.pem
     ```
 1. Verify the signature:
     ```sh
@@ -75,14 +125,14 @@ All artifacts are checksummed and the checksum file is signed with [cosign][].
     sha256sum --ignore-missing -c checksums.txt
     ```
 
-### docker images
+### Container images
 
-Our Docker images are signed with [cosign][].
+Likewise are the container images signed with [cosign](https://github.com/sigstore/cosign).
 
 Verify the signatures:
 
 ```sh
-COSIGN_EXPERIMENTAL=1 cosign verify goreleaser/goreleaser
+cosign verify ghcr.io/raffis/kjournal/cli
 ```
 
 !!! info
@@ -90,45 +140,14 @@ COSIGN_EXPERIMENTAL=1 cosign verify goreleaser/goreleaser
 
 ## Running with Docker
 
-You can also use it within a Docker container.
-To do that, you'll need to execute something more-or-less like the examples below.
-
-Registries:
-
-- [`goreleaser/goreleaser`](https://hub.docker.com/r/goreleaser/goreleaser)
-- [`ghcr.io/goreleaser/goreleaser`](https://github.com/goreleaser/goreleaser/pkgs/container/goreleaser)
-
+You can also use the cli within a Docker container.
 Example usage:
 
 ```sh
-docker run --rm --privileged \
-    -v $PWD:/go/src/github.com/user/repo \
-    -v /var/run/docker.sock:/var/run/docker.sock \
-    -w /go/src/github.com/user/repo \
-    -e GITHUB_TOKEN \
-    -e DOCKER_USERNAME \
-    -e DOCKER_PASSWORD \
-    -e DOCKER_REGISTRY \
-    goreleaser/goreleaser release
+docker run 
+    -v ~/.kube:/home/alpine/.kube \
+    ghcr.io/raffis/kjournal/cli
 ```
-
-!!! info
-    Currently, the provided docker image does not support
-    the generation of snapcraft packages.
-
-Note that the image will almost always have the last stable Go version.
-
-The `DOCKER_REGISTRY` environment variable can be left empty when you are
-releasing to the public docker registry.
-
-If you need more things, you are encouraged to keep your own image. You can
-always use GoReleaser's [own Dockerfile][dockerfile] as an example though
-and iterate from that.
-
-[dockerfile]: https://github.com/goreleaser/goreleaser/blob/main/Dockerfile
-[releases]: https://github.com/goreleaser/goreleaser/releases
-[pro-releases]: https://github.com/goreleaser/goreleaser-pro/releases
-[cosign]: https://github.com/sigstore/cosign
 
 ## Compiling from source
 

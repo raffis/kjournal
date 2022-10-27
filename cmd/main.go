@@ -17,18 +17,31 @@ limitations under the License.
 package main
 
 import (
+	"fmt"
 	"net/http"
+	_ "net/http/pprof"
+	"runtime"
 
 	"k8s.io/klog/v2"
 	"sigs.k8s.io/apiserver-runtime/pkg/builder"
 
 	// +kubebuilder:scaffold:resource-imports
-	logv1beta1adapter "github.com/raffis/kjournal/internal/container/v1beta1"
-	auditv1 "github.com/raffis/kjournal/pkg/apis/audit/v1"
+
+	"github.com/pyroscope-io/client/pyroscope"
+	adapterv1alpha1 "github.com/raffis/kjournal/internal/apis/core/v1alpha1"
+	"github.com/raffis/kjournal/pkg/apis/core/v1alpha1"
+	"github.com/spf13/cobra"
+	k8sversion "k8s.io/apimachinery/pkg/version"
+)
+
+const (
+	version = "0.0.0-dev"
+	commit  = "none"
+	date    = "unknown"
 )
 
 type apiServerFlags struct {
-	storageBackend string
+	configFile string
 }
 
 type httpWrap struct {
@@ -39,7 +52,12 @@ var (
 	apiServerArgs apiServerFlags
 )
 
+var (
+	rootCmd *cobra.Command
+)
+
 func (m *httpWrap) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+	fmt.Printf("req %#v\n", r.RequestURI)
 	q := r.URL.Query()
 	fieldSelector := q.Get("fieldSelector")
 	q.Set("labelSelector", fieldSelector)
@@ -49,11 +67,44 @@ func (m *httpWrap) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 }
 
 func main() {
+	runtime.SetMutexProfileFraction(5)
+	runtime.SetBlockProfileRate(5)
+
+	pyroscope.Start(pyroscope.Config{
+		ApplicationName: "simple.golang.app",
+
+		// replace this with the address of pyroscope server
+		ServerAddress: "http://pyroscope:4040",
+
+		// you can disable logging by setting this to nil
+		Logger: pyroscope.StandardLogger,
+
+		// optionally, if authentication is enabled, specify the API key:
+		// AuthToken: os.Getenv("PYROSCOPE_AUTH_TOKEN"),
+
+		ProfileTypes: []pyroscope.ProfileType{
+			// these profile types are enabled by default:
+			pyroscope.ProfileCPU,
+			pyroscope.ProfileAllocObjects,
+			pyroscope.ProfileAllocSpace,
+			pyroscope.ProfileInuseObjects,
+			pyroscope.ProfileInuseSpace,
+
+			// these profile types are optional:
+			pyroscope.ProfileGoroutines,
+			pyroscope.ProfileMutexCount,
+			pyroscope.ProfileMutexDuration,
+			pyroscope.ProfileBlockCount,
+			pyroscope.ProfileBlockDuration,
+		},
+	})
+
 	cmd, err := builder.APIServer.
 		// +kubebuilder:scaffold:resource-register
-		WithResourceAndHandler(&logv1beta1adapter.Log{}, newElasticsearchLogStorageProvider(&logv1beta1adapter.Log{})).
-		WithResourceAndHandler(&auditv1.Event{}, newElasticsearchAuditStorageProvider(&auditv1.Event{})).
-		WithResourceAndHandler(&auditv1.ClusterEvent{}, newElasticsearchAuditStorageProvider(&auditv1.ClusterEvent{})).
+		WithResourceAndHandler(&v1alpha1.Log{}, storageMapper(&v1alpha1.Log{})).
+		WithResourceAndHandler(&v1alpha1.ContainerLog{}, storageMapper(&v1alpha1.ContainerLog{})).
+		WithResourceAndHandler(&adapterv1alpha1.AuditEvent{}, storageMapper(&adapterv1alpha1.AuditEvent{})).
+		WithResourceAndHandler(&adapterv1alpha1.Event{}, storageMapper(&adapterv1alpha1.Event{})).
 		WithLocalDebugExtension().
 		WithoutEtcd().
 		WithServerFns(func(server *builder.GenericAPIServer) *builder.GenericAPIServer {
@@ -65,13 +116,39 @@ func main() {
 
 			return server
 		}).
+		WithServerFns(func(server *builder.GenericAPIServer) *builder.GenericAPIServer {
+			server.Version = &k8sversion.Info{
+				GitCommit: commit,
+				BuildDate: date,
+			}
+
+			return server
+		}).
 		Build()
 	if err != nil {
 		klog.Fatal(err)
 	}
 
-	cmd.Flags().StringVar(&apiServerArgs.storageBackend, "log-storage-backend", "elasticsearch", "Storage backend, currently only elasticsearch is supported")
-	elasticsearchFlags(cmd)
+	cmd.Flags().StringVar(&apiServerArgs.configFile, "config", "", "Path to kjournal config")
+
+	rootCmd = cmd
+	rootCmd.Use = "kjournal-apiserver"
+	rootCmd.Short = "Launches the kjournal kubernetes apiserver"
+
+	// TODO: workaorund for removing etcd related flags. Apparantly WithoutEtcd() does not work.
+	rootCmd.Flags().MarkHidden("etcd-cafile")
+	rootCmd.Flags().MarkHidden("etcd-certfile")
+	rootCmd.Flags().MarkHidden("etcd-compaction-interval")
+	rootCmd.Flags().MarkHidden("etcd-count-metric-poll-period")
+	rootCmd.Flags().MarkHidden("etcd-db-metric-poll-interval")
+	rootCmd.Flags().MarkHidden("etcd-healthcheck-timeout")
+	rootCmd.Flags().MarkHidden("etcd-keyfile")
+	rootCmd.Flags().MarkHidden("etcd-prefix")
+	rootCmd.Flags().MarkHidden("etcd-servers")
+	rootCmd.Flags().MarkHidden("etcd-servers-overrides")
+
+	cmd.AddCommand(cmdMan)
+	cmd.AddCommand(cmdRef)
 
 	err = cmd.Execute()
 	if err != nil {

@@ -1,3 +1,3 @@
 package apis
 
-// +domain=k8s.io
+// +domain=kjournal.io

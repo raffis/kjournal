@@ -1,8 +1,12 @@
 
 # Image URL to use all building/pushing image targets
-IMG ?= kjournal-apiserver:latest
+IMG ?= kjournal/apiserver:latest
 # ENVTEST_K8S_VERSION refers to the version of kubebuilder assets to be downloaded by envtest binary.
 ENVTEST_K8S_VERSION = 1.23
+
+BINARY_NAME=mybinary
+
+TEST_PROFILE=elasticsearchv7-fluentbit-kjournal-structured
 
 # Get the currently used golang install path (in GOPATH/bin, unless GOBIN is set)
 ifeq (,$(shell go env GOBIN))
@@ -39,13 +43,10 @@ help: ## Display this help.
 
 ##@ Development
 
-.PHONY: manifests
-manifests: controller-gen ## Generate WebhookConfiguration, ClusterRole and CustomResourceDefinition objects.
-	$(CONTROLLER_GEN) rbac:roleName=manager-role crd webhook paths="./..." output:crd:artifacts:config=config/crd/bases
-
 .PHONY: generate
 generate: controller-gen ## Generate code containing DeepCopy, DeepCopyInto, and DeepCopyObject method implementations.
-	$(CONTROLLER_GEN) object:headerFile="hack/boilerplate.go.txt" paths="./..."
+	$(CONTROLLER_GEN) object:headerFile="hack/boilerplate.go.txt" paths="./pkg/apis/..."
+	$(CONTROLLER_GEN) object:headerFile="hack/boilerplate.go.txt" paths="./pkg/storage/elasticsearch/..."
 
 .PHONY: fmt
 fmt: ## Run go fmt against code.
@@ -55,32 +56,96 @@ fmt: ## Run go fmt against code.
 vet: ## Run go vet against code.
 	go vet ./...
 
-.PHONY: test
-test: manifests generate fmt vet envtest ## Run tests.
-	KUBEBUILDER_ASSETS="$(shell $(ENVTEST) use $(ENVTEST_K8S_VERSION) -p path)" go test ./... -coverprofile cover.out
+.PHONY: golangci-lint
+golint: ## Download golint locally if necessary.
+	$(call go-install-tool,$(CONTROLLER_GEN),github.com/golangci/golangci-lint/cmd/golangci-lint@v1.49.0)
 
-.PHONY: kind-test
-kind-test: docker-build
-# apiserver-boot  build container --targets apiserver --image kjournal:latest &&
-	kind load docker-image ${IMG} && kubectl -n logging rollout restart deployment/kjournal-apiserver && stern -n logging kjournal
+.PHONY: lint
+lint: golangci-lint ## Run golangci-lint against code.
+	golangci-lint run ./...
+
+.PHONY: test
+#test: generate fmt vet envtest ## Run tests.
+test:
+	KUBEBUILDER_ASSETS="$(shell $(ENVTEST) use $(ENVTEST_K8S_VERSION) -p path)" go test ./... -v -coverprofile coverage.out
+
+.PHONY: kind-deploy
+kind-deploy: ## Deploy to kind.
+	kind load docker-image ${IMG} --name kjournal
+	make kind-load -C cli
+	kustomize build config/tests/${TEST_PROFILE} --enable-helm | kubectl apply -f -	
+	kubectl -n kjournal-system wait --for=condition=complete --timeout=250s job/validation
+
+.PHONY: kind-debug
+kind-debug: docker-build kind-deploy ## Deploy to kind and tail log
+	kubectl -n kjournal-system rollout restart deployment/kjournal-apiserver
+	kubectl -n kjournal-system rollout status deployment/kjournal-apiserver
+	kubectl -n kjournal-system logs -l api=kjournal -f
+
+.PHONY: kind-dev-tools
+kind-dev-tools: kind-dev-tools ## Deploy dev-tools to kind.
+	kustomize config/dev-tools | kubectl apply -f -
 
 ##@ Build
 
+.PHONY: prepare-embeds
+prepare-embed:
+	rm -rf cli/cmd/config
+	mkdir -p cli/cmd/config
+	cp -rpv config/{apiserver,components,prometheus,namespace,rbac} cli/cmd/config/
+
 .PHONY: build
-build: generate fmt vet ## Build manager binary.
-	go build -o bin/manager main.go
+build: generate fmt vet ## Build apiserver binary.
+	CGO_ENABLED=0 go build -o bin/apiserver cmd/*
 
 .PHONY: run
-run: manifests generate fmt vet ## Run a controller from your host.
-	go run ./main.go
+run: generate fmt vet ## Run apiserver from your host.
+	go run cmd/*
 
 .PHONY: docker-build
-docker-build: test ## Build docker image with the manager.
-	docker build -t ${IMG} .
+docker-build: build ## Build docker image with the apiserver.
+	cp bin/apiserver kjournal-apiserver
+	docker build -f Dockerfile.release -t ${IMG} .
+	rm kjournal-apiserver
 
 .PHONY: docker-push
-docker-push: ## Push docker image with the manager.
+docker-push: ## Push docker image with the apiserver.
 	docker push ${IMG}
+
+api-docs: gen-crd-api-reference-docs  ## Generate API reference documentation
+	$(GEN_CRD_API_REFERENCE_DOCS) -api-dir=./pkg/apis/core/v1alpha1 -config=./hack/api-docs/config.json -template-dir=./hack/api-docs/template -out-file=./docs/api/core.kjournal.v1alpha1.md
+	$(GEN_CRD_API_REFERENCE_DOCS) -api-dir=./pkg/apis/config/v1alpha1 -config=./hack/api-docs/config.json -template-dir=./hack/api-docs/template -out-file=./docs/api/config.kjournal.v1alpha1.md
+
+# Find or download gen-crd-api-reference-docs
+GEN_CRD_API_REFERENCE_DOCS = $(GOBIN)/gen-crd-api-reference-docs
+.PHONY: gen-crd-api-reference-docs
+gen-crd-api-reference-docs: ## Download gen-crd-api-reference-docs locally if necessary
+	$(call go-install-tool,$(GEN_CRD_API_REFERENCE_DOCS),github.com/ahmetb/gen-crd-api-reference-docs@3f29e6853552dcf08a8e846b1225f275ed0f3e3b)
+
+.PHONY: apiserver-cmdref
+apiserver-cmdref: build  ## Build apiserver command line reference
+	./bin/apiserver cmdref -d docs/server/cmdref
+
+.PHONY: helm-docs
+helm-docs:
+	helm-docs -c chart/
+
+.PHONY: gen-docs
+gen-docs: api-docs apiserver-cmdref helm-docs mkdocs  ## Build docs using mkdocs
+	cp README.md docs/index.md
+	cp CONTRIBUTING.md docs/contributing.md
+	cp chart/kjournal/README.md docs/server/methods/helm.md
+	mkdocs build
+
+.PHONY: mkdocs
+mkdocs: ## Install mkdocs
+	pip install mkdocs
+	pip install mkdocs-minify-plugin
+	pip install mkdocs-material
+
+.PHONY: mkdocs-serve
+mkdocs-serve: mkdocs ## Serve docs locally using mkdocs
+	mkdocs serve
 
 ##@ Deployment
 
@@ -88,24 +153,16 @@ ifndef ignore-not-found
   ignore-not-found = false
 endif
 
-.PHONY: install
-install: manifests kustomize ## Install CRDs into the K8s cluster specified in ~/.kube/config.
-	$(KUSTOMIZE) build config/crd | kubectl apply -f -
-
-.PHONY: uninstall
-uninstall: manifests kustomize ## Uninstall CRDs from the K8s cluster specified in ~/.kube/config. Call with ignore-not-found=true to ignore resource not found errors during deletion.
-	$(KUSTOMIZE) build config/crd | kubectl delete --ignore-not-found=$(ignore-not-found) -f -
-
 .PHONY: deploy
-deploy: manifests kustomize ## Deploy controller to the K8s cluster specified in ~/.kube/config.
-	cd config/manager && $(KUSTOMIZE) edit set image controller=${IMG}
+deploy: kustomize ## Deploy apiserver to the K8s cluster specified in ~/.kube/config.
+	cd config/default && $(KUSTOMIZE) edit set image apiserver=${IMG}
 	$(KUSTOMIZE) build config/default | kubectl apply -f -
 
 .PHONY: undeploy
-undeploy: ## Undeploy controller from the K8s cluster specified in ~/.kube/config. Call with ignore-not-found=true to ignore resource not found errors during deletion.
+undeploy: ## Undeploy apiserver from the K8s cluster specified in ~/.kube/config. Call with ignore-not-found=true to ignore resource not found errors during deletion.
 	$(KUSTOMIZE) build config/default | kubectl delete --ignore-not-found=$(ignore-not-found) -f -
 
-CONTROLLER_GEN = $(shell pwd)/bin/controller-gen
+CONTROLLER_GEN = controller-gen
 .PHONY: controller-gen
 controller-gen: ## Download controller-gen locally if necessary.
 	$(call go-install-tool,$(CONTROLLER_GEN),sigs.k8s.io/controller-tools/cmd/controller-gen@v0.8.0)
@@ -120,15 +177,6 @@ ENVTEST = $(shell pwd)/bin/setup-envtest
 envtest: ## Download envtest-setup locally if necessary.
 	$(call go-install-tool,$(ENVTEST),sigs.k8s.io/controller-runtime/tools/setup-envtest@latest)
 
-api-docs: gen-crd-api-reference-docs  ## Generate API reference documentation
-	$(GEN_CRD_API_REFERENCE_DOCS) -api-dir=./pkg/apis/audit/v1 -config=./hack/api-docs/config.json -template-dir=./hack/api-docs/template -out-file=./docs/api/audit.v1.md
-	$(GEN_CRD_API_REFERENCE_DOCS) -api-dir=./pkg/apis/container/v1beta1 -config=./hack/api-docs/config.json -template-dir=./hack/api-docs/template -out-file=./docs/api/container.v1beta1.md
-
-# Find or download gen-crd-api-reference-docs
-GEN_CRD_API_REFERENCE_DOCS = $(GOBIN)/gen-crd-api-reference-docs
-.PHONY: gen-crd-api-reference-docs
-gen-crd-api-reference-docs: ## Download gen-crd-api-reference-docs locally if necessary
-	$(call go-install-tool,$(GEN_CRD_API_REFERENCE_DOCS),github.com/ahmetb/gen-crd-api-reference-docs@3f29e6853552dcf08a8e846b1225f275ed0f3e3b)
 
 # go-install-tool will 'go install' any package $2 and install it to $1.
 define go-install-tool

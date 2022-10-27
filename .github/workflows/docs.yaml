@@ -9,9 +9,9 @@ jobs:
   deploy:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v2
-      - uses: actions/setup-python@v2
+      - uses: actions/checkout@2541b1294d2704b0964813337f33b291d3f8596b #v3
+      - uses: actions/setup-python@13ae5bb136fac2878aff31522b9efb785519f984 #v4.3.0
         with:
           python-version: 3.x
-      - run: pip install mkdocs-material 
+      - run: make mkdocs
       - run: mkdocs gh-deploy --force

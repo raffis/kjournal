@@ -1,41 +1,117 @@
 # Install
 
-The recomended way of installing the server is by using the helm chart.
-However the pre-compiled apiserver binaries are also available in different ways or compilable from source. 
+The kjournal apiserver can be deployed using you favourite continous delivery utitlities or you may build and deploy from the
+source code.
 Below you can find the steps for each of them.
 
-## Install the pre-compiled binary
+## Install the pre-compiled apiserver
 
-### helm chart
+=== "kjournal"
+    ```sh
+    kjournal install -n kjournal-system
+    ```
 
-```sh
-helm repo add kjournal https://raffis.github.io/kjournal
-helm upgrade --install kjournal kjournal/kjournal
-```
+=== "Kustomize"
+    ```sh
+    kustomize build github.com/raffis/kjournal//config/default | kubectl apply -f -
+    ```
 
-### kustomize
+=== "Helm"
+    ```sh
+    helm upgrade kjournal --install oci://github.com/raffis/charts/kjournal
+    ```
 
-```sh
-helm repo add kjournal https://raffis.github.io/kjournal
-helm upgrade --install kjournal kjournal/kjournal
-```
+    You may find addtional documentation regarding support chart values in the chart documentation [here](methods/helm).
 
-### manually
+!!! Warning
+    It is recommended to enable certmanager support on any production cluster. See bellow. 
 
-Download the pre-compiled binaries from the [OSS releases page][releases] and copy them to the desired location.
 
+## Install a specific version of the pre-compiled apiserver
+
+=== "kjournal"
+    ```sh
+    kjournal install -n kjournal-system --version 0.0.1
+    ```
+
+=== "Kustomize"
+    ```sh
+    kustomize build github.com/raffis/kjournal?ref=v0.0.1//config/default | kubectl apply -f -
+    ```
+
+=== "Helm"
+    ```sh
+    helm upgrade kjournal --install oci://github.com/raffis/charts/kjournal --version 0.0.1
+    ```
+
+## Certmanager support
+
+It is recommended to enable certmanger support for setting up a trusted certificate between the kubernetes apiserver
+and the kjournal apiserver. By default the kuberntes apiserver trusts kjournal without validating the certificate.
+
+=== "kjournal"
+    ```sh
+    kjournal install -n kjournal-system --with-certmanager
+    ```
+
+=== "Helm"
+    ```sh
+    helm upgrade kjournal --install oci://ghcr.io/raffis/kjournal/helm --set certmanager.enabled=true
+    ```
+
+=== "Kustomize"
+    ```sh
+    cat <<EOT >> kustomization.yaml
+    apiVersion: kustomize.config.k8s.io/v1beta1
+    kind: Kustomization
+    resources:
+    - github.com/raffis/kjournal//config/default
+    - github.com/raffis/kjournal//config/rbac
+
+    components:
+    - github.com/raffis/kjournal//config/components/certmanager
+    EOT && kustomize build | kubectl apply -f -
+    ```
+
+## Prometheus support
+
+kjournal has support for the prometheus-operator or using prometheus scraping via annotations.
+
+=== "kjournal"
+    ```sh
+    kjournal install -n kjournal-system --with-prometheus=operator/annotations
+    ```
+
+=== "Helm"
+    ```sh
+    helm upgrade kjournal --install oci://ghcr.io/raffis/kjournal/helm --set serviceMonitor.enabled=true
+    ```
+
+=== "Kustomize"
+    ```sh
+    cat <<EOT >> kustomization.yaml
+    apiVersion: kustomize.config.k8s.io/v1beta1
+    kind: Kustomization
+    resources:
+    - github.com/raffis/kjournal//config/default
+    - github.com/raffis/kjournal//config/rbac
+
+    components:
+    - github.com/raffis/kjournal//config/components/prometheus
+    EOT && kustomize build | kubectl apply -f -
+    ```
 
 ## Verifying the artifacts
 
-### binaries
+### Binaries
 
-All artifacts are checksummed and the checksum file is signed with [cosign][].
+All artifacts are checksummed and the checksum file is signed with [cosign](https://github.com/sigstore/cosign).
 
 1. Download the files you want, and the `checksums.txt`, `checksum.txt.pem` and `checksums.txt.sig` files from the [releases][releases] page:
     ```sh
-    wget https://github.com/goreleaser/goreleaser/releases/download/__VERSION__/checksums.txt
-    wget https://github.com/goreleaser/goreleaser/releases/download/__VERSION__/checksums.txt.sig
-    wget https://github.com/goreleaser/goreleaser/releases/download/__VERSION__/checksums.txt.pem
+    wget https://github.com/raffis/kjournal/releases/download/__VERSION__/checksums.txt
+    wget https://github.com/raffis/kjournal/releases/download/__VERSION__/checksums.txt.sig
+    wget https://github.com/raffis/kjournal/releases/download/__VERSION__/checksums.txt.pem
     ```
 1. Verify the signature:
     ```sh
@@ -49,62 +125,20 @@ All artifacts are checksummed and the checksum file is signed with [cosign][].
     sha256sum --ignore-missing -c checksums.txt
     ```
 
-### docker images
+### Container images
 
-Our Docker images are signed with [cosign][].
+Likewise are the container images signed with [cosign](https://github.com/sigstore/cosign).
 
 Verify the signatures:
 
 ```sh
-COSIGN_EXPERIMENTAL=1 cosign verify goreleaser/goreleaser
+cosign verify ghcr.io/raffis/kjournal/apiserver
 ```
 
 !!! info
     The `.pem` and `.sig` files are the image `name:tag`, replacing `/` and `:` with `-`.
 
-## Running with Docker
-
-You can also use it within a Docker container.
-To do that, you'll need to execute something more-or-less like the examples below.
-
-Registries:
-
-- [`goreleaser/goreleaser`](https://hub.docker.com/r/goreleaser/goreleaser)
-- [`ghcr.io/goreleaser/goreleaser`](https://github.com/goreleaser/goreleaser/pkgs/container/goreleaser)
-
-Example usage:
-
-```sh
-docker run --rm --privileged \
-    -v $PWD:/go/src/github.com/user/repo \
-    -v /var/run/docker.sock:/var/run/docker.sock \
-    -w /go/src/github.com/user/repo \
-    -e GITHUB_TOKEN \
-    -e DOCKER_USERNAME \
-    -e DOCKER_PASSWORD \
-    -e DOCKER_REGISTRY \
-    goreleaser/goreleaser release
-```
-
-!!! info
-    Currently, the provided docker image does not support
-    the generation of snapcraft packages.
-
-Note that the image will almost always have the last stable Go version.
-
-The `DOCKER_REGISTRY` environment variable can be left empty when you are
-releasing to the public docker registry.
-
-If you need more things, you are encouraged to keep your own image. You can
-always use GoReleaser's [own Dockerfile][dockerfile] as an example though
-and iterate from that.
-
-[dockerfile]: https://github.com/goreleaser/goreleaser/blob/main/Dockerfile
-[releases]: https://github.com/goreleaser/goreleaser/releases
-[pro-releases]: https://github.com/goreleaser/goreleaser-pro/releases
-[cosign]: https://github.com/sigstore/cosign
-
-## Compiling from source
+## Compile and install from source
 
 Here you have two options:
 
@@ -116,24 +150,21 @@ If you just want to build from source for whatever reason, follow these steps:
 **clone:**
 
 ```sh
-git clone https://github.com/goreleaser/goreleaser
-cd goreleaser
+git clone https://github.com/raffis/kjournal
+cd kjournal
 ```
 
-**get the dependencies:**
+**build image:**
 
 ```sh
-go mod tidy
+make docker-build
 ```
 
-**build:**
+**deploy:**
 
 ```sh
-go build -o goreleaser .
+make deploy
 ```
 
-**verify it works:**
-
-```sh
-./goreleaser --version
-```
+!!! Note
+    `make deploy` uses kustomize under the hood to apply the overlay `config/default` with the just built image.

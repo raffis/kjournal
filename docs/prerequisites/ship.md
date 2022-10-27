@@ -1,4 +1,4 @@
-# Ship logs
+# Ship container & audit logs
 
 Both audit and container logs need to be persisted in the longterm log storage.
 For this a component is required which tails these logs on the kubernetes nodes and pushes them to the storage.
@@ -6,7 +6,7 @@ For this a component is required which tails these logs on the kubernetes nodes 
 There are various tools out there doing exactly this. Namely [fluent-bit](), [filebeat]() or [fluent]().
 
 !!! Important
-    kjournal needs kubernetes metadata for the container logs from the longterm storage. Both [fluent-bit](https://docs.fluentbit.io/manual/pipeline/filters/kubernetes) and [filebeat](https://www.elastic.co/guide/en/beats/filebeat/current/add-kubernetes-metadata.html) provide a kubernetes filter to attach that data to all log events.
+    kjournal needs kubernetes metadata for the container logs from the longterm storage. Both [fluent-bit](https://docs.fluentbit.io/manual/pipeline/filters/kubernetes) and [filebeat](https://www.elastic.co/guide/en/beats/filebeat/current/add-kubernetes-metadata.html) provide a kubernetes filter to attach that data to all container logs.
 
 
 ## fluent-bit
@@ -45,7 +45,7 @@ an elasticsearch cluster.
 [OUTPUT]
     Name            es
     Match           kube.*
-    Host            logging-es-http.logging
+    Host            elasticsearch-master
     Port            9200
     Time_Key        @es_ts
     Logstash_Format On
@@ -56,7 +56,7 @@ an elasticsearch cluster.
 [OUTPUT]
     Name            es
     Match           audit.*
-    Host            logging-es-http.logging
+    Host            elasticsearch-master
     Port            9200
     Logstash_Format On
     Replace_Dots    On
@@ -68,7 +68,6 @@ an elasticsearch cluster.
     Daemon Off
     Log_Level info
     Parsers_File parsers.conf
-    Parsers_File custom_parsers.conf
     HTTP_Server On
     HTTP_Listen 0.0.0.0
     HTTP_Port 2020

@@ -1,0 +1,10 @@
+replicas: 1
+tests:
+  enabled: false
+resources:
+  requests:
+    cpu: "100m"
+    memory: "2Gi"
+  limits:
+    cpu: "1000m"
+    memory: "2Gi"

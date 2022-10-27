@@ -1,8 +1,5 @@
-VERSION?=$(shell grep 'VERSION' cmd/flux/main.go | awk '{ print $$4 }' | head -n 1 | tr -d '"')
-EMBEDDED_MANIFESTS_TARGET=cmd/flux/.manifests.done
-TEST_KUBECONFIG?=/tmp/flux-e2e-test-kubeconfig
-# Architecture to use envtest with
-ENVTEST_ARCH ?= amd64
+# Image URL to use all building/pushing image targets
+IMG ?= kjournal/cli:latest
 
 # Get the currently used golang install path (in GOPATH/bin, unless GOBIN is set)
 ifeq (,$(shell go env GOBIN))
@@ -16,8 +13,7 @@ rwildcard=$(foreach d,$(wildcard $(addsuffix *,$(1))),$(call rwildcard,$(d)/,$(2
 all: test build
 
 tidy:
-	go mod tidy -compat=1.17
-	cd tests/azure && go mod tidy -compat=1.17
+	go mod tidy
 
 fmt:
 	go fmt ./...
@@ -25,46 +21,38 @@ fmt:
 vet:
 	go vet ./...
 
-setup-kind:
-	kind create cluster --name=flux-e2e-test --kubeconfig=$(TEST_KUBECONFIG) --config=.github/kind/config.yaml
-	kubectl --kubeconfig=$(TEST_KUBECONFIG) apply -f https://docs.projectcalico.org/v3.16/manifests/calico.yaml
-	kubectl --kubeconfig=$(TEST_KUBECONFIG) -n kube-system set env daemonset/calico-node FELIX_IGNORELOOSERPF=true
+.PHONY: test
+test:
+	go test ./... -v -coverprofile coverage.out
 
-cleanup-kind:
-	kind delete cluster --name=flux-e2e-test
-	rm $(TEST_KUBECONFIG)
+manifests:
+	rm -rfv cmd/config
+	mkdir cmd/config
+	cp -Rpv ../config/base cmd/config/
 
-KUBEBUILDER_ASSETS?="$(shell $(ENVTEST) --arch=$(ENVTEST_ARCH) use -i $(ENVTEST_KUBERNETES_VERSION) --bin-dir=$(ENVTEST_ASSETS_DIR) -p path)"
-TEST_PKG_PATH="./..."
-test: $(EMBEDDED_MANIFESTS_TARGET) tidy fmt vet install-envtest
-	KUBEBUILDER_ASSETS="$(KUBEBUILDER_ASSETS)" go test $(TEST_PKG_PATH) -coverprofile cover.out --tags=unit $(TEST_ARGS)
+build: manifests
+	CGO_ENABLED=0 go build -o ./bin/kjournal ./cmd
 
-E2E_TEST_PKG_PATH="./cmd/flux/..."
-e2e: $(EMBEDDED_MANIFESTS_TARGET) tidy fmt vet
-	TEST_KUBECONFIG=$(TEST_KUBECONFIG) go test $(E2E_TEST_PKG_PATH) -coverprofile e2e.cover.out --tags=e2e -v -failfast $(TEST_ARGS)
+.PHONY: docker-build
+docker-build: build ## Build docker image with the cli.
+	cp bin/kjournal kjournal-cli
+	docker build -f Dockerfile.release -t ${IMG} .
+	rm kjournal-cli
 
-test-with-kind: install-envtest
-	make setup-kind
-	make e2e
-	make cleanup-kind
+.PHONY: kind-load
+kind-load: ## Load image into kind.
+	kind load docker-image ${IMG} --name kjournal
 
-$(EMBEDDED_MANIFESTS_TARGET): $(call rwildcard,manifests/,*.yaml *.json)
-	./manifests/scripts/bundle.sh
-	touch $@
-
-build: $(EMBEDDED_MANIFESTS_TARGET)
-	CGO_ENABLED=0 go build -ldflags="-s -w -X main.VERSION=$(VERSION)" -o ./bin/flux ./cmd/flux
+.PHONY: docker-push
+docker-push: ## Push docker image with the cli.
+	docker push ${IMG}
 
 .PHONY: install
 install:
-	CGO_ENABLED=0 go install ./cmd/*
+	CGO_ENABLED=0 go install ./cmd
 
 install-dev:
-	CGO_ENABLED=0 go build -o /usr/local/bin ./cmd/*
-
-.PHONY: gen-cli-docs
-gen-cli-docs: 
-	go run cmd/* cmdref -d ../docs/cli/cmdref
+	CGO_ENABLED=0 go build -o /usr/local/bin ./cmd
 
 # go-install-tool will 'go install' any package $2 and install it to $1.
 PROJECT_DIR := $(shell dirname $(abspath $(lastword $(MAKEFILE_LIST))))

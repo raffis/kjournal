@@ -1,0 +1,150 @@
+name: pr-build
+
+on:
+  pull_request:
+  push:
+    branches:
+      - main
+
+jobs:
+  cli:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@2541b1294d2704b0964813337f33b291d3f8596b #v3
+      - name: Setup Go
+        uses: actions/setup-go@c4a742cab115ed795e34d4513e2cf7d472deb55f #v3.3.1
+        with:
+          go-version: 1.18.x
+      - name: Restore Go cache
+        uses: actions/cache@9b0c1fce7a93df8e3bb8926b0d6e9d89e92f20a7 #v3.0.11
+        with:
+          path: /home/runner/work/_temp/_github_home/go/pkg/mod
+          key: ${{ runner.os }}-go-${{ hashFiles('**/go.sum') }}
+          restore-keys: |
+            ${{ runner.os }}-go-
+      - name: Check if working tree is dirty
+        run: |
+          if [[ $(git diff --stat) != '' ]]; then
+            git --no-pager diff
+            echo 'run make test and commit changes'
+            exit 1
+          fi
+      - name: Build container image
+        run: |
+          make docker-build -C cli BUILD_PLATFORMS=linux/amd64 \
+            BUILD_ARGS="--cache-from=type=local,src=/tmp/.buildx-cache \
+            --cache-to=type=local,dest=/tmp/.buildx-cache-new,mode=max"
+      - name: Create image tarball
+        run: |
+          docker save --output cli.tar kjournal/cli:latest
+      - name: Upload image
+        uses: actions/upload-artifact@83fd05a356d7e2593de66fc9913b3002723633cb #v3.1.1
+        with:
+          name: cli
+          path: cli.tar        
+
+  apiserver:
+    runs-on: ubuntu-latest
+    outputs:
+      profiles: ${{ steps.profiles.outputs.matrix }}    
+    steps:
+      - name: Checkout
+        uses: actions/checkout@2541b1294d2704b0964813337f33b291d3f8596b #v3
+      - name: Setup Go
+        uses: actions/setup-go@c4a742cab115ed795e34d4513e2cf7d472deb55f #v3.3.1
+        with:
+          go-version: 1.18.x
+      - name: Restore Go cache
+        uses: actions/cache@9b0c1fce7a93df8e3bb8926b0d6e9d89e92f20a7 #v3.0.11
+        with:
+          path: /home/runner/work/_temp/_github_home/go/pkg/mod
+          key: ${{ runner.os }}-go-${{ hashFiles('**/go.sum') }}
+          restore-keys: |
+            ${{ runner.os }}-go-
+      - name: Setup envtest
+        uses: fluxcd/pkg/actions/envtest@main
+        with:
+          version: "1.21.2"
+      - name: Run tests
+        run: make test
+      - name: Send go coverage report
+        uses: shogo82148/actions-goveralls@v1
+        with:
+          path-to-profile: coverage.out
+      - name: Check if working tree is dirty
+        run: |
+          if [[ $(git diff --stat) != '' ]]; then
+            git --no-pager diff
+            echo 'run make test and commit changes'
+            exit 1
+          fi
+      - name: Build container image
+        run: |
+          make docker-build BUILD_PLATFORMS=linux/amd64 \
+            BUILD_ARGS="--cache-from=type=local,src=/tmp/.buildx-cache \
+            --cache-to=type=local,dest=/tmp/.buildx-cache-new,mode=max"
+      - name: Create image tarball
+        run: |
+          docker save --output apiserver.tar kjournal/apiserver:latest
+      - name: Upload image
+        uses: actions/upload-artifact@83fd05a356d7e2593de66fc9913b3002723633cb #v3.1.1
+        with:
+          name: apiserver
+          path: apiserver.tar        
+      - id: profiles
+        name: Determine test profiles
+        run: |
+          profiles=$(ls config/tests | jq -R -s -c 'split("\n")[:-1]')
+          echo $profiles
+          echo "::set-output name=matrix::$profiles"
+
+  tests:
+    runs-on: ubuntu-latest
+    needs: [apiserver,cli]
+    strategy:
+      matrix:
+        profile: ${{ fromJson(needs.apiserver.outputs.profiles) }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@2541b1294d2704b0964813337f33b291d3f8596b #v3
+      - name: Setup Go
+        uses: actions/setup-go@c4a742cab115ed795e34d4513e2cf7d472deb55f #v3.3.1
+        with:
+          go-version: 1.18.x
+      - name: Setup Kubernetes
+        uses: engineerd/setup-kind@aa272fe2a7309878ffc2a81c56cfe3ef108ae7d0 #v0.5.0
+        with:
+          name: kjournal
+          version: v0.11.1
+          image: kindest/node:v1.21.1@sha256:69860bda5563ac81e3c0057d654b5253219618a22ec3a346306239bba8cfa1a6
+      - name: Download apiserver
+        uses: actions/download-artifact@9782bd6a9848b53b110e712e20e42d89988822b7 #v3.0.1
+        with:
+          name: apiserver
+          path: /tmp
+      - name: Download cli
+        uses: actions/download-artifact@9782bd6a9848b53b110e712e20e42d89988822b7 #v3.0.1
+        with:
+          name: cli
+          path: /tmp
+      - name: Load images
+        run: |
+          docker load --input /tmp/apiserver.tar
+          docker load --input /tmp/cli.tar
+          docker image ls -a
+      - name: Setup Kustomize
+        uses: imranismail/setup-kustomize@6691bdeb1b0a3286fb7f70fd1423c10e81e5375f # v2.0.0
+      - name: Deploy
+        run: make kind-deploy KIND_TEST_PROFILE=${{ matrix.profile }}
+      - name: Logs
+        run: |
+          kubectl -n kjournal-system logs deploy/kjournal-apiserver
+      - name: Debug failure
+        if: failure()
+        run: |
+          kubectl -n kjournal-system get pods
+          kubectl get apiservice v1alpha1.core.kjournal
+          kubectl -n kjournal-system describe pods
+          kubectl -n kjournal-system logs deploy/kjournal-apiserver
+          kubectl get containerlogs -n kjournal-system --field-selector payload.foobar=foobar -o json

@@ -35,36 +35,40 @@ import (
 	k8sget "k8s.io/kubectl/pkg/cmd/get"
 	"k8s.io/kubectl/pkg/util/interrupt"
 
-	auditv1 "github.com/raffis/kjournal/pkg/apis/audit/v1"
-	logsv1beta1 "github.com/raffis/kjournal/pkg/apis/container/v1beta1"
+	corev1alpha1 "github.com/raffis/kjournal/pkg/apis/core/v1alpha1"
 )
 
 type GetFlags struct {
 	fieldSelector string
 	watch         bool
 	noStream      bool
-	chunkSize     int64
+	chunkSize     string
 	since         string
+	timeRange     string
 }
 
 var getArgs GetFlags
 var printFlags *k8sget.PrintFlags
 
 func addGetFlags(getCmd *cobra.Command) {
+	if printFlags == nil {
+		printFlags = k8sget.NewGetPrintFlags()
+	}
+
 	getCmd.Flags().StringVarP(printFlags.OutputFormat, "output", "o", *printFlags.OutputFormat, fmt.Sprintf(`Output format. One of: (%s). See custom columns [https://kubernetes.io/docs/reference/kubectl/overview/#custom-columns], golang template [http://golang.org/pkg/text/template/#pkg-overview] and jsonpath template [https://kubernetes.io/docs/reference/kubectl/jsonpath/].`, strings.Join(printFlags.AllowedFormats(), ", ")))
-	getCmd.PersistentFlags().StringVarP(&getArgs.since, "since", "", "", "Change the time range from which logs are received. (e.g. `--since=now-24h`)")
+	getCmd.PersistentFlags().StringVarP(&getArgs.since, "since", "", "", "Change the time range from which logs are received. (e.g. `--since=24h`)")
+	getCmd.PersistentFlags().StringVarP(&getArgs.timeRange, "range", "", "", "Change the time range from which logs are received. (e.g. `--range=20h-24h`)")
 	getCmd.PersistentFlags().BoolVarP(&getArgs.noStream, "no-stream", "", false, "By default all logs are streamed. This behaviour can be disabled. Be mindful that this can lead to an increased memory usage and no output while logs are beeing gathered")
 	getCmd.PersistentFlags().BoolVarP(&getArgs.watch, "watch", "w", false, "After dumping all existing logs keep watching for newly added ones")
 	getCmd.PersistentFlags().StringVar(&getArgs.fieldSelector, "field-selector", "", "Selector (field query) to filter on, supports '=', '==', '!=', '!=', '>' and '<'. (e.g. --field-selector key1=value1,key2=value2).")
-	getCmd.PersistentFlags().Int64VarP(&getArgs.chunkSize, "chunk-size", "", 500, "Return large lists in chunks rather than all at once. Pass 0 to disable. This has no impact as long as --no-stream is not set.")
+	getCmd.PersistentFlags().StringVarP(&getArgs.chunkSize, "chunk-size", "", "500", "Return large lists in chunks rather than all at once. Pass 0 to disable. This has no impact as long as --no-stream is not set.")
 }
 
 // Create the Scheme, methods for serializing and deserializing API objects
 // which can be shared by tests.
 func NewScheme() *runtime.Scheme {
 	scheme := runtime.NewScheme()
-	auditv1.AddToScheme(scheme)
-	logsv1beta1.AddToScheme(scheme)
+	corev1alpha1.AddToScheme(scheme)
 
 	return scheme
 }
@@ -82,11 +86,15 @@ func KubeConfig(rcg genericclioptions.RESTClientGetter, opts *Options) (*rest.Co
 	return cfg, nil
 }
 
+type command interface {
+	filter(args []string, opts *metav1.ListOptions) error
+	defaultPrinter(obj runtime.Object) error
+}
+
 type getCommand struct {
 	apiType
-	list           listAdapter
-	filter         func(args []string, opts *metav1.ListOptions) error
-	defaultPrinter func(obj runtime.Object) error
+	command command
+	list    listAdapter
 }
 
 func (get getCommand) run(cmd *cobra.Command, args []string) error {
@@ -126,16 +134,19 @@ func (get getCommand) prepareRequest(args []string) (*rest.Request, error) {
 
 	opts.FieldSelector = selector.String()
 
-	err = get.filter(args, &opts)
+	err = get.command.filter(args, &opts)
 	if err != nil {
 		return nil, err
 	}
 
 	r := c.
 		Get().
-		Namespace(*kubeconfigArgs.Namespace).
 		Resource(get.resource).
 		Param("fieldSelector", opts.FieldSelector)
+
+	if get.namespaced {
+		r.Namespace(*kubeconfigArgs.Namespace)
+	}
 
 	return r, nil
 }
@@ -145,15 +156,21 @@ func (get getCommand) listObjects(cmd *cobra.Command, args []string) error {
 	defer cancel()
 	res := get.list.asClientList()
 
-	fmt.Printf("into %#v", res)
 	r, err := get.prepareRequest(args)
 	if err != nil {
 		return err
 	}
 
-	err = r.
-		Do(ctx).
-		Into(res)
+	r.Param("limit", getArgs.chunkSize)
+	logger.Debugf("request uri", "uri", r.URL().String())
+
+	response := r.Do(ctx)
+	var httpCode int
+	response.StatusCode(&httpCode)
+
+	logger.Debugf("apiserver response received", "code", httpCode)
+
+	err = response.Into(res)
 
 	if err != nil {
 		return err
@@ -178,7 +195,7 @@ func (get getCommand) listObjects(cmd *cobra.Command, args []string) error {
 	)
 
 	if *printFlags.OutputFormat != "" {
-		err = p.PrintObj(get.list.asClientList(), os.Stdout)
+		err = p.PrintObj(res, os.Stdout)
 		if err != nil {
 			return err
 		}
@@ -186,7 +203,7 @@ func (get getCommand) listObjects(cmd *cobra.Command, args []string) error {
 		return nil
 	}
 
-	return get.defaultPrinter(get.list.asClientList())
+	return get.command.defaultPrinter(res)
 }
 
 func (get getCommand) streamObjects(cmd *cobra.Command, args []string) error {
@@ -235,7 +252,7 @@ func (get getCommand) streamObjects(cmd *cobra.Command, args []string) error {
 				return false, nil
 			}
 
-			return false, get.defaultPrinter(objToPrint)
+			return false, get.command.defaultPrinter(objToPrint)
 		})
 		return err
 	})

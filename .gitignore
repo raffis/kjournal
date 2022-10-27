@@ -1,3 +1,4 @@
+config/tests/loki-promtail-simple/
 
 # Binaries for programs and plugins
 *.exe
@@ -7,6 +8,8 @@
 *.dylib
 bin
 testbin/*
+cli/kjournal
+cli/kjournal-cli
 
 # Test binary, build with `go test -c`
 *.test
@@ -26,6 +29,10 @@ testbin/*
 *~
 
 dist
+cli/audit
 site
 apiserver.local.config
+config/release
 config/certificates
+/config/**/charts
+cli/cmd/config
