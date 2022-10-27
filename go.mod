@@ -6,8 +6,8 @@ require (
 	github.com/Jeffail/gabs v1.4.0
 	github.com/elastic/elastic-transport-go/v8 v8.1.0
 	github.com/elastic/go-elasticsearch/v8 v8.4.0
-	github.com/pyroscope-io/client v0.3.0
-	github.com/spf13/cobra v1.6.1
+	github.com/pyroscope-io/client v0.4.0
+	github.com/spf13/cobra v1.5.0
 	gotest.tools/v3 v3.0.3
 	k8s.io/api v0.25.1
 	k8s.io/apimachinery v0.25.1
