@@ -8,9 +8,9 @@ require (
 	github.com/elastic/go-elasticsearch/v8 v8.4.0
 	github.com/prometheus/client_golang v1.12.1
 	github.com/prometheus/common v0.32.1
-	github.com/pyroscope-io/client v0.3.0
+	github.com/pyroscope-io/client v0.4.0
 	github.com/spf13/cobra v1.5.0
-	github.com/stretchr/testify v1.7.0
+	github.com/stretchr/testify v1.8.1
 	gotest.tools/v3 v3.0.3
 	k8s.io/api v0.25.1
 	k8s.io/apimachinery v0.25.1
@@ -51,7 +51,7 @@ require (
 	github.com/grpc-ecosystem/go-grpc-prometheus v1.2.0 // indirect
 	github.com/grpc-ecosystem/grpc-gateway v1.16.0 // indirect
 	github.com/imdario/mergo v0.3.8 // indirect
-	github.com/inconshreveable/mousetrap v1.0.0 // indirect
+	github.com/inconshreveable/mousetrap v1.0.1 // indirect
 	github.com/josharian/intern v1.0.0 // indirect
 	github.com/json-iterator/go v1.1.12 // indirect
 	github.com/mailru/easyjson v0.7.6 // indirect
