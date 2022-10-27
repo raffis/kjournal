@@ -122,20 +122,10 @@ brews:
   - cli
   tap:
     owner: raffis
-    name: kjournal-cli
+    name: kjournal
   folder: Formulas
   test: |
     system "#{bin}/kjournal help"      
-
-krews:
-- ids:
-  - cli
-  index:
-     owner: raffis
-     name: kjournal
-     branch: master
-  description: s
-  short_description: s
 
 signs:
 - cmd: cosign
@@ -151,11 +141,11 @@ signs:
   output: true
 
 docker_signs:
-  - cmd: cosign
-    env:
-    - COSIGN_EXPERIMENTAL=1
-    artifacts: images
-    output: true
-    args:
-    - 'sign'
-    - '${artifact}'
+- cmd: cosign
+  env:
+  - COSIGN_EXPERIMENTAL=1
+  artifacts: images
+  output: true
+  args:
+  - 'sign'
+  - '${artifact}'
