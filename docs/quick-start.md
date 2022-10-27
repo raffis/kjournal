@@ -12,7 +12,7 @@
 
 === "Go"
     ```sh
-    go install github.com/raffis/kjournal/cli/@latest
+    go install github.com/raffis/kjournal/cli/cmd@latest
     ```
 
 === "Bash"

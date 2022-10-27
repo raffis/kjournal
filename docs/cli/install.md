@@ -12,7 +12,7 @@ Below you can find the steps for each of them.
 
 === "Go"
     ```sh
-    go install github.com/raffis/kjournal/cli@latest
+    go install github.com/raffis/kjournal/cli/cmd@latest
     ```
 
 === "Bash"
@@ -32,12 +32,12 @@ Here version `v0.0.1` gets installed.
 
 === "Brew"
     ```sh
-    brew install kjournal/tap/kjournal@v0.0.1
+    brew install raffis/kjournal/kjournal@v0.0.1
     ```
 
 === "Go"
     ```sh
-    go install github.com/raffis/kjournal@v0.0.1
+    go install github.com/raffis/kjournal/cli/cmd@v0.0.1
     ```
 
 === "Bash"

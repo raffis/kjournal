@@ -173,13 +173,13 @@ download_hash() {
 
     info "Downloading hash ${HASH_URL}"
     download "${TMP_HASH}" "${HASH_URL}"
-    HASH_EXPECTED=$(grep " kjournal_${VERSION}_${OS}_${ARCH}.tar.gz$" "${TMP_HASH}")
+    HASH_EXPECTED=$(grep " kjournal_cli_${VERSION}_${OS}_${ARCH}.tar.gz$" "${TMP_HASH}")
     HASH_EXPECTED=${HASH_EXPECTED%%[[:blank:]]*}
 }
 
 # Download binary from Github URL
 download_binary() {
-    BIN_URL="https://github.com/${GITHUB_REPO}/releases/download/v${VERSION}/kjournal_${VERSION}_${OS}_${ARCH}.tar.gz"
+    BIN_URL="https://github.com/${GITHUB_REPO}/releases/download/v${VERSION}/kjournal_cli_${VERSION}_${OS}_${ARCH}.tar.gz"
     info "Downloading binary ${BIN_URL}"
     download "${TMP_BIN}" "${BIN_URL}"
 }
@@ -215,7 +215,7 @@ setup_binary() {
     info "Installing kjournal to ${BIN_DIR}/kjournal"
     tar -xzof "${TMP_BIN}" -C "${TMP_DIR}"
 
-    local CMD_MOVE="mv -f \"${TMP_DIR}/kjournal\" \"${BIN_DIR}\""
+    local CMD_MOVE="mv -f \"${TMP_DIR}/kjournal-cli\" \"${BIN_DIR}\""
     if [[ -w "${BIN_DIR}" ]]; then
         eval "${CMD_MOVE}"
     else
