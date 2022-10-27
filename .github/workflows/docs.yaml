@@ -13,5 +13,5 @@ jobs:
       - uses: actions/setup-python@13ae5bb136fac2878aff31522b9efb785519f984 #v4.3.0
         with:
           python-version: 3.x
-      - run: make mkdocs
+      - run: make gen-docs
       - run: mkdocs gh-deploy --force
