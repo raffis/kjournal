@@ -17,7 +17,7 @@ jobs:
     name: FOSSA
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@2541b1294d2704b0964813337f33b291d3f8596b #v3
+      - uses: actions/checkout@93ea575cb5d8a053eaa0ac8fa3b40d7e05a33cc8 #v3
       - name: Run FOSSA scan and upload build data
         uses: fossa-contrib/fossa-action@6cffaa064112e1cf9b5798c6224f9487dc1ec316 #v1.2.0
         with:
@@ -30,7 +30,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repository
-        uses: actions/checkout@2541b1294d2704b0964813337f33b291d3f8596b #v3
+        uses: actions/checkout@93ea575cb5d8a053eaa0ac8fa3b40d7e05a33cc8 #v3
       - name: Initialize CodeQL
         uses: github/codeql-action/init@f0a12816612c7306b485a22cb164feb43c6df818 #codeql-bundle-20221020
         with:
