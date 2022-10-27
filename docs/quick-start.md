@@ -7,12 +7,12 @@
 
 === "Brew"
     ```sh
-    brew install kjournal/tap/kjournal
+    brew install raffis/kjournal/kjournal
     ```
 
 === "Go"
     ```sh
-    go install github.com/raffis/kjournal@latest
+    go install github.com/raffis/kjournal/cli/@latest
     ```
 
 === "Bash"
