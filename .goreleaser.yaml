@@ -7,8 +7,8 @@ builds:
   binary: kjournal-cli
   goos:
   - linux
-#  - darwin
-#  - windows    
+  - darwin
+  - windows    
 - id: apiserver
   main: ./cmd
   binary: kjournal-apiserver
@@ -85,7 +85,6 @@ dockers:
   - --label=org.opencontainers.image.licenses=MIT
 - image_templates:
   - ghcr.io/raffis/{{ .ProjectName }}/apiserver:{{ .Version }}-amd64
-  - ghcr.io/raffis/{{ .ProjectName }}/apiserver:{{ .Version }}
   dockerfile: Dockerfile.release
   use: buildx
   ids:
@@ -100,7 +99,8 @@ dockers:
   - --label=org.opencontainers.image.created={{ time "2006-01-02T15:04:05Z07:00" }}
   - --label=org.opencontainers.image.revision={{ .FullCommit }}
   - --label=org.opencontainers.image.licenses=MIT
-- image_templates: ["ghcr.io/raffis/{{ .ProjectName }}/apiserver:{{ .Version }}-arm64v8"]
+- image_templates:
+  - ghcr.io/raffis/{{ .ProjectName }}/apiserver:{{ .Version }}-arm64v8
   goarch: arm64
   dockerfile: Dockerfile.release
   use: buildx
@@ -117,15 +117,36 @@ dockers:
   - --label=org.opencontainers.image.revision={{ .FullCommit }}
   - --label=org.opencontainers.image.licenses=MIT
 
+docker_manifests:
+- name_template: ghcr.io/raffis/{{ .ProjectName }}/cli:{{ .Version }}
+  image_templates:
+  - ghcr.io/raffis/{{ .ProjectName }}/cli:{{ .Version }}-amd64
+  - ghcr.io/raffis/{{ .ProjectName }}/cli:{{ .Version }}-arm64v8
+- name_template: ghcr.io/raffis/{{ .ProjectName }}/cli:latest
+  image_templates:
+  - ghcr.io/raffis/{{ .ProjectName }}/cli:{{ .Version }}-amd64
+  - ghcr.io/raffis/{{ .ProjectName }}/cli:{{ .Version }}-arm64v8
+- name_template: ghcr.io/raffis/{{ .ProjectName }}/apiserver:{{ .Version }}
+  image_templates:
+  - ghcr.io/raffis/{{ .ProjectName }}/apiserver:{{ .Version }}-amd64
+  - ghcr.io/raffis/{{ .ProjectName }}/apiserver:{{ .Version }}-arm64v8
+- name_template: ghcr.io/raffis/{{ .ProjectName }}/apiserver:latest
+  image_templates:
+  - ghcr.io/raffis/{{ .ProjectName }}/apiserver:{{ .Version }}-amd64
+  - ghcr.io/raffis/{{ .ProjectName }}/apiserver:{{ .Version }}-arm64v8
+
 brews:
 - ids:
   - cli
+  license: "Apache-2.0"
   tap:
     owner: raffis
     name: kjournal
   folder: Formulas
   test: |
     system "#{bin}/kjournal help"      
+  install: |
+    bin.install "kjournal"
 
 signs:
 - cmd: cosign
