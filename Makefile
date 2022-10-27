@@ -75,8 +75,6 @@ kind-deploy: ## Deploy to kind.
 	make kind-load -C cli
 	kustomize build config/tests/${TEST_PROFILE} --enable-helm | kubectl apply -f -	
 	kubectl -n kjournal-system wait --for=condition=complete --timeout=250s job/validation
-	#kubectl -n kjournal-system wait deployments --all --for=condition=available --timeout=120s
-	#kubectl -n kjournal-system get pods | grep -v 'test\|NAME\|fluent\|log-generator' | cut -d ' ' -f1 | xargs kubectl wait pods -n kjournal-system --all --for=condition=ready  --timeout=120s
 
 .PHONY: kind-debug
 kind-debug: docker-build kind-deploy ## Deploy to kind and tail log
