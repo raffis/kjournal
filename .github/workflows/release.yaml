@@ -26,11 +26,9 @@ jobs:
           go-version: '1.18'
       - name: Setup Cosign
         uses: sigstore/cosign-installer@9becc617647dfa20ae7b1151972e9b3a2c338a2b #v2.8.1
-      - name: Generate release manifests
-        if: startsWith(github.ref, 'refs/tags/v')
+      - name: Copy cli manifests
         run: |
-          mkdir -p deploy/release
-          kustomize build ./config/base/apiserver > ./deploy/release/kjournal.apiserver.yaml
+          make manifests -C cli
       - uses: anchore/sbom-action/download-syft@b5042e9d19d8b32849779bfe17673ff84aec702d #v0.12.0
       - name: Create release and SBOM
         if: startsWith(github.ref, 'refs/tags/v')
