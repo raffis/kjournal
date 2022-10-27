@@ -11,7 +11,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
-        uses: actions/checkout@2541b1294d2704b0964813337f33b291d3f8596b #v3
+        uses: actions/checkout@93ea575cb5d8a053eaa0ac8fa3b40d7e05a33cc8 #v3
       - name: Setup Go
         uses: actions/setup-go@c4a742cab115ed795e34d4513e2cf7d472deb55f #v3.3.1
         with:
@@ -50,7 +50,7 @@ jobs:
       profiles: ${{ steps.profiles.outputs.matrix }}    
     steps:
       - name: Checkout
-        uses: actions/checkout@2541b1294d2704b0964813337f33b291d3f8596b #v3
+        uses: actions/checkout@93ea575cb5d8a053eaa0ac8fa3b40d7e05a33cc8 #v3
       - name: Setup Go
         uses: actions/setup-go@c4a742cab115ed795e34d4513e2cf7d472deb55f #v3.3.1
         with:
@@ -107,7 +107,7 @@ jobs:
         profile: ${{ fromJson(needs.apiserver.outputs.profiles) }}
     steps:
       - name: Checkout
-        uses: actions/checkout@2541b1294d2704b0964813337f33b291d3f8596b #v3
+        uses: actions/checkout@93ea575cb5d8a053eaa0ac8fa3b40d7e05a33cc8 #v3
       - name: Setup Go
         uses: actions/setup-go@c4a742cab115ed795e34d4513e2cf7d472deb55f #v3.3.1
         with:
