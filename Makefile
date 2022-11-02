@@ -126,12 +126,18 @@ gen-crd-api-reference-docs: ## Download gen-crd-api-reference-docs locally if ne
 apiserver-cmdref: build  ## Build apiserver command line reference
 	./bin/apiserver cmdref -d docs/server/cmdref
 
+HELM_DOCS = $(GOBIN)/helm-docs
 .PHONY: helm-docs
 helm-docs:
-	helm-docs -c chart/
+	echo TEST
+	$(call go-install-tool,$(HELM_DOCS),github.com/norwoodj/helm-docs/cmd/helm-docs@v1.11.0)
+
+.PHONY: gen-helm-docs
+gen-helm-docs: helm-docs ## Build helm chart readme using helm-docs
+	$(HELM_DOCS) -c chart/
 
 .PHONY: gen-docs
-gen-docs: api-docs apiserver-cmdref helm-docs mkdocs  ## Build docs using mkdocs
+gen-docs: api-docs apiserver-cmdref gen-helm-docs mkdocs  ## Build docs using mkdocs
 	cp README.md docs/index.md
 	cp CONTRIBUTING.md docs/contributing.md
 	cp chart/kjournal/README.md docs/server/methods/helm.md
