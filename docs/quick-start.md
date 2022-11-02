@@ -62,10 +62,6 @@ kjournal audit
 ```
 
 !!! Note
-    `--since` is a shortcut of `--range now-[to]`. `--since 5h` is the same as `--range now-5h`. 
-
-
-!!! Note
     AuditEvent is a cluster scoped resource and needs cluster wide permission to read it.
 
 

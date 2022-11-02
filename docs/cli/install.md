@@ -58,12 +58,13 @@ That said this guarantees full compatibility, a bigger version gap will likely s
 
 Example:
 
-| cli       | apiserver | Fully compatible
-| v1.1.0    | v1.0.0    | `yes`
-| v1.1.0    | v1.1.0    | `yes`
-| v1.1.0    | v1.2.0    | `yes`
-| v1.1.0    | v1.3.0    | `no`
-| v1.0.0    | v1.2.0    | `no`
+| cli       | apiserver | Fully compatible |
+|-----------|-----------|------------------|
+| v1.1.0    | v1.0.0    | `yes` |
+| v1.1.0    | v1.1.0    | `yes` |
+| v1.1.0    | v1.2.0    | `yes` |
+| v1.1.0    | v1.3.0    | `no`  |
+| v1.0.0    | v1.2.0    | `no`  |
 
 
 !!! Note

@@ -77,65 +77,6 @@ The above mapping will decode the stored log into a `containerlogs.v1alpha1.core
 !!! Note
     You can use `.` which represents the object root. For example `payload: "."` means that the entire stored object will be mapped to the `payload` field and not just a specific path.
 
-#### Example how to use field mapping
-
-```mermaid
-graph LR
-  A[<b>storage-document</b></br>kubernetes.namespace_name: default</br>kubernetes.pod_name: sd]
-  B[<b>field-mapper</b></br>]
-  C[<b>kjournal-api</b></br>]
-  
-  A --> B;
-  B --> C;
-
-  style A text-align:left
-```
-
-The config to support this use case would be as follow:
-=== "v1alpha1"
-  ```yaml
-  apiVersion: config.kjournal/v1alpha1
-  kind: APIServerConfig
-
-  backend: 
-    elasticsearch:
-      url:
-      - http://elasticsearch-master:9200
-
-  apis:
-  - resource: containerlogs
-    fieldMap:
-      metadata.namespace: [kubernetes.namespace_name]
-      metadata.creationTimestamp: ["@timestamp"]
-      pod: [kubernetes.pod_name]
-      container: [kubernetes.container_name]
-      payload: ["."]
-    dropFields:
-    - payload.@timestamp
-    - payload.kubernetes
-    backend:
-      elasticsearch:
-        index: logstash-*
-
-  - resource: events
-    backend:
-      elasticsearch:
-          index: k8sevents-*
-
-  - resource: auditevents
-    backend:
-      elasticsearch:
-          index: k8saudit-*
-
-  - resource: logs
-    fieldMap:
-      metadata.creationTimestamp: ["@timestamp"]
-      payload: ["."]
-    backend:
-      elasticsearch:
-        index: "*"
-  ```
-
 ### Remove fields
 
 Using drop fields allows to remove specific paths from an object. This is useful if you want to remove a specific field from a sub object which was mapped previously.

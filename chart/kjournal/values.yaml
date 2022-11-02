@@ -1,22 +1,23 @@
+apiserverConfig:
+  existingConfigMap:
+  config: |
+
 affinity: {}
 
 topologySpreadConstraints: []
 
 image:
-  repository: ghcr.io/raffis/kjournal
+  repository: ghcr.io/raffis/kjournal/apiserver
   tag:
   pullPolicy: IfNotPresent
 
-logLevel: 4
-
-metricsRelistInterval: 1m
-
 listenPort: 8443
 
-# User to run adapter container as
-runAsUser: 10001
-
 nodeSelector: {}
+
+env: []
+# - name: MY_ENV
+#   value: myvalue
 
 priorityClassName: ""
 
@@ -25,18 +26,11 @@ namespaceOverride: ""
 
 ## Additional annotations to add to all resources
 customAnnotations: {}
-  # role: custom-metrics
+  # role: logging
 
 ## Additional labels to add to all resources
 customLabels: {}
-  # monitoring: kjournal
-
-# Url to access prometheus
-prometheus:
-  # Value is templated
-  url: http://prometheus.default.svc
-  port: 9090
-  path: ""
+  # label: kjournal
 
 replicas: 1
 
@@ -45,13 +39,34 @@ replicas: 1
 podSecurityContext:
   fsGroup: 10001
 
+livenessProbe:
+  httpGet:
+    path: /healthz
+    port: https
+    scheme: HTTPS
+  initialDelaySeconds: 30
+  timeoutSeconds: 5
+
+readinessProbe:
+  httpGet:
+    path: /healthz
+    port: https
+    scheme: HTTPS
+  initialDelaySeconds: 30
+  timeoutSeconds: 5
+
+securityContext:
+  allowPrivilegeEscalation: false
+  readOnlyRootFilesystem: true
+  runAsNonRoot: true
+  capabilities:
+    drop: ["ALL"]
+  seccompProfile:
+    type: RuntimeDefault
+
 rbac:
   # Specifies whether RBAC resources should be created
   create: true
-
-psp:
-  # Specifies whether PSP resources should be created
-  create: false
 
 serviceAccount:
   # Specifies whether a service account should be created
@@ -160,3 +175,6 @@ certManager:
   enabled: false
   caCertDuration: 43800h
   certDuration: 8760h
+
+serviceMonitor:
+  enabled: false

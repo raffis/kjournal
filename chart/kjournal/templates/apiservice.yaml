@@ -7,15 +7,17 @@ kind: APIService
 metadata:
 {{- if or .Values.certManager.enabled .Values.customAnnotations }}
   annotations:
+    {{- if .Values.certManager.enabled }}
     certmanager.k8s.io/inject-ca-from: {{ printf "%s/%s-root-cert" (include "kjournal.namespace" .) (include "kjournal.fullname" .) | quote }}
     cert-manager.io/inject-ca-from: {{ printf "%s/%s-root-cert" (include "kjournal.namespace" .) (include "kjournal.fullname" .) | quote }}
+    {{- end }}
     {{- if .Values.customAnnotations }}
     {{- toYaml .Values.customAnnotations | nindent 4 }}
     {{- end }}
 {{- end }}
   labels:
     {{- include "kjournal.labels" . | indent 4 }}
-  name: v1.audit.kjournal
+  name: v1alpha1.core.kjournal
 spec:
   service:
     name: {{ template "kjournal.fullname" . }}
@@ -23,8 +25,8 @@ spec:
   {{- if .Values.tls.enable }}
   caBundle: {{ b64enc .Values.tls.ca }}
   {{- end }}
-  group: audit.kjournal
-  version: v1
+  group: core.kjournal
+  version: v1alpha1
   insecureSkipTLSVerify: {{ if or .Values.tls.enable .Values.certManager.enabled }}false{{ else }}true{{ end }}
   groupPriorityMinimum: 100
   versionPriority: 100

@@ -41,59 +41,55 @@ spec:
       {{- end}}
       containers:
       - name: {{ .Chart.Name }}
-        image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
+        image: "{{ .Values.image.repository }}:{{ default .Chart.AppVersion .Values.image.tag }}"
         imagePullPolicy: {{ .Values.image.pullPolicy }}
+        {{- if .Values.env }}
+        {{- toYaml .Values.env | trim | nindent 8 }}
+        {{- end }}
         args:
-        - /adapter
+        - "--audit-log-path=-"
+        - "--feature-gates=APIPriorityAndFairness=false"
+        - "--audit-log-maxage=0"
+        - "--audit-log-maxbackup=0"
         - --secure-port={{ .Values.listenPort }}
+        - --cert-dir=/tmp
         {{- if or .Values.tls.enable .Values.certManager.enabled }}
         - --tls-cert-file=/var/run/serving-cert/tls.crt
         - --tls-private-key-file=/var/run/serving-cert/tls.key
         {{- end }}
-        - --cert-dir=/tmp/cert
-        - --logtostderr=true
-        - --v={{ .Values.logLevel }}
         {{- if .Values.extraArguments }}
         {{- toYaml .Values.extraArguments | trim | nindent 8 }}
         {{- end }}
         ports:
         - containerPort: {{ .Values.listenPort }}
           name: https
+        {{- if .Values.livenessProbe }}
         livenessProbe:
-          httpGet:
-            path: /healthz
-            port: https
-            scheme: HTTPS
-          initialDelaySeconds: 30
-          timeoutSeconds: 5
+          {{- toYaml .Values.livenessProbe | nindent 10 }}
+        {{- end }}
+        {{- if .Values.readinessProbe }}
         readinessProbe:
-          httpGet:
-            path: /healthz
-            port: https
-            scheme: HTTPS
-          initialDelaySeconds: 30
-          timeoutSeconds: 5
+          {{- toYaml .Values.readinessProbe | nindent 10 }}
+        {{- end }}
         {{- if .Values.resources }}
         resources:
           {{- toYaml .Values.resources | nindent 10 }}
         {{- end }}
         {{- with .Values.dnsConfig }}
         dnsConfig:
-        {{ toYaml . | indent 8 }}
+          {{ toYaml . | indent 8 }}
         {{- end }}
+        {{- if .Values.securityContext }}
         securityContext:
-          allowPrivilegeEscalation: false
-          capabilities:
-            drop: ["all"]
-          readOnlyRootFilesystem: true
-          runAsNonRoot: true
-          {{- if .Values.runAsUser }}
-          runAsUser: {{ .Values.runAsUser }}
-          {{- end }}
+          {{- toYaml .Values.securityContext | nindent 10 }}
+        {{- end }}
         volumeMounts:
         {{- if .Values.extraVolumeMounts }}
-        {{ toYaml .Values.extraVolumeMounts | trim | nindent 8 }}
+        {{ toYaml .Values.extraVolumeMounts | trim | nindent 10 }}
         {{ end }}
+        - mountPath: /config.yaml
+          name: apiserver-config
+          subPath: apiserver-config.yaml
         - mountPath: /tmp
           name: tmp
         {{- if or .Values.tls.enable .Values.certManager.enabled }}
@@ -124,6 +120,10 @@ spec:
       {{- if .Values.extraVolumes  }}
       {{ toYaml .Values.extraVolumes | trim | nindent 6 }}
       {{ end }}
+      - name: apiserver-config
+        configMap:
+          {{- $name := include "kjournal.fullname" . }}
+          name: {{ default $name .Values.apiserverConfig.existingConfigMap }}
       - name: tmp
         emptyDir: {}
       {{- if or .Values.tls.enable .Values.certManager.enabled }}

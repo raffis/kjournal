@@ -1,0 +1,16 @@
+{{- if not .Values.apiserverConfig.existingConfigMap -}}
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ template "kjournal.fullname" . }}
+  namespace: {{ include "kjournal.namespace" . }}
+  {{- if .Values.customAnnotations }}
+  annotations:
+  {{- toYaml .Values.customAnnotations | nindent 4 }}
+  {{- end }}
+  labels:
+    {{- include "kjournal.labels" . | indent 4 }}
+data:
+  apiserver-config.yaml:
+    {{ toYaml .Values.apiserverConfig.config | nindent 4 }}
+{{- end }}

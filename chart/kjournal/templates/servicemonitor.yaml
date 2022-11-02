@@ -1,0 +1,19 @@
+{{- if or .Values.serviceMonitor.enabled }}
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  {{- if .Values.customAnnotations }}
+  annotations:
+  {{- toYaml .Values.customAnnotations | nindent 4 }}
+  {{- end }}
+  labels:
+    {{- include "kjournal.labels" . | indent 4 }}
+  name: {{ template "kjournal.fullname" . }}
+  namespace: {{ include "kjournal.namespace" . }}
+spec:
+  selector:
+    matchLabels:
+      {{- include "kjournal.selectorLabels" . | indent 6 }}
+  endpoints:
+  - port: {{ .Values.service.port }}
+{{- end }}

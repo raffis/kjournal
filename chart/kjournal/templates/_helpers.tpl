@@ -44,7 +44,6 @@ Generate basic labels
 {{- define "kjournal.labels" }}
 helm.sh/chart: {{ include "kjournal.chart" . }}
 app.kubernetes.io/managed-by: {{ .Release.Service }}
-app.kubernetes.io/component: metrics
 app.kubernetes.io/part-of: {{ template "kjournal.name" . }}
 {{- include "kjournal.selectorLabels" . }}
 {{- if .Chart.AppVersion }}
