@@ -16,17 +16,11 @@ graph LR
   C --> D;
   E ---> D;
 ```
-
-## Goals
-A kubernetes native solution to serve logs as a kubernetes API. It may bee seen as an extension to the integrated logs API endpoint.
-However the goal for kjournal is to expose logs from the longterm log storage back to kubernetes api consumers.
-Logs should be searchable, watchable and consumable in a kubernete style manner.
-Likewise log endpoints must RBAC protected as and consumable via a kubernetes signed authentication token.
-
-## Non goals
-It is **not** the job of kjournal to feed the kubernetes logs into your longterm storage solution.
-For this part various tooling exists. The job of kjournal is rather the other way around.
-kjournal itself does **not** store any data. It serves logs from a backing storage.
+## Expose longterm logs using kjournal
+To close the gap again between the longterm storage and kubernetes is kjournals job. 
+The kjournal-apiserver exposes a single api group `core.kjournal` with `containerlogs`, `events`, `auditevents` and `logs` as resources which makes logs accessible
+to kubernetes tooling.
+The kjournal-apiserver talks to the longterm storage while clients including kjournal or kubectl talk only to the kjournal-apiserver (via the kube-apiserver).
 
 ## Logging in kubernetes
 
@@ -44,8 +38,7 @@ The kube-apiserver can be configured to store audit events for all requests goin
 Similar to container logs these events are usually stored in log files directly on the master node(s). 
 Like for container logs these logs should be persisted into longterm storage to make them available over time.
 
-## Expose longterm logs using kjournal
-To close the gap again between the longterm storage and kubernetes is kjournals job. 
-The kjournal-apiserver exposes a single api group `core.kjournal` with `containerlogs`, `events`, `auditevents` and `logs` as resources which makes logs accessible
-to kubernetes tooling.
-The kjournal-apiserver talks to the longterm storage while clients including kjournal or kubectl talk only to the kjournal-apiserver (via the kube-apiserver).
+### Kubernetes events
+Kubernetes events are not logs directly. Rather they are evens emitted by reconcilers and stored as normal kubernetes resource in the backing storage (etcd).
+These events live only for one hour and are removed after.
+kjournal exposes the same API and makes these events available from the longterm log storage.

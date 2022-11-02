@@ -27,7 +27,9 @@
     
 You will find in the CLI installation documentation more advanced options regarding the cli installation.
 
-## Container logs
+## Fetch logs
+
+### Containers
 To fetch container logs from a namespace you can simply use the `pods` command.
 The command will start to print log streams from all containers prefixed and colored by pod and container names.
 
@@ -44,7 +46,41 @@ Will stream logs from all pods starting with mypod-
 kjournal pods -n mynamespace mypod-
 ```
 
-## Time window
+### Events
+Get historical kubernetes events.
+```sh
+kjournal events -n mynamespace
+```
+
+### Audit events
+kjournal has built-in support for kubernetes audit events. 
+You can access audit event using the audit command.
+
+This will stream the entire audit feed:
+```sh
+kjournal audit
+```
+
+!!! Note
+    `--since` is a shortcut of `--range now-[to]`. `--since 5h` is the same as `--range now-5h`. 
+
+
+!!! Note
+    AuditEvent is a cluster scoped resource and needs cluster wide permission to read it.
+
+
+### Arbitary logs
+Get arbitary logs.
+
+```sh
+kjournal logs
+```
+
+!!! Note
+    Logs is a cluster scoped resource and needs cluster wide permission to read it.
+
+
+## Time range
 The kjournal-apiserver looks up logs from the last 24 hours and starts stream from 24h ago. 
 The server default is configurable (see server configuration).
 You can change the window in which logs are looked up by using the `--since` flag.
@@ -71,11 +107,3 @@ However on top of that kjournal also supports other operators including `>`,`<` 
 kjournal pods -n mynamespace mypod- --field-selector payload.myLogField=xxx
 ```
 
-## Audit events
-kjournal has built-in support for kubernetes audit events. 
-You can access audit event using the audit command.
-
-This will stream the entire audit feed:
-```sh
-kjournal audit
-```

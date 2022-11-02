@@ -63,7 +63,7 @@ nav:
 - Home: index.md
 - quick-start.md
 - how-it-works.md
-- resources.md
+- goals.md
 - Prerequisites:
   - prerequisites/ship.md
   - prerequisites/audit.md
