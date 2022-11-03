@@ -1,7 +1,7 @@
 # Quick Start
 
 !!! Note
-    If you are a cluster admin a and want to deploy kjournal on your cluster(s), please refer to the apiserver quick start.
+    If you are a cluster admin a and want to deploy kjournal on your cluster(s), please refer to the apiserver [install guide](/kjournal/server/install).
 
 ## Install CLI
 
