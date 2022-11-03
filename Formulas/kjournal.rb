@@ -5,21 +5,21 @@
 class Kjournal < Formula
   desc ""
   homepage ""
-  version "0.0.7"
+  version "0.0.8"
   license "Apache-2.0"
 
   on_macos do
-    if Hardware::CPU.intel?
-      url "https://github.com/raffis/kjournal/releases/download/v0.0.7/kjournal_cli_0.0.7_darwin_amd64.tar.gz"
-      sha256 "36c627a0e7d427adba2024d22b891f8766e942dabbc39ce2b68f6dace4c994e7"
+    if Hardware::CPU.arm?
+      url "https://github.com/raffis/kjournal/releases/download/v0.0.8/kjournal_cli_0.0.8_darwin_arm64.tar.gz"
+      sha256 "36a4be60495adfe74367f1bfdf234db080d57bb744f6b5132d1f1bdd15253f66"
 
       def install
         bin.install "kjournal"
       end
     end
-    if Hardware::CPU.arm?
-      url "https://github.com/raffis/kjournal/releases/download/v0.0.7/kjournal_cli_0.0.7_darwin_arm64.tar.gz"
-      sha256 "03dba30d7c728610ed618e2f74a9d6efa654333caf9e1b89a3d17132b085cc0a"
+    if Hardware::CPU.intel?
+      url "https://github.com/raffis/kjournal/releases/download/v0.0.8/kjournal_cli_0.0.8_darwin_amd64.tar.gz"
+      sha256 "a96b26a6b7e6f03863ba58b4f1a23bbec559f53cdd8994fdb6a1c81f8e31de5b"
 
       def install
         bin.install "kjournal"
@@ -29,16 +29,16 @@ class Kjournal < Formula
 
   on_linux do
     if Hardware::CPU.arm? && Hardware::CPU.is_64_bit?
-      url "https://github.com/raffis/kjournal/releases/download/v0.0.7/kjournal_cli_0.0.7_linux_arm64.tar.gz"
-      sha256 "30915472a31d89476a48d919a80e1419e0c1f2ef40ab31ccdeaf3648ff952bb8"
+      url "https://github.com/raffis/kjournal/releases/download/v0.0.8/kjournal_cli_0.0.8_linux_arm64.tar.gz"
+      sha256 "ef314f776cd01e17534b22b65c0415e1fb226204a2f63b9bee3a3d4dd67edc73"
 
       def install
         bin.install "kjournal"
       end
     end
     if Hardware::CPU.intel?
-      url "https://github.com/raffis/kjournal/releases/download/v0.0.7/kjournal_cli_0.0.7_linux_amd64.tar.gz"
-      sha256 "f04db9e9c73921ef3383c3f45510c9502bd67bbe3e068c97f95caf962c88d704"
+      url "https://github.com/raffis/kjournal/releases/download/v0.0.8/kjournal_cli_0.0.8_linux_amd64.tar.gz"
+      sha256 "4c0d2e3ceb046627c93fe1f787f63766ad273a0e61a538094d0547deea7460fb"
 
       def install
         bin.install "kjournal"
