@@ -51,7 +51,7 @@ func initConfig() (configv1alpha1.APIServerConfig, error) {
 	expand := os.ExpandEnv(string(b))
 
 	scheme := runtime.NewScheme()
-	configv1alpha1.AddToScheme(scheme)
+	_ = configv1alpha1.AddToScheme(scheme)
 	codec := serializer.NewCodecFactory(scheme)
 	decoder := codec.UniversalDeserializer()
 

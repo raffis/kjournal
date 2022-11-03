@@ -173,7 +173,9 @@ func (r *elasticsearchREST) List(
 		}
 
 		klog.InfoS("setting continue token", "token", string(b))
-		r.metaAccessor.SetContinue(newListObj, string(b))
+		if err := r.metaAccessor.SetContinue(newListObj, string(b)); err != nil {
+			return newListObj, err
+		}
 	}
 
 	return newListObj, nil
@@ -246,10 +248,14 @@ func (r *elasticsearchREST) decodeFrom(obj esHit) (runtime.Object, error) {
 	for k, fields := range r.opts.FieldMap {
 		for _, field := range fields {
 			if field == "." {
-				jsonParsed.SetP(obj.Source, k)
+				if _, err := jsonParsed.SetP(obj.Source, k); err != nil {
+					return newObj, err
+				}
 			} else {
 				if v := jsonParsed.Path(field); v != nil {
-					jsonParsed.SetP(v.Data(), k)
+					if _, err := jsonParsed.SetP(v.Data(), k); err != nil {
+						return newObj, err
+					}
 					break
 				}
 			}
@@ -262,7 +268,7 @@ func (r *elasticsearchREST) decodeFrom(obj esHit) (runtime.Object, error) {
 	}
 
 	for _, field := range r.opts.DropFields {
-		jsonParsed.DeleteP(field)
+		_ = jsonParsed.DeleteP(field)
 	}
 
 	decodedObj, _, err := r.codec.Decode(jsonParsed.Bytes(), nil, newObj)
@@ -276,8 +282,13 @@ func (r *elasticsearchREST) decodeFrom(obj esHit) (runtime.Object, error) {
 	}
 
 	annotations["kjournal/es-index"] = obj.Index
-	r.metaAccessor.SetAnnotations(decodedObj, annotations)
-	r.metaAccessor.SetUID(decodedObj, types.UID(obj.ID))
+	if err := r.metaAccessor.SetAnnotations(decodedObj, annotations); err != nil {
+		return decodedObj, err
+	}
+
+	if err := r.metaAccessor.SetUID(decodedObj, types.UID(obj.ID)); err != nil {
+		return decodedObj, err
+	}
 
 	return decodedObj, err
 }

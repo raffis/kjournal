@@ -39,7 +39,7 @@ import (
 )
 
 func init() {
-	storage.Providers.Add("elasticsearch", newElasticsearchStorageProvider)
+	storage.Providers.MustRegister("elasticsearch", newElasticsearchStorageProvider)
 }
 
 var esClient *elasticsearch.Client

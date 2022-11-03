@@ -95,7 +95,7 @@ prepare-embed:
 	cp -rpv config/{apiserver,components,prometheus,namespace,rbac} cli/cmd/config/
 
 .PHONY: build
-build: generate fmt vet ## Build apiserver binary.
+build: generate fmt vet lint ## Build apiserver binary.
 	CGO_ENABLED=0 go build -o bin/apiserver cmd/*
 
 .PHONY: run

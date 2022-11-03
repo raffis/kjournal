@@ -25,12 +25,20 @@ vet:
 test:
 	go test ./... -v -coverprofile coverage.out
 
+.PHONY: golangci-lint
+golint: ## Download golint locally if necessary.
+	$(call go-install-tool,$(CONTROLLER_GEN),github.com/golangci/golangci-lint/cmd/golangci-lint@v1.49.0)
+
+.PHONY: lint
+lint: golangci-lint ## Run golangci-lint against code.
+	golangci-lint run ./...
+
 manifests:
 	rm -rfv cmd/config
 	mkdir cmd/config
 	cp -Rpv ../config/base cmd/config/
 
-build: manifests
+build: manifests fmt vet lint
 	CGO_ENABLED=0 go build -o ./bin/kjournal ./cmd
 
 .PHONY: docker-build

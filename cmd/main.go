@@ -20,6 +20,7 @@ import (
 	"fmt"
 	"net/http"
 	_ "net/http/pprof"
+	"os"
 	"runtime"
 
 	"k8s.io/klog/v2"
@@ -67,37 +68,14 @@ func (m *httpWrap) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 }
 
 func main() {
-	runtime.SetMutexProfileFraction(5)
-	runtime.SetBlockProfileRate(5)
-
-	pyroscope.Start(pyroscope.Config{
-		ApplicationName: "simple.golang.app",
-
-		// replace this with the address of pyroscope server
-		ServerAddress: "http://pyroscope:4040",
-
-		// you can disable logging by setting this to nil
-		Logger: pyroscope.StandardLogger,
-
-		// optionally, if authentication is enabled, specify the API key:
-		// AuthToken: os.Getenv("PYROSCOPE_AUTH_TOKEN"),
-
-		ProfileTypes: []pyroscope.ProfileType{
-			// these profile types are enabled by default:
-			pyroscope.ProfileCPU,
-			pyroscope.ProfileAllocObjects,
-			pyroscope.ProfileAllocSpace,
-			pyroscope.ProfileInuseObjects,
-			pyroscope.ProfileInuseSpace,
-
-			// these profile types are optional:
-			pyroscope.ProfileGoroutines,
-			pyroscope.ProfileMutexCount,
-			pyroscope.ProfileMutexDuration,
-			pyroscope.ProfileBlockCount,
-			pyroscope.ProfileBlockDuration,
-		},
-	})
+	if profilingEnabled, ok := os.LookupEnv("PYROSCOPE_START_PROFILING"); ok && profilingEnabled == "true" {
+		runtime.SetMutexProfileFraction(5)
+		runtime.SetBlockProfileRate(5)
+		_, err := pyroscope.Start(getProfilerConfig())
+		if err != nil {
+			panic(err)
+		}
+	}
 
 	cmd, err := builder.APIServer.
 		// +kubebuilder:scaffold:resource-register
@@ -136,16 +114,16 @@ func main() {
 	rootCmd.Short = "Launches the kjournal kubernetes apiserver"
 
 	// TODO: workaorund for removing etcd related flags. Apparantly WithoutEtcd() does not work.
-	rootCmd.Flags().MarkHidden("etcd-cafile")
-	rootCmd.Flags().MarkHidden("etcd-certfile")
-	rootCmd.Flags().MarkHidden("etcd-compaction-interval")
-	rootCmd.Flags().MarkHidden("etcd-count-metric-poll-period")
-	rootCmd.Flags().MarkHidden("etcd-db-metric-poll-interval")
-	rootCmd.Flags().MarkHidden("etcd-healthcheck-timeout")
-	rootCmd.Flags().MarkHidden("etcd-keyfile")
-	rootCmd.Flags().MarkHidden("etcd-prefix")
-	rootCmd.Flags().MarkHidden("etcd-servers")
-	rootCmd.Flags().MarkHidden("etcd-servers-overrides")
+	_ = rootCmd.Flags().MarkHidden("etcd-cafile")
+	_ = rootCmd.Flags().MarkHidden("etcd-certfile")
+	_ = rootCmd.Flags().MarkHidden("etcd-compaction-interval")
+	_ = rootCmd.Flags().MarkHidden("etcd-count-metric-poll-period")
+	_ = rootCmd.Flags().MarkHidden("etcd-db-metric-poll-interval")
+	_ = rootCmd.Flags().MarkHidden("etcd-healthcheck-timeout")
+	_ = rootCmd.Flags().MarkHidden("etcd-keyfile")
+	_ = rootCmd.Flags().MarkHidden("etcd-prefix")
+	_ = rootCmd.Flags().MarkHidden("etcd-servers")
+	_ = rootCmd.Flags().MarkHidden("etcd-servers-overrides")
 
 	cmd.AddCommand(cmdMan)
 	cmd.AddCommand(cmdRef)
@@ -154,4 +132,38 @@ func main() {
 	if err != nil {
 		klog.Fatal(err)
 	}
+}
+
+func getProfilerConfig() pyroscope.Config {
+	cfg := pyroscope.Config{
+		ApplicationName: "kjournal",
+		ServerAddress:   "http://pyroscope:4040",
+		Logger:          pyroscope.StandardLogger,
+		ProfileTypes: []pyroscope.ProfileType{
+			pyroscope.ProfileCPU,
+			pyroscope.ProfileAllocObjects,
+			pyroscope.ProfileAllocSpace,
+			pyroscope.ProfileInuseObjects,
+			pyroscope.ProfileInuseSpace,
+			pyroscope.ProfileGoroutines,
+			pyroscope.ProfileMutexCount,
+			pyroscope.ProfileMutexDuration,
+			pyroscope.ProfileBlockCount,
+			pyroscope.ProfileBlockDuration,
+		},
+	}
+
+	if appName, ok := os.LookupEnv("PYROSCOPE_APPLICATION_NAME"); ok {
+		cfg.ApplicationName = appName
+	}
+
+	if address, ok := os.LookupEnv("PYROSCOPE_SERVER_ADDRESS"); ok {
+		cfg.ServerAddress = address
+	}
+
+	if token, ok := os.LookupEnv("PYROSCOPE_AUTH_TOKEN"); ok {
+		cfg.AuthToken = token
+	}
+
+	return cfg
 }

@@ -13,6 +13,7 @@ var (
 type Registry[T any] interface {
 	Add(key string, value T) error
 	Get(key string) (T, error)
+	MustRegister(key string, value T)
 }
 
 type registry[T any] struct {
@@ -32,6 +33,12 @@ func (r *registry[T]) Add(key string, value T) error {
 
 	r.store[key] = value
 	return nil
+}
+
+func (r *registry[T]) MustRegister(key string, value T) {
+	if err := r.Add(key, value); err != nil {
+		panic(err)
+	}
 }
 
 func (r *registry[T]) Get(key string) (T, error) {
