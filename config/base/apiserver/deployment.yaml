@@ -50,14 +50,26 @@ spec:
         - containerPort: 8443
           name: https
           protocol: TCP
-        #readinessProbe:
-        #  httpGet:
-        #    path: /readyz
-        #    port: https
-        #livenessProbe:
-        #  httpGet:
-        #    path: /healthz
-        #    port: https
+        livenessProbe:
+          failureThreshold: 3
+          httpGet:
+            path: /healthz
+            port: https
+            scheme: HTTPS
+          initialDelaySeconds: 30
+          periodSeconds: 10
+          successThreshold: 1
+          timeoutSeconds: 5
+        readinessProbe:
+          failureThreshold: 3
+          httpGet:
+            path: /healthz
+            port: https
+            scheme: HTTPS
+          initialDelaySeconds: 30
+          periodSeconds: 10
+          successThreshold: 1
+          timeoutSeconds: 5
       serviceAccountName: apiserver
       volumes:
       - name: tmp
