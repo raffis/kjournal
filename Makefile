@@ -57,7 +57,7 @@ vet: ## Run go vet against code.
 	go vet ./...
 
 .PHONY: golangci-lint
-golint: ## Download golint locally if necessary.
+golangci-lint: ## Download golint locally if necessary.
 	$(call go-install-tool,$(CONTROLLER_GEN),github.com/golangci/golangci-lint/cmd/golangci-lint@v1.49.0)
 
 .PHONY: lint
