@@ -62,7 +62,7 @@ golangci-lint: ## Download golint locally if necessary.
 
 .PHONY: lint
 lint: golangci-lint ## Run golangci-lint against code.
-	golangci-lint run ./...
+	golangci-lint run --timeout=2m ./...
 
 .PHONY: test
 #test: generate fmt vet envtest ## Run tests.
