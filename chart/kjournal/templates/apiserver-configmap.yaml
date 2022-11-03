@@ -12,5 +12,5 @@ metadata:
     {{- include "kjournal.labels" . | indent 4 }}
 data:
   apiserver-config.yaml:
-    {{ toYaml .Values.apiserverConfig.config | nindent 4 }}
+    {{- toYaml .Values.apiserverConfig.config | nindent 4 }}
 {{- end }}
