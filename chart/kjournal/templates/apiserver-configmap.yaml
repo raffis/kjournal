@@ -11,6 +11,10 @@ metadata:
   labels:
     {{- include "kjournal.labels" . | indent 4 }}
 data:
-  apiserver-config.yaml:
+  apiserver-config.yaml: |
+    {{- if .Values.apiserverConfig.templateName}}
+    {{- (.Files.Get (printf "config-templates/%s/apiserver-config.yaml"  .Values.apiserverConfig.templateName )) | nindent 4 }}
+    {{- else }}
     {{- toYaml .Values.apiserverConfig.config | nindent 4 }}
+    {{- end -}}
 {{- end }}

@@ -23,9 +23,50 @@ Below you can find the steps for each of them.
 
     You may find addtional documentation regarding support chart values in the chart documentation [here](methods/helm).
 
+!!! Note
+    You need to configure the kjournal-apiserver for your logging backend. kjournal will not serve any data if no backend is configured.
+    Please follow the next chapter.
+
 !!! Warning
     It is recommended to enable certmanager support on any production cluster. See bellow. 
 
+## Configure apiserver
+
+A backing storage needs to be confgured in order to tell kjournal from where it can get the data.
+This is the longterm storage your log shippers will send data to.
+
+Each installation method offers couple of preconfigured installation templates to get started.
+Visit the [config](/kjournal/server/config) page for more information regarding the kjournal apiserver config.
+
+=== "kjournal"
+    ```sh
+    kjournal install -n kjournal-system --with-config-template=<config-template-name>
+    ```
+
+=== "Helm"
+    ```sh
+    helm upgrade kjournal --install oci://ghcr.io/raffis/kjournal/helm --set apiserverConfig.templateName=<config-template-name>
+    ```
+
+=== "Kustomize"
+    ```sh
+    cat <<EOT >> kustomization.yaml
+    apiVersion: kustomize.config.k8s.io/v1beta1
+    kind: Kustomization
+    resources:
+    - github.com/raffis/kjournal//config/default
+    - github.com/raffis/kjournal//config/rbac
+
+    components:
+    - github.com/raffis/kjournal//config/components/config-templates/<config-template-name>
+    EOT && kustomize build | kubectl apply -f -
+    ```
+
+| Template name                       | Description |  
+|----------------------------------   |-------------|
+| `elasticsearch-kjournal-structured` | Configures the apiserver for an elasticsearch backend. The docuements are expected to be directly compatible with the kjournal api specification. |
+| `elasticsearch-fluentbit-simple`    | Configures the apiserver for an elasticsearch backend. The fields are mapped to to a document structure which is usually created by the fluent-bit kubernetes plugin without any special configuration. |
+| `elasticsearch-filebeat-simple`     | Configures the apiserver for an elasticsearch backend. The fields are mapped to to a document structure which is usually created by the filebeat kubernetes plugin without any special configuration. |
 
 ## Install a specific version of the pre-compiled apiserver
 

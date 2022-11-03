@@ -1,9 +1,10 @@
 # kjournal
+![Release](https://img.shields.io/github/v/release/raffis/kjournal)
 [![release](https://github.com/raffis/kjournal/actions/workflows/release.yaml/badge.svg)](https://github.com/raffis/kjournal/actions/workflows/release.yaml)
 [![Go Report Card](https://goreportcard.com/badge/github.com/raffis/kjournal)](https://goreportcard.com/report/github.com/raffis/kjournal)
 [![PkgGoDev](https://pkg.go.dev/badge/github.com/raffis/kjournal?tab=subdirectories)](https://pkg.go.dev/github.com/raffis/kjournal?tab=subdirectories)
 [![Coverage Status](https://coveralls.io/repos/github/raffis/kjournal/badge.svg?branch=main)](https://coveralls.io/github/raffis/kjournal?branch=main)
-[![Artifact HUB](https://img.shields.io/endpoint?url=https://artifacthub.io/badge/repository/kjournal)](https://artifacthub.io/packages/search?repo=kjournal)
+[![Artifact Hub](https://img.shields.io/endpoint?url=https://artifacthub.io/badge/repository/kjournal)](https://artifacthub.io/packages/search?repo=kjournal)
 
 kjournal closes the gap between long-term log storage and your client. kjournal is a simple and lightweight kubernetes api server 
 which makes your longterm log storage available as consumable readonly kubernetes api.

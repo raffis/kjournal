@@ -88,11 +88,11 @@ kind-dev-tools: kind-dev-tools ## Deploy dev-tools to kind.
 
 ##@ Build
 
-.PHONY: prepare-embeds
-prepare-embed:
-	rm -rf cli/cmd/config
-	mkdir -p cli/cmd/config
-	cp -rpv config/{apiserver,components,prometheus,namespace,rbac} cli/cmd/config/
+.PHONY: configs
+configs:
+	rm -rf chart/kjournal/config-templates
+	cp -Rpv config/base/components/config-templates chart/kjournal/
+	find chart/kjournal/config-templates -name kustomization.yaml -exec rm -rfv {} \;
 
 .PHONY: build
 build: generate fmt vet lint ## Build apiserver binary.
@@ -129,15 +129,15 @@ apiserver-cmdref: build  ## Build apiserver command line reference
 HELM_DOCS = $(GOBIN)/helm-docs
 .PHONY: helm-docs
 helm-docs:
-	echo TEST
 	$(call go-install-tool,$(HELM_DOCS),github.com/norwoodj/helm-docs/cmd/helm-docs@v1.11.0)
 
 .PHONY: gen-helm-docs
 gen-helm-docs: helm-docs ## Build helm chart readme using helm-docs
 	$(HELM_DOCS) -c chart/
+	sed 's/# kjournal/Helm Chart/g' -i docs/server/methods/helm.md
 
-.PHONY: gen-docs
-gen-docs: api-docs apiserver-cmdref gen-helm-docs mkdocs  ## Build docs using mkdocs
+.PHONY: docs
+docs: api-docs apiserver-cmdref gen-helm-docs mkdocs  ## Build docs using mkdocs
 	cp README.md docs/index.md
 	cp CONTRIBUTING.md docs/contributing.md
 	cp chart/kjournal/README.md docs/server/methods/helm.md

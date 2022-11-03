@@ -43,6 +43,17 @@ source:
   enabled: true
   name_template: "{{ .ProjectName }}_{{ .Version }}_source_code"
 
+changelog:
+  groups:
+    - title: Features
+      regexp: "^.*feat[(\\w)]*:+.*$"
+      order: 0
+    - title: 'Fixes'
+      regexp: "^.*fix[(\\ w)]*:+.*$"
+      order: 1
+    - title: Others
+      order: 999
+
 sboms:
 - id: source
   artifacts: source

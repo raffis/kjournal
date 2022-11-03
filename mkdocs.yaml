@@ -69,9 +69,8 @@ nav:
   - prerequisites/audit.md
   - prerequisites/event-exporter.md
 - Server:
-  - server/quick-start.md
-  - server/config.md
   - server/install.md
+  - server/config.md
   - server/uninstall.md
   - Methods:
     - server/methods/helm.md

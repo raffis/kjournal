@@ -62,12 +62,8 @@ jobs:
           key: ${{ runner.os }}-go-${{ hashFiles('**/go.sum') }}
           restore-keys: |
             ${{ runner.os }}-go-
-      - name: Setup envtest
-        uses: fluxcd/pkg/actions/envtest@main
-        with:
-          version: "1.21.2"
       - name: Run tests
-        run: make test
+        run: make test configs
       - name: Send go coverage report
         uses: shogo82148/actions-goveralls@v1
         with:
@@ -76,7 +72,7 @@ jobs:
         run: |
           if [[ $(git diff --stat) != '' ]]; then
             git --no-pager diff
-            echo 'run make test and commit changes'
+            echo 'run <make test configs> and commit changes'
             exit 1
           fi
       - name: Build container image

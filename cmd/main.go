@@ -17,22 +17,19 @@ limitations under the License.
 package main
 
 import (
-	"fmt"
 	"net/http"
 	_ "net/http/pprof"
 	"os"
 	"runtime"
 
+	"github.com/pyroscope-io/client/pyroscope"
+	"github.com/spf13/cobra"
+	k8sversion "k8s.io/apimachinery/pkg/version"
 	"k8s.io/klog/v2"
 	"sigs.k8s.io/apiserver-runtime/pkg/builder"
 
-	// +kubebuilder:scaffold:resource-imports
-
-	"github.com/pyroscope-io/client/pyroscope"
 	adapterv1alpha1 "github.com/raffis/kjournal/internal/apis/core/v1alpha1"
 	"github.com/raffis/kjournal/pkg/apis/core/v1alpha1"
-	"github.com/spf13/cobra"
-	k8sversion "k8s.io/apimachinery/pkg/version"
 )
 
 const (
@@ -58,7 +55,6 @@ var (
 )
 
 func (m *httpWrap) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	fmt.Printf("req %#v\n", r.RequestURI)
 	q := r.URL.Query()
 	fieldSelector := q.Get("fieldSelector")
 	q.Set("labelSelector", fieldSelector)
