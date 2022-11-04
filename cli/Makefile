@@ -33,12 +33,12 @@ golint: ## Download golint locally if necessary.
 lint: golangci-lint ## Run golangci-lint against code.
 	golangci-lint run ./...
 
-manifests:
+configs:
 	rm -rfv cmd/config
 	mkdir cmd/config
 	cp -Rpv ../config/base cmd/config/
 
-build: manifests fmt vet lint
+build: configs fmt vet lint
 	CGO_ENABLED=0 go build -o ./bin/kjournal ./cmd
 
 .PHONY: docker-build

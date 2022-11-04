@@ -20,11 +20,17 @@ jobs:
           key: ${{ runner.os }}-go-${{ hashFiles('**/go.sum') }}
           restore-keys: |
             ${{ runner.os }}-go-
+      - name: Run tests
+        run: make test configs -C cli
+      - name: Send go coverage report
+        uses: shogo82148/actions-goveralls@v1
+        with:
+          path-to-profile: coverage.out
       - name: Check if working tree is dirty
         run: |
           if [[ $(git diff --stat) != '' ]]; then
             git --no-pager diff
-            echo 'run make test and commit changes'
+            echo 'run <make test configs> and commit changes'
             exit 1
           fi
       - name: Build container image

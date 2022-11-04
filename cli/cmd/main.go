@@ -28,7 +28,7 @@ import (
 	_ "k8s.io/client-go/plugin/pkg/client/auth"
 )
 
-const (
+var (
 	version = "0.0.0-dev"
 	commit  = "none"
 	date    = "unknown"

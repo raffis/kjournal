@@ -1,9 +1,8 @@
 # Configuration
 
 The apiserver needs to be configured with a backend storage where your logs are persisted.
-Besides each resource may have custom configuration related to the backend configured.
 
-Example config:
+Example config for elasticsearch:
 
 === "v1alpha1"
   ```yaml

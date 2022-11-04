@@ -93,6 +93,7 @@ configs:
 	rm -rf chart/kjournal/config-templates
 	cp -Rpv config/base/components/config-templates chart/kjournal/
 	find chart/kjournal/config-templates -name kustomization.yaml -exec rm -rfv {} \;
+	make configs -C cli
 
 .PHONY: build
 build: generate fmt vet lint ## Build apiserver binary.

@@ -18,7 +18,7 @@ Below you can find the steps for each of them.
 
 === "Helm"
     ```sh
-    helm upgrade kjournal --install oci://github.com/raffis/charts/kjournal
+    helm upgrade kjournal --install oci://ghcr.io/raffis/charts/kjournal
     ```
 
     You may find addtional documentation regarding support chart values in the chart documentation [here](methods/helm).
@@ -45,7 +45,7 @@ Visit the [config](/kjournal/server/config) page for more information regarding 
 
 === "Helm"
     ```sh
-    helm upgrade kjournal --install oci://ghcr.io/raffis/kjournal/helm --set apiserverConfig.templateName=<config-template-name>
+    helm upgrade kjournal --install oci://ghcr.io/raffis/charts/kjournal --set apiserverConfig.templateName=<config-template-name>
     ```
 
 === "Kustomize"
@@ -82,7 +82,7 @@ Visit the [config](/kjournal/server/config) page for more information regarding 
 
 === "Helm"
     ```sh
-    helm upgrade kjournal --install oci://github.com/raffis/charts/kjournal --version 0.0.1
+    helm upgrade kjournal --install oci://ghcr.io/raffis/charts/kjournal --version 0.0.1
     ```
 
 ## Certmanager support
@@ -97,7 +97,7 @@ and the kjournal apiserver. By default the kuberntes apiserver trusts kjournal w
 
 === "Helm"
     ```sh
-    helm upgrade kjournal --install oci://ghcr.io/raffis/kjournal/helm --set certmanager.enabled=true
+    helm upgrade kjournal --install oci://ghcr.io/raffis/charts/kjournal --set certmanager.enabled=true
     ```
 
 === "Kustomize"
@@ -125,7 +125,7 @@ kjournal has support for the prometheus-operator or using prometheus scraping vi
 
 === "Helm"
     ```sh
-    helm upgrade kjournal --install oci://ghcr.io/raffis/kjournal/helm --set serviceMonitor.enabled=true
+    helm upgrade kjournal --install oci://ghcr.io/raffis/charts/kjournal --set serviceMonitor.enabled=true
     ```
 
 === "Kustomize"
