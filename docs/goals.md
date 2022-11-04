@@ -7,6 +7,7 @@ Logs should be searchable, watchable and consumable in a kubernete style manner.
 Likewise log endpoints must RBAC protected as and consumable via a kubernetes signed authentication token.
 
 Summary: 
+
 - Log server which provides historical kubernetes events
 - Log server which provides historical container logs
 - Log server which provides historical audit logs
