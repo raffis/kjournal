@@ -17,10 +17,6 @@ spec:
       {{- include "kjournal.selectorLabels" . | indent 6 }}
   template:
     metadata:
-      {{- if .Values.customAnnotations }}
-      annotations:
-      {{- toYaml .Values.customAnnotations | nindent 8 }}
-      {{- end }}
       labels:
         {{- include "kjournal.labels" . | indent 8 }}
         {{- with .Values.podLabels }}
@@ -28,6 +24,10 @@ spec:
         {{- end }}
       name: {{ template "kjournal.name" . }}
       annotations:
+        checksum/config: {{ include "kjournal.configHash" . }}
+        {{- if .Values.customAnnotations }}
+        {{- toYaml .Values.customAnnotations | nindent 8 }}
+        {{- end }}
         {{- with .Values.podAnnotations }}
         {{- toYaml . | trim | nindent 8 }}
         {{- end }}
@@ -44,6 +44,7 @@ spec:
         image: "{{ .Values.image.repository }}:{{ default .Chart.AppVersion .Values.image.tag }}"
         imagePullPolicy: {{ .Values.image.pullPolicy }}
         {{- if .Values.env }}
+        env:
         {{- toYaml .Values.env | trim | nindent 8 }}
         {{- end }}
         args:

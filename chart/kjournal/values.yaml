@@ -3,7 +3,7 @@ apiserverConfig:
   existingConfigMap:
 
   ## Specify a predefined config name, see config-templates
-  templateName:
+  templateName: elasticsearch-kjournal-structured
 
   ## Full apiserver config inline 
   config: |

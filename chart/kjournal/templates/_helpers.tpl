@@ -81,3 +81,15 @@ Create the name of the service account to use
     {{- print "policy/v1beta1" -}}
 {{- end -}}
 {{- end -}}
+
+
+{{/* Get config hash */}}
+{{- define "kjournal.configHash" -}}
+{{- if .Values.apiserverConfig.templateName}}
+{{- (.Files.Get (printf "config-templates/%s/apiserver-config.yaml"  .Values.apiserverConfig.templateName )) | sha256sum }}
+{{- else if .Values.apiserverConfig.config }}
+{{- .Values.apiserverConfig.config | sha256sum }}
+{{- else }}
+{{- .Values.apiserverConfig.existingConfigMap | sha256sum }}
+{{- end -}}
+{{- end -}}

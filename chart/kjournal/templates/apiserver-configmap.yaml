@@ -14,7 +14,9 @@ data:
   apiserver-config.yaml: |
     {{- if .Values.apiserverConfig.templateName}}
     {{- (.Files.Get (printf "config-templates/%s/apiserver-config.yaml"  .Values.apiserverConfig.templateName )) | nindent 4 }}
-    {{- else }}
+    {{- else if .Values.apiserverConfig.config }}
     {{- toYaml .Values.apiserverConfig.config | nindent 4 }}
+    {{- else }}
+    {{- fail "apiserverConfig requires one of [templateName, config, existingConfigMap] to be defined" }}
     {{- end -}}
 {{- end }}
