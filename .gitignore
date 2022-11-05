@@ -35,4 +35,3 @@ apiserver.local.config
 config/release
 config/certificates
 /config/**/charts
-cli/cmd/config

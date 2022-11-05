@@ -1,0 +1,39 @@
+apiVersion: config.kjournal/v1alpha1
+kind: APIServerConfig
+
+backend:
+  elasticsearch:
+    url:
+    - ${ELASTICSEARCH_URI}
+
+apis:
+- resource: containerlogs
+  fieldMap:
+    metadata.uid: [metadata.uid.keyword]
+    metadata.namespace: [metadata.namespace.keyword]
+  backend:
+    elasticsearch:
+      index: "*"
+      timestampFields: ["metadata.creationTimestamp"]
+      uidFields: [metadata.uid.keyword]
+
+- resource: events
+  backend:
+    elasticsearch:
+      index: "*"
+      timestampFields: ["metadata.creationTimestamp"]
+
+- resource: auditevents
+  backend:
+    elasticsearch:
+      index: "*"
+      timestampFields: ["stageTimestamp"]
+
+- resource: logs
+  fieldMap:
+    metadata.creationTimestamp: ["@timestamp", "metadata.creationTimestamp", "stageTimestamp"]
+    payload: ["."]
+  backend:
+    elasticsearch:
+      timestampFields: ["@timestamp", "metadata.creationTimestamp", "stageTimestamp"]
+      index: "*"

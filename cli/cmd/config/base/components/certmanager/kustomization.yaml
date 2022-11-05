@@ -1,0 +1,101 @@
+kind: Component
+
+resources:
+- issuer.yaml
+- certificate.yaml
+
+patches:
+- target:
+    kind: APIService
+  patch: |
+    kind: APIService
+    metadata:
+      name: apiserver
+      annotations:
+        certmanager.k8s.io/inject-ca-from: $(NAMESPACE)/$(SVC_NAME)
+        cert-manager.io/inject-ca-from: $(NAMESPACE)/$(SVC_NAME)
+    spec:
+      insecureSkipTLSVerify: false
+- target:
+    kind: Certificate
+  patch: |
+    kind: Certificate
+    metadata:
+      name: apiserver
+    spec:
+      issuerRef:
+        name: $(ISSUER_NAME)
+      secretName: $(CERT_SECRET_NAME)
+- target:
+    kind: Deployment
+    name: apiserver
+  patch: |-
+    - op: add
+      path: /spec/template/spec/containers/0/args/-
+      value: --tls-cert-file=/certificates/tls.crt
+    - op: add
+      path: /spec/template/spec/containers/0/args/-
+      value: --tls-private-key-file=/certificates/tls.key
+- target: 
+    kind: Deployment
+    name: apiserver
+  patch: |
+    kind: Deployment
+    metadata:
+      name: apiserver
+    spec: 
+      template: 
+        spec:
+          containers:
+          - name: apiserver
+            volumeMounts:
+            - mountPath: certificates
+              name: apiserver-certs
+              readOnly: true
+          volumes:
+          - name: apiserver-certs
+            secret:
+              secretName: $(CERT_SECRET_NAME)
+
+configurations:
+- config.yaml
+
+vars:
+- name: SVC_NAME
+  objref:
+    kind: Service
+    name: apiserver
+    apiVersion: v1
+  fieldref:
+    fieldpath: metadata.name
+- name: NAMESPACE
+  objref:
+    kind: Service
+    name: apiserver
+    apiVersion: v1
+  fieldref:
+    fieldpath: metadata.namespace
+- name: ISSUER_NAME
+  objref:
+    kind: Issuer
+    name: selfsigned-issuer
+    group: cert-manager.io
+    apiVersion: v1
+  fieldref:
+    fieldpath: metadata.name
+- name: CERT_SECRET_NAME
+  objref:
+    kind: Certificate
+    name: apiserver
+    group: cert-manager.io
+    apiVersion: v1
+  fieldref:
+    fieldpath: metadata.name
+- name: CLUSTER_DOMAIN
+  objref:
+    kind: Certificate
+    name: apiserver
+    group: cert-manager.io
+    apiVersion: v1
+  fieldref:
+    fieldpath: metadata.annotations.kjournal/cluster-domain
