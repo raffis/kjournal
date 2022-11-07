@@ -6,46 +6,15 @@ Below you can find the steps for each of them.
 
 ## Install the pre-compiled apiserver
 
-=== "kjournal"
-    ```sh
-    kjournal install -n kjournal-system
-    ```
-
-=== "Kustomize"
-    ```sh
-    kustomize build github.com/raffis/kjournal//config/default | kubectl apply -f -
-    ```
-
-=== "Helm"
-    ```sh
-    helm upgrade kjournal --install oci://ghcr.io/raffis/charts/kjournal
-    ```
-
-    You may find addtional documentation regarding support chart values in the chart documentation [here](methods/helm).
-
-!!! Note
-    You need to configure the kjournal-apiserver for your logging backend. kjournal will not serve any data if no backend is configured.
-    Please follow the next chapter.
-
-!!! Warning
-    It is recommended to enable certmanager support on any production cluster. See bellow. 
-
-## Configure apiserver
-
 A backing storage needs to be confgured in order to tell kjournal from where it can get the data.
 This is the longterm storage your log shippers will send data to.
-
-Each installation method offers couple of preconfigured installation templates to get started.
+All installation method offer a couple of preconfigured installation templates to get started.
 Visit the [config](/kjournal/server/config) page for more information regarding the kjournal apiserver config.
+The default behaviour is elasticsearch as backing storage and it expects kjournal structured documents.
 
 === "kjournal"
     ```sh
-    kjournal install -n kjournal-system --with-config-template=<config-template-name>
-    ```
-
-=== "Helm"
-    ```sh
-    helm upgrade kjournal --install oci://ghcr.io/raffis/charts/kjournal --set apiserverConfig.templateName=<config-template-name>
+    kjournal install -n kjournal-system --with-config-template=elasticsearch-kjournal-structured
     ```
 
 === "Kustomize"
@@ -55,12 +24,23 @@ Visit the [config](/kjournal/server/config) page for more information regarding 
     kind: Kustomization
     resources:
     - github.com/raffis/kjournal//config/default
-    - github.com/raffis/kjournal//config/rbac
 
     components:
-    - github.com/raffis/kjournal//config/components/config-templates/<config-template-name>
+    - github.com/raffis/kjournal//config/components/config-templates/elasticsearch-kjournal-structured
     EOT && kustomize build | kubectl apply -f -
     ```
+
+=== "Helm"
+    ```sh
+    helm upgrade kjournal --install oci://ghcr.io/raffis/charts/kjournal --set apiserverConfig.templateName=elasticsearch-kjournal-structured
+    ```
+
+    You may find addtional documentation regarding support chart values in the chart documentation [here](methods/helm).
+
+!!! Warning
+    It is recommended to enable certmanager support on any production cluster. See bellow. 
+
+### Configuration templates
 
 | Template name                       | Description |  
 |----------------------------------   |-------------|
@@ -107,7 +87,6 @@ and the kjournal apiserver. By default the kuberntes apiserver trusts kjournal w
     kind: Kustomization
     resources:
     - github.com/raffis/kjournal//config/default
-    - github.com/raffis/kjournal//config/rbac
 
     components:
     - github.com/raffis/kjournal//config/components/certmanager
@@ -135,10 +114,9 @@ kjournal has support for the prometheus-operator or using prometheus scraping vi
     kind: Kustomization
     resources:
     - github.com/raffis/kjournal//config/default
-    - github.com/raffis/kjournal//config/rbac
 
     components:
-    - github.com/raffis/kjournal//config/components/prometheus
+    - github.com/raffis/kjournal//config/base/components/prometheus
     EOT && kustomize build | kubectl apply -f -
     ```
 

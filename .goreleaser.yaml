@@ -157,7 +157,8 @@ brews:
   test: |
     system "#{bin}/kjournal help"      
   install: |
-    bin.install "kjournal"
+    bin.install "kjournal-cli" => "kjournal"
+    generate_completions_from_executable(bin/"kjournal", "completion", base_name: "kjournal")
 
 signs:
 - cmd: cosign

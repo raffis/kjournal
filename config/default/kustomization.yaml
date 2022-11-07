@@ -14,5 +14,6 @@ resources:
 - ../base/rbac
 - ../base/namespace
 
+# Use a config template
 #components:
-#- ../base/components/certmanager
+#- ../base/components/config-templates/<config-template>

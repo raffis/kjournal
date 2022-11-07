@@ -41,7 +41,8 @@ class Kjournal < Formula
       sha256 "4c0d2e3ceb046627c93fe1f787f63766ad273a0e61a538094d0547deea7460fb"
 
       def install
-        bin.install "kjournal"
+        bin.install "kjournal-cli" => "kjournal"
+        generate_completions_from_executable(bin/"kjournal", "completion", base_name: "kjournal")
       end
     end
   end

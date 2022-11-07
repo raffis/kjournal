@@ -94,7 +94,7 @@ func (s *stream) Start(ctx context.Context, options *metainternalversion.ListOpt
 			time.Sleep(s.refreshRate)
 		}
 
-		// The continue token represents teh last sort value from the last hit.
+		// The continue token represents the last sort value from the last hit.
 		// Which itself gets used in the next es query as search_after
 		// If there is no hit there will be no continue token as this means we reached the end of available results
 		if len(hit.Sort) > 0 {

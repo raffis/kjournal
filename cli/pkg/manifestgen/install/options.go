@@ -26,7 +26,7 @@ func MakeDefaultOptions() Options {
 		Namespace:       "kjournal-system",
 		Registry:        "ghcr.io/raffis/kjournal",
 		ImagePullSecret: "",
-		ConfigTemplate:  "",
+		ConfigTemplate:  "elasticsearch-kjournal-structured",
 		NetworkPolicy:   true,
 		CertManager:     false,
 		ServiceMonitor:  false,
