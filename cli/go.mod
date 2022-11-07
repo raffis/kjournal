@@ -3,6 +3,7 @@ module github.com/raffis/kjournal/cli
 go 1.18
 
 require (
+	github.com/Masterminds/semver v1.5.0
 	github.com/cyphar/filepath-securejoin v0.2.3
 	github.com/fatih/color v1.12.0
 	github.com/liggitt/tabwriter v0.0.0-20181228230101-89fcab3d43de

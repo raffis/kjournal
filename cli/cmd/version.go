@@ -2,8 +2,13 @@ package main
 
 import (
 	"fmt"
+	"runtime"
+	"strconv"
 
+	"github.com/Masterminds/semver"
 	"github.com/spf13/cobra"
+	k8sversion "k8s.io/apimachinery/pkg/version"
+	"k8s.io/client-go/discovery"
 )
 
 type versionFlags struct {
@@ -16,16 +21,52 @@ var versionArgs versionFlags
 var versionCmd = &cobra.Command{
 	Use:   "version",
 	Short: "Print version",
-	Long:  "The version command prints the cli version",
-	//ValidArgsFunction: resourceNamesCompletionFunc(logsv1beta1.GroupVersion.WithKind(logsv1beta1.LogKind)),
-	RunE: func(cmd *cobra.Command, args []string) error {
-		fmt.Printf(`{"version":"%s","sha":"%s","date":"%s"}`+"\n", version, commit, date)
-		return nil
-	},
+	Long:  "The version command prints the cli version as well as attempts to print the kjournal-apiserver version",
+	RunE:  versionCmdRun,
 }
 
 func init() {
 	rootCmd.AddCommand(versionCmd)
+}
+
+func versionCmdRun(cmd *cobra.Command, args []string) error {
+	clientSemantic, err := semver.NewVersion(version)
+	if err != nil {
+		return err
+	}
+
+	clientVersion := k8sversion.Info{
+		Major:        strconv.Itoa(int(clientSemantic.Major())),
+		Minor:        strconv.Itoa(int(clientSemantic.Minor())),
+		GitVersion:   version,
+		GitCommit:    commit,
+		GitTreeState: "clean",
+		BuildDate:    date,
+		GoVersion:    runtime.Version(),
+		Compiler:     runtime.Compiler,
+		Platform:     fmt.Sprintf("%s/%s", runtime.GOOS, runtime.GOARCH),
+	}
+	fmt.Printf("Client Version: %#v\n", clientVersion)
+
+	cfg, err := KubeConfig(kubeconfigArgs, kubeclientOptions)
+	if err != nil {
+		return err
+	}
+
+	cfg.APIPath = ""
+
+	client, err := discovery.NewDiscoveryClientForConfig(cfg)
+	if err != nil {
+		return err
+	}
+
+	srvVersion, err := client.ServerVersion()
+	if err != nil {
+		return err
+	}
+
+	fmt.Printf("Server Version: %#v\n", *srvVersion)
+	return nil
 }
 
 /*
