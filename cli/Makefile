@@ -28,6 +28,9 @@ test:
 .PHONY: golangci-lint
 golangci-lint: ## Download golint locally if necessary.
 	$(call go-install-tool,golangci-lint,github.com/golangci/golangci-lint/cmd/golangci-lint@v1.49.0)
+	echo $(GOBIN)
+	ls -l $(GOBIN)/
+	find / -name go-install-tool
 
 .PHONY: lint
 lint: golangci-lint ## Run golangci-lint against code.
