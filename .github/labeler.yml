@@ -13,14 +13,14 @@ area/chart:
 area/build:
 - .github/workflows/**
 - .github/dependabot.yml
-- **/Dockerfile*
+- /**/Dockerfile*
 - .goreleaser.yaml
 - Formula/**
-- **/Makefile
+- /**/Makefile
 
 area/kustomization:
 - config/**
 
 area/docs:
 - docs/**
-- **/*.md
+- /**/*.md
