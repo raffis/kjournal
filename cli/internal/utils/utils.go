@@ -121,7 +121,6 @@ func ReadObjects(r io.Reader) ([]*unstructured.Unstructured, error) {
 		err := reader.Decode(obj)
 		if err != nil {
 			if err == io.EOF {
-				err = nil
 				break
 			}
 			return objects, err

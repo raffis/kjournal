@@ -7,42 +7,37 @@ import (
 // APIServerConfig
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
 type APIServerConfig struct {
-	metav1.TypeMeta `json:",inline"`
-	Backend         Backend `json:"backend"`
-	Apis            []API   `json:"apis"`
+	metav1.TypeMeta `json:",inline,omitempty"`
+	Backend         Backend `json:"backend,omitempty"`
+	Apis            []API   `json:"apis,omitempty"`
 }
 
 type Backend struct {
-	Elasticsearch *BackendElasticsearch `json:"elasticsearch"`
-	GCloud        *BackendGCloud        `json:"gcloud"`
+	Elasticsearch *BackendElasticsearch `json:"elasticsearch,omitempty"`
 }
 
 type BackendElasticsearch struct {
-	URL              []string `json:"url"`
-	AllowInsecureTLS bool     `json:"allowInsecureTLS"`
-	CACert           string   `json:"cacert"`
-}
-
-type BackendGCloud struct {
-	APIKey string `json:"apiKey"`
+	URL              []string `json:"url,omitempty"`
+	AllowInsecureTLS bool     `json:"allowInsecureTLS,omitempty"`
+	CACert           string   `json:"cacert,omitempty"`
 }
 
 type API struct {
-	Resource         string              `json:"resource"`
-	FieldMap         map[string][]string `json:"fieldMap"`
-	DropFields       []string            `json:"dropFields"`
-	Filter           map[string]string   `json:"filter"`
-	Backend          ApiBackend          `json:"backend"`
-	DefaultTimeRange string              `json:"defaultTimeRange"`
+	Resource         string              `json:"resource,omitempty"`
+	FieldMap         map[string][]string `json:"fieldMap,omitempty"`
+	DropFields       []string            `json:"dropFields,omitempty"`
+	Filter           string              `json:"filter,omitempty"`
+	Backend          ApiBackend          `json:"backend,omitempty"`
+	DefaultTimeRange string              `json:"defaultTimeRange,omitempty"`
 }
 
 type ApiBackend struct {
-	Elasticsearch ApiBackendElasticsearch `json:"elasticsearch"`
+	Elasticsearch ApiBackendElasticsearch `json:"elasticsearch,omitempty"`
 }
 
 type ApiBackendElasticsearch struct {
-	Index           string          `json:"index"`
-	RefreshRate     metav1.Duration `json:"refreshRate"`
-	TimestampFields []string        `json:"timestampFields"`
-	BulkSize        int64           `json:"bulkSize"`
+	Index           string          `json:"index,omitempty"`
+	RefreshRate     metav1.Duration `json:"refreshRate,omitempty"`
+	TimestampFields []string        `json:"timestampFields,omitempty"`
+	BulkSize        int64           `json:"bulkSize,omitempty"`
 }

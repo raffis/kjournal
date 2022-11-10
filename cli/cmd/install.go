@@ -1,19 +1,3 @@
-/*
-Copyright 2020 The Flux authors
-
-Licensed under the Apache License, Version 2.0 (the "License");
-you may not use this file except in compliance with the License.
-You may obtain a copy of the License at
-
-    http://www.apache.org/licenses/LICENSE-2.0
-
-Unless required by applicable law or agreed to in writing, software
-distributed under the License is distributed on an "AS IS" BASIS,
-WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-See the License for the specific language governing permissions and
-limitations under the License.
-*/
-
 package main
 
 import (
@@ -29,6 +13,7 @@ import (
 	"github.com/raffis/kjournal/cli/pkg/status"
 	"github.com/spf13/cobra"
 	"k8s.io/apimachinery/pkg/runtime/schema"
+	"k8s.io/klog/v2"
 	"sigs.k8s.io/cli-utils/pkg/object"
 )
 
@@ -63,14 +48,13 @@ var installCmd = &cobra.Command{
   
   # Specify a specific version
   kjournal install -n kjournal-system --version=v0.0.1`,
-	//ValidArgsFunction: resourceNamesCompletionFunc(installv1.GroupVersion.WithKind(corev1alpha1.EventKind)),
 	RunE: installCmdRun,
 }
 
 func init() {
 	defaults = install.MakeDefaultOptions()
 
-	installCmd.PersistentFlags().StringVarP(&installArgs.withConfigTemplate, "with-config-template", "", "",
+	installCmd.PersistentFlags().StringVarP(&installArgs.withConfigTemplate, "with-config-template", "", defaults.ConfigTemplate,
 		"specify a kjournal config template")
 	installCmd.PersistentFlags().BoolVarP(&installArgs.withCertManager, "with-certmanager", "", defaults.CertManager,
 		"Enable certmanager support (recomended option)")
@@ -78,7 +62,7 @@ func init() {
 		"Enable prometheus-operator support (Deploys a ServiceMonitor)")
 	installCmd.PersistentFlags().BoolVarP(&installArgs.export, "export", "", false,
 		"write the install manifests to stdout and exit")
-	installCmd.PersistentFlags().StringVarP(&installArgs.version, "version", "", "",
+	installCmd.PersistentFlags().StringVarP(&installArgs.version, "version", "", defaults.Version,
 		"specify a specific kjournal version to install (by default the latest version is used)")
 	installCmd.PersistentFlags().BoolVarP(&installArgs.asKustomization, "as-kustomization", "k", defaults.AsKustomization,
 		"Print kustomization to stdout and exit")
@@ -137,6 +121,7 @@ func installCmdRun(cmd *cobra.Command, args []string) error {
 		NetworkPolicy:   installArgs.withNetworkPolicies,
 		CertManager:     installArgs.withCertManager,
 		ServiceMonitor:  installArgs.withServiceMonitor,
+		ConfigTemplate:  installArgs.withConfigTemplate,
 		ManifestFile:    fmt.Sprintf("%s.yaml", *kubeconfigArgs.Namespace),
 	}
 
@@ -160,12 +145,12 @@ func installCmdRun(cmd *cobra.Command, args []string) error {
 	if installArgs.export {
 		fmt.Print(manifest.Content)
 		return nil
-	} else if rootArgs.verbose {
-		fmt.Print(manifest.Content)
+	} else {
+		klog.V(2).InfoS("build manifests", "manifests", manifest.Content)
 	}
 
-	logger.Successf("manifests build completed")
-	logger.Infof("installing components in %s namespace", *kubeconfigArgs.Namespace)
+	klog.InfoS("manifests build completed")
+	klog.InfoS("installing components", "namespace", *kubeconfigArgs.Namespace)
 
 	kubeConfig, err := kubeconfigArgs.ToRESTConfig()
 	if err != nil {
@@ -179,7 +164,7 @@ func installCmdRun(cmd *cobra.Command, args []string) error {
 
 	fmt.Fprintln(os.Stderr, applyOutput)
 
-	statusChecker, err := status.NewStatusChecker(kubeConfig, 5*time.Second, rootArgs.timeout, logger)
+	statusChecker, err := status.NewStatusChecker(kubeConfig, 5*time.Second, rootArgs.timeout)
 	if err != nil {
 		return fmt.Errorf("install failed: %w", err)
 	}
@@ -190,11 +175,11 @@ func installCmdRun(cmd *cobra.Command, args []string) error {
 		GroupKind: schema.GroupKind{Group: "apps", Kind: "Deployment"},
 	}
 
-	logger.Waitingf("verifying installation")
+	klog.InfoS("verifying installation")
 	if err := statusChecker.Assess(apiserver); err != nil {
 		return fmt.Errorf("install failed")
 	}
 
-	logger.Successf("install finished")
+	klog.InfoS("install finished")
 	return nil
 }

@@ -1,6 +1,6 @@
 package kustomization
 
-import "sigs.k8s.io/kustomize/api/filesys"
+import "sigs.k8s.io/kustomize/kyaml/filesys"
 
 type Options struct {
 	FileSystem filesys.FileSystem

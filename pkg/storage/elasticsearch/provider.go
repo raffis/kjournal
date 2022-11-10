@@ -24,6 +24,7 @@ import (
 	"os"
 	"time"
 
+	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/serializer"
 	"k8s.io/apiserver/pkg/registry/generic"
@@ -103,7 +104,7 @@ func MakeDefaultOptions() Options {
 type Options struct {
 	FieldMap         map[string][]string
 	DropFields       []string
-	Filter           map[string]string
+	Filter           labels.Requirements
 	DefaultTimeRange string
 	Backend          OptionsBackend
 }
@@ -115,11 +116,17 @@ type OptionsBackend struct {
 	BulkSize        int64
 }
 
-func MakeOptionsFromConfig(apiBinding *configv1alpha1.API) Options {
+func MakeOptionsFromConfig(apiBinding *configv1alpha1.API) (Options, error) {
 	options := MakeDefaultOptions()
 	options.FieldMap = apiBinding.FieldMap
 	options.DropFields = apiBinding.DropFields
-	options.Filter = apiBinding.Filter
+
+	req, err := labels.ParseToRequirements(apiBinding.Filter)
+	if err != nil {
+		return options, err
+	}
+
+	options.Filter = req
 
 	if apiBinding.Backend.Elasticsearch.Index != "" {
 		options.Backend.Index = apiBinding.Backend.Elasticsearch.Index
@@ -137,11 +144,14 @@ func MakeOptionsFromConfig(apiBinding *configv1alpha1.API) Options {
 		options.DefaultTimeRange = apiBinding.DefaultTimeRange
 	}
 
-	return options
+	return options, nil
 }
 
 func newElasticsearchStorageProvider(obj resource.Object, scheme *runtime.Scheme, getter generic.RESTOptionsGetter, backend *configv1alpha1.Backend, apiBinding *configv1alpha1.API) (rest.Storage, error) {
-	opts := MakeOptionsFromConfig(apiBinding)
+	opts, err := MakeOptionsFromConfig(apiBinding)
+	if err != nil {
+		return nil, err
+	}
 
 	gr := obj.GetGroupVersionResource().GroupResource()
 	codec, _, err := srvstorage.NewStorageCodec(srvstorage.StorageCodecConfig{

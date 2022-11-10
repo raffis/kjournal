@@ -97,13 +97,13 @@ dnsConfig: {}
   #     value: "2"
   #   - name: edns0
 
-resources: {}
-  # requests:
-  #   cpu: 100m
-  #   memory: 128Mi
-  # limits:
-  #   cpu: 100m
-  #   memory: 128Mi
+resources:
+  requests:
+    cpu: "100m"
+    memory: 20Mi
+  limits:
+    cpu: "1"
+    memory: 200Mi
 
 service:
   annotations: {}

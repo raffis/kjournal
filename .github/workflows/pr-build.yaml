@@ -20,8 +20,8 @@ jobs:
           key: ${{ runner.os }}-go-${{ hashFiles('**/go.sum') }}
           restore-keys: |
             ${{ runner.os }}-go-
-      - name: Run tests
-        run: make test configs -C cli
+      - name: make
+        run: make configs fmt vet lint test -C cli
       - name: Send go coverage report
         uses: shogo82148/actions-goveralls@v1
         with:
@@ -65,8 +65,8 @@ jobs:
           key: ${{ runner.os }}-go-${{ hashFiles('**/go.sum') }}
           restore-keys: |
             ${{ runner.os }}-go-
-      - name: Run tests
-        run: make test configs
+      - name: make
+        run: make configs fmt vet lint test 
       - name: Send go coverage report
         uses: shogo82148/actions-goveralls@v1
         with:

@@ -7,7 +7,6 @@ import (
 	"github.com/raffis/kjournal/pkg/apis/core/v1alpha1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
-	auditv1 "k8s.io/apiserver/pkg/apis/audit"
 )
 
 type AuditEventList struct {
@@ -26,12 +25,9 @@ func (in *AuditEvent) UnmarshalJSON(bs []byte) error {
 func (in *AuditEvent) New() runtime.Object {
 	return &AuditEvent{
 		AuditEvent: v1alpha1.AuditEvent{
-			//Force set Event kind as we ditch it while fetching from the storage
-			Event: auditv1.Event{
-				TypeMeta: metav1.TypeMeta{
-					Kind:       "AuditEvent",
-					APIVersion: "core.kjournal/v1alpha1",
-				},
+			TypeMeta: metav1.TypeMeta{
+				Kind:       "AuditEvent",
+				APIVersion: "core.kjournal/v1alpha1",
 			},
 		},
 	}

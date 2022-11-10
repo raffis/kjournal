@@ -1,22 +1,7 @@
-/*
-Copyright 2020 The Flux authors
-
-Licensed under the Apache License, Version 2.0 (the "License");
-you may not use this file except in compliance with the License.
-You may obtain a copy of the License at
-
-    http://www.apache.org/licenses/LICENSE-2.0
-
-Unless required by applicable law or agreed to in writing, software
-distributed under the License is distributed on an "AS IS" BASIS,
-WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-See the License for the specific language governing permissions and
-limitations under the License.
-*/
-
 package main
 
 import (
+	"flag"
 	"log"
 	"os"
 	"path"
@@ -26,6 +11,7 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/cli-runtime/pkg/genericclioptions"
 	_ "k8s.io/client-go/plugin/pkg/client/auth"
+	"k8s.io/klog/v2"
 )
 
 var (
@@ -44,11 +30,8 @@ var rootCmd = &cobra.Command{
 Command line utility for accessing long-term kubernetes logs.`,
 }
 
-var logger = stderrLogger{stderr: os.Stderr}
-
 type rootFlags struct {
 	timeout      time.Duration
-	verbose      bool
 	pollInterval time.Duration
 }
 
@@ -75,8 +58,11 @@ var kubeconfigArgs = genericclioptions.NewConfigFlags(false)
 var kubeclientOptions = new(Options)
 
 func init() {
+	set := &flag.FlagSet{}
+	klog.InitFlags(set)
+	rootCmd.PersistentFlags().AddGoFlagSet(set)
+
 	rootCmd.PersistentFlags().DurationVar(&rootArgs.timeout, "timeout", 5*time.Minute, "timeout for this operation")
-	rootCmd.PersistentFlags().BoolVar(&rootArgs.verbose, "verbose", false, "print generated objects")
 
 	kubeconfigArgs.APIServer = nil // prevent AddFlags from configuring --server flag
 	kubeconfigArgs.Timeout = nil   // prevent AddFlags from configuring --request-timeout flag, we have --timeout instead
@@ -91,8 +77,8 @@ func init() {
 
 	//kubeclientOptions.BindFlags(rootCmd.PersistentFlags())
 
-	rootCmd.RegisterFlagCompletionFunc("context", contextsCompletionFunc)
-	rootCmd.RegisterFlagCompletionFunc("namespace", resourceNamesCompletionFunc(corev1.SchemeGroupVersion.WithKind("Namespace")))
+	_ = rootCmd.RegisterFlagCompletionFunc("context", contextsCompletionFunc)
+	_ = rootCmd.RegisterFlagCompletionFunc("namespace", resourceNamesCompletionFunc(corev1.SchemeGroupVersion.WithKind("Namespace")))
 
 	rootCmd.DisableAutoGenTag = true
 	rootCmd.SetOut(os.Stdout)
@@ -118,15 +104,15 @@ func main() {
 	if err := rootCmd.Execute(); err != nil {
 		if err, ok := err.(*RequestError); ok {
 			if err.StatusCode == 1 {
-				logger.Warningf("%v", err)
+				klog.V(1).ErrorS(err, "request failed")
 			} else {
-				logger.Failuref("%v", err)
+				klog.ErrorS(err, "execution failed")
 			}
 
 			os.Exit(err.StatusCode)
 		}
 
-		logger.Failuref("%v", err)
+		klog.ErrorS(err, "execution failed")
 		os.Exit(1)
 	}
 }

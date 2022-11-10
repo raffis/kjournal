@@ -14,8 +14,8 @@ var completionBashCmd = &cobra.Command{
 To configure your bash shell to load completions for each session add to your bashrc
 # ~/.bashrc or ~/.profile
 command -v kjournal >/dev/null && . <(kjournal completion bash)`,
-	Run: func(cmd *cobra.Command, args []string) {
-		rootCmd.GenBashCompletion(os.Stdout)
+	RunE: func(cmd *cobra.Command, args []string) error {
+		return rootCmd.GenBashCompletion(os.Stdout)
 	},
 }
 

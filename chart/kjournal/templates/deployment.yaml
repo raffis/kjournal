@@ -7,7 +7,7 @@ metadata:
   {{- end }}
   labels:
     {{- include "kjournal.labels" . | indent 4 }}
-  name: {{ template "kjournal.fullname" . }}
+  name: {{ template "kjournal.fullname" . }}-apiserver
   namespace: {{ include "kjournal.namespace" . }}
 spec:
   replicas: {{ .Values.replicas }}

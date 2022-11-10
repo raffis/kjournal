@@ -17,11 +17,14 @@ limitations under the License.
 package main
 
 import (
+	"fmt"
 	"net/http"
 	_ "net/http/pprof"
 	"os"
 	"runtime"
+	"strconv"
 
+	"github.com/Masterminds/semver"
 	"github.com/pyroscope-io/client/pyroscope"
 	"github.com/spf13/cobra"
 	k8sversion "k8s.io/apimachinery/pkg/version"
@@ -91,11 +94,7 @@ func main() {
 			return server
 		}).
 		WithServerFns(func(server *builder.GenericAPIServer) *builder.GenericAPIServer {
-			server.Version = &k8sversion.Info{
-				GitCommit: commit,
-				BuildDate: date,
-			}
-
+			server.Version = getVersion()
 			return server
 		}).
 		Build()
@@ -128,6 +127,27 @@ func main() {
 	if err != nil {
 		klog.Fatal(err)
 	}
+}
+
+func getVersion() *k8sversion.Info {
+	v := &k8sversion.Info{
+		GitVersion:   version,
+		GitCommit:    commit,
+		GitTreeState: "clean",
+		BuildDate:    date,
+		GoVersion:    runtime.Version(),
+		Compiler:     runtime.Compiler,
+		Platform:     fmt.Sprintf("%s/%s", runtime.GOOS, runtime.GOARCH),
+	}
+
+	srvSemantic, err := semver.NewVersion(version)
+	if err != nil {
+		return v
+	}
+
+	v.Major = strconv.Itoa(int(srvSemantic.Major()))
+	v.Minor = strconv.Itoa(int(srvSemantic.Minor()))
+	return v
 }
 
 func getProfilerConfig() pyroscope.Config {

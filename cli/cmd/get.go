@@ -1,23 +1,8 @@
-/*
-Copyright 2020 The Flux authors
-
-Licensed under the Apache License, Version 2.0 (the "License");
-you may not use this file except in compliance with the License.
-You may obtain a copy of the License at
-
-    http://www.apache.org/licenses/LICENSE-2.0
-
-Unless required by applicable law or agreed to in writing, software
-distributed under the License is distributed on an "AS IS" BASIS,
-WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-See the License for the specific language governing permissions and
-limitations under the License.
-*/
-
 package main
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"os"
 	"strings"
@@ -32,6 +17,7 @@ import (
 	"k8s.io/cli-runtime/pkg/genericclioptions"
 	"k8s.io/client-go/rest"
 	watchtools "k8s.io/client-go/tools/watch"
+	"k8s.io/klog/v2"
 	k8sget "k8s.io/kubectl/pkg/cmd/get"
 	"k8s.io/kubectl/pkg/util/interrupt"
 
@@ -68,7 +54,7 @@ func addGetFlags(getCmd *cobra.Command) {
 // which can be shared by tests.
 func NewScheme() *runtime.Scheme {
 	scheme := runtime.NewScheme()
-	corev1alpha1.AddToScheme(scheme)
+	_ = corev1alpha1.AddToScheme(scheme)
 
 	return scheme
 }
@@ -79,7 +65,6 @@ func KubeConfig(rcg genericclioptions.RESTClientGetter, opts *Options) (*rest.Co
 		return nil, fmt.Errorf("kubernetes configuration load failed: %w", err)
 	}
 
-	// avoid throttling request when some Flux CRDs are not registered
 	cfg.QPS = opts.QPS
 	cfg.Burst = opts.Burst
 
@@ -144,7 +129,7 @@ func (get getCommand) prepareRequest(args []string) (*rest.Request, error) {
 		Resource(get.resource).
 		Param("fieldSelector", opts.FieldSelector)
 
-	if get.namespaced {
+	if get.apiType.namespaced {
 		r.Namespace(*kubeconfigArgs.Namespace)
 	}
 
@@ -162,14 +147,7 @@ func (get getCommand) listObjects(cmd *cobra.Command, args []string) error {
 	}
 
 	r.Param("limit", getArgs.chunkSize)
-	logger.Debugf("request uri %s", r.URL().String())
-
 	response := r.Do(ctx)
-	var httpCode int
-	response.StatusCode(&httpCode)
-
-	logger.Debugf("apiserver response received %d", httpCode)
-
 	err = response.Into(res)
 
 	if err != nil {
@@ -177,7 +155,7 @@ func (get getCommand) listObjects(cmd *cobra.Command, args []string) error {
 	}
 
 	if get.list.len() == 0 {
-		logger.Failuref("no %s objects found in %s namespace", get.kind, *kubeconfigArgs.Namespace)
+		klog.InfoS("no objects found", "kind", get.kind, "namespace", *kubeconfigArgs.Namespace)
 		return nil
 	}
 
@@ -237,13 +215,22 @@ func (get getCommand) streamObjects(cmd *cobra.Command, args []string) error {
 			objToPrint := e.Object
 
 			if *printFlags.OutputFormat != "" {
-				objToPrint.GetObjectKind().SetGroupVersionKind(
-					schema.GroupVersionKind{
-						Group:   get.groupVersion.Group,
-						Version: get.groupVersion.Version,
-						Kind:    get.kind,
-					},
-				)
+				if e.Type == "ERROR" {
+					objToPrint.GetObjectKind().SetGroupVersionKind(
+						schema.GroupVersionKind{
+							Version: "v1",
+							Kind:    "Status",
+						},
+					)
+				} else {
+					objToPrint.GetObjectKind().SetGroupVersionKind(
+						schema.GroupVersionKind{
+							Group:   get.groupVersion.Group,
+							Version: get.groupVersion.Version,
+							Kind:    get.kind,
+						},
+					)
+				}
 
 				if err := p.PrintObj(objToPrint, cmd.OutOrStdout()); err != nil {
 					return false, err
@@ -252,8 +239,18 @@ func (get getCommand) streamObjects(cmd *cobra.Command, args []string) error {
 				return false, nil
 			}
 
+			if e.Type == "ERROR" {
+				return false, errors.New(e.Object.(*metav1.Status).Message)
+			}
+
 			return false, get.command.defaultPrinter(objToPrint)
 		})
+
+		// Ignore end of stream error if we don't watch objects
+		if !getArgs.watch && err == watchtools.ErrWatchClosed {
+			return nil
+		}
+
 		return err
 	})
 

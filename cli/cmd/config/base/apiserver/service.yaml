@@ -10,6 +10,7 @@ spec:
   - port: 443
     protocol: TCP
     targetPort: 8443
+    name: https
   selector:
     api: kjournal
     apiserver: "true"
