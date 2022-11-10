@@ -1,0 +1,26 @@
+area/cli:
+- cli/**
+
+area/apiserver:
+- go.*
+- pkg/**
+- cmd/**
+- internal/**
+
+area/chart:
+- chart/**
+
+area/build:
+- .github/workflows/**
+- .github/dependabot.yml
+- **/Dockerfile*
+- .goreleaser.yaml
+- Formula/**
+- **/Makefile
+
+area/kustomization:
+- config/**
+
+area/docs:
+- docs/**
+- **/*.md
