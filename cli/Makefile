@@ -26,8 +26,8 @@ test:
 	go test ./... -v -coverprofile coverage.out
 
 .PHONY: golangci-lint
-golint: ## Download golint locally if necessary.
-	$(call go-install-tool,$(CONTROLLER_GEN),github.com/golangci/golangci-lint/cmd/golangci-lint@v1.49.0)
+golangci-lint: ## Download golint locally if necessary.
+	$(call go-install-tool,golangci-lint,github.com/golangci/golangci-lint/cmd/golangci-lint@v1.49.0)
 
 .PHONY: lint
 lint: golangci-lint ## Run golangci-lint against code.
