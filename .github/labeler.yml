@@ -1,6 +1,12 @@
 area/cli:
 - cli/**
 
+area/api:
+- pkg/apis/**
+
+area/storage:
+- pkg/storage/**
+
 area/apiserver:
 - go.*
 - pkg/**
