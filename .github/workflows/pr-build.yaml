@@ -136,9 +136,6 @@ jobs:
         uses: imranismail/setup-kustomize@6691bdeb1b0a3286fb7f70fd1423c10e81e5375f # v2.0.0
       - name: Deploy
         run: make kind-deploy KIND_TEST_PROFILE=${{ matrix.profile }}
-      - name: Logs
-        run: |
-          kubectl -n kjournal-system logs deploy/kjournal-apiserver
       - name: Debug failure
         if: failure()
         run: |
@@ -147,3 +144,8 @@ jobs:
           kubectl -n kjournal-system describe pods
           kubectl -n kjournal-system logs deploy/kjournal-apiserver
           kubectl get containerlogs -n kjournal-system --field-selector payload.foobar=foobar -o json
+      - name: Logs
+        if: failure()
+        run: |
+          kubectl -n kjournal-system logs deploy/kjournal-apiserver
+          kubectl -n kjournal-system logs job/validation
