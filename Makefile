@@ -56,13 +56,14 @@ fmt: ## Run go fmt against code.
 vet: ## Run go vet against code.
 	go vet ./...
 
+GOLANGCI_LINT = $(GOBIN)/golangci-lint
 .PHONY: golangci-lint
 golangci-lint: ## Download golint locally if necessary.
-	$(call go-install-tool,golangci-lint,github.com/golangci/golangci-lint/cmd/golangci-lint@v1.49.0)
+	$(call go-install-tool,$(GOLANGCI_LINT),github.com/golangci/golangci-lint/cmd/golangci-lint@v1.49.0)
 
 .PHONY: lint
 lint: golangci-lint ## Run golangci-lint against code.
-	golangci-lint run --timeout=2m ./...
+	$(GOLANGCI_LINT) run --timeout=2m ./...
 
 .PHONY: test
 #test: generate fmt vet envtest ## Run tests.

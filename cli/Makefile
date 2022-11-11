@@ -25,16 +25,14 @@ vet:
 test:
 	go test ./... -v -coverprofile coverage.out
 
+GOLANGCI_LINT = $(GOBIN)/golangci-lint
 .PHONY: golangci-lint
 golangci-lint: ## Download golint locally if necessary.
-	$(call go-install-tool,golangci-lint,github.com/golangci/golangci-lint/cmd/golangci-lint@v1.49.0)
-	echo $(GOBIN)
-	ls -l $(GOBIN)/
-	find / -name go-install-tool
+	$(call go-install-tool,$(GOLANGCI_LINT),github.com/golangci/golangci-lint/cmd/golangci-lint@v1.49.0)
 
 .PHONY: lint
 lint: golangci-lint ## Run golangci-lint against code.
-	golangci-lint run ./...
+	$(GOLANGCI_LINT) run ./...
 
 configs:
 	rm -rfv cmd/config
