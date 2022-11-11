@@ -56,6 +56,7 @@ func queryFromListOptions(ctx context.Context, options *metainternalversion.List
 		q.sortByTimestampFields,
 		q.fieldSelectors(req),
 		q.fieldSelectors(rest.opts.Filter),
+		q.defaultRange,
 		q.namespaceFilter,
 	}
 
@@ -115,7 +116,6 @@ func (b *queryBuilder) sortByTimestampFields() error {
 
 func (b *queryBuilder) fieldSelectors(requirements labels.Requirements) queryBuilderFunc {
 	return func() error {
-		var skipTimestampFilter bool
 		for _, req := range requirements {
 			operator, ok := operatorMap[req.Operator()]
 			if !ok {
@@ -171,12 +171,6 @@ func (b *queryBuilder) fieldSelectors(requirements labels.Requirements) queryBui
 				}
 
 				should = append(should, shouldCondition)
-
-				for _, tsField := range b.rest.opts.Backend.TimestampFields {
-					if !skipTimestampFilter && fieldTo == tsField {
-						skipTimestampFilter = true
-					}
-				}
 			}
 
 			q = append(q, map[string]interface{}{
@@ -188,32 +182,66 @@ func (b *queryBuilder) fieldSelectors(requirements labels.Requirements) queryBui
 			b.query["query"].(map[string]interface{})["bool"].(map[string]interface{})[operator[0]] = q
 		}
 
-		if !skipTimestampFilter {
-			q := b.query["query"].(map[string]interface{})["bool"].(map[string]interface{})["must"].([]map[string]interface{})
-			var should []map[string]interface{}
-
-			for _, tsField := range b.rest.opts.Backend.TimestampFields {
-				should = append(should, map[string]interface{}{
-					"range": map[string]interface{}{
-						tsField: map[string]interface{}{
-							"gte": b.rest.opts.DefaultTimeRange,
-						},
-					},
-				})
-			}
-
-			q = append(q, map[string]interface{}{
-				"bool": map[string]interface{}{
-					"should": should,
-				},
-			})
-
-			b.query["query"].(map[string]interface{})["bool"].(map[string]interface{})["must"] = q
-
-		}
-
 		return nil
 	}
+}
+
+func (b *queryBuilder) defaultRange() error {
+	var skipTimestampFilter bool
+	requirements, _ := b.options.LabelSelector.Requirements()
+
+	for _, req := range requirements {
+		operator, ok := operatorMap[req.Operator()]
+		if !ok {
+			return fmt.Errorf("invalid selector operator %s", operator)
+		}
+
+		fieldsMap := []string{req.Key()}
+
+		for field, fieldsTo := range b.rest.opts.FieldMap {
+			for k, fieldTo := range fieldsTo {
+				lookupKey := strings.TrimLeft(strings.Replace(req.Key(), field, fieldTo, -1), ".")
+				if lookupKey != req.Key() {
+					fieldsMap[k] = lookupKey
+					break
+				}
+			}
+		}
+
+		for _, fieldTo := range fieldsMap {
+			for _, tsField := range b.rest.opts.Backend.TimestampFields {
+				if !skipTimestampFilter && fieldTo == tsField {
+					skipTimestampFilter = true
+				}
+			}
+		}
+	}
+
+	if !skipTimestampFilter {
+		q := b.query["query"].(map[string]interface{})["bool"].(map[string]interface{})["must"].([]map[string]interface{})
+		var should []map[string]interface{}
+
+		for _, tsField := range b.rest.opts.Backend.TimestampFields {
+			should = append(should, map[string]interface{}{
+				"range": map[string]interface{}{
+					tsField: map[string]interface{}{
+						"gte": b.rest.opts.DefaultTimeRange,
+					},
+				},
+			})
+		}
+
+		q = append(q, map[string]interface{}{
+			"bool": map[string]interface{}{
+				"should": should,
+			},
+		})
+
+		b.query["query"].(map[string]interface{})["bool"].(map[string]interface{})["must"] = q
+
+	}
+
+	return nil
 }
 
 func (b *queryBuilder) namespaceFilter() error {
