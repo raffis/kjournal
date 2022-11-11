@@ -25,7 +25,7 @@ jobs:
       - name: Send go coverage report
         uses: shogo82148/actions-goveralls@v1
         with:
-          path-to-profile: coverage.out
+          path-to-profile: cli/coverage.out
       - name: Check if working tree is dirty
         run: |
           if [[ $(git diff --stat) != '' ]]; then
