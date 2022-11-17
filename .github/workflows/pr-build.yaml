@@ -159,7 +159,9 @@ jobs:
         if: failure()
         run: |
           echo "PODS ==================================="
-          kubectl -n kjournal-system get pods
+          kubectl -n kjournal-system get pods -o wide
+          echo "SVC ==================================="
+          kubectl -n kjournal-system get svc -o wide
           echo "APISERVICE ==================================="
           kubectl get apiservice v1alpha1.core.kjournal
           echo "DESCRIBE ==================================="
@@ -175,3 +177,5 @@ jobs:
           kubectl -n kjournal-system logs job/validation
           echo "FLUENTBIT ==================================="
           kubectl -n kjournal-system logs ds/fluent-bit
+          echo "ELASTICSEARCH ==================================="
+          kubectl -n kjournal-system logs sts/elasticsearch-master

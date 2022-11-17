@@ -86,7 +86,7 @@ kind-deploy-validate: ## Validate kjournal.
 	kubectl -n kjournal-system wait --for=condition=complete --timeout=300s job/validation
 
 .PHONY: kind-debug
-kind-debug: docker-build kind-deploy-deps kind-deploy-apiserver ## Deploy to kind and tail log
+kind-debug: docker-build kind-deploy-apiserver kind-deploy-deps ## Deploy to kind and tail log
 	kubectl -n kjournal-system rollout restart deployment/kjournal-apiserver
 	kubectl -n kjournal-system rollout status deployment/kjournal-apiserver
 	kubectl -n kjournal-system logs -l api=kjournal -f
