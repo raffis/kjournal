@@ -156,13 +156,20 @@ jobs:
       - name: Debug failure
         if: failure()
         run: |
+          echo "PODS ==================================="
           kubectl -n kjournal-system get pods
+          echo "APISERVICE ==================================="
           kubectl get apiservice v1alpha1.core.kjournal
+          echo "DESCRIBE ==================================="
           kubectl -n kjournal-system describe pods
-          kubectl -n kjournal-system logs deploy/kjournal-apiserver
+          echo "CONTAINERLOGS ==================================="
           kubectl get containerlogs -n kjournal-system --field-selector payload.foobar=foobar -o json
       - name: Logs
         if: failure()
         run: |
+          echo "APISERVER ==================================="
           kubectl -n kjournal-system logs deploy/kjournal-apiserver
+          echo "VALIDATION ==================================="
           kubectl -n kjournal-system logs job/validation
+          echo "FLUENTBIT ==================================="
+          kubectl -n kjournal-system logs ds/fluent-bit
