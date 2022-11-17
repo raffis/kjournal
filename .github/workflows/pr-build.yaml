@@ -144,13 +144,14 @@ jobs:
           docker image ls -a
       - name: Setup Kustomize
         uses: imranismail/setup-kustomize@6691bdeb1b0a3286fb7f70fd1423c10e81e5375f # v2.0.0
+      - name: Deploy dependencies
+        run: |
+          kubectl create ns kjournal-system
+          make kind-deploy-deps KIND_TEST_PROFILE=$(echo "${{ matrix.profile }}" | cut -d '_' -f 2)
       - name: Deploy kjournal
         run: |
           chmod +x /tmp/kjournal
           /tmp/kjournal install --with-config-template=$(echo "${{ matrix.profile }}" | cut -d '_' -f 2)
-      - name: Deploy dependencies
-        run: |
-          make kind-deploy-deps KIND_TEST_PROFILE=$(echo "${{ matrix.profile }}" | cut -d '_' -f 2)
       - name: Run validation tests
         run: |
           make kind-deploy-validate KIND_TEST_PROFILE=$(echo "${{ matrix.profile }}" | cut -d '_' -f 2)
