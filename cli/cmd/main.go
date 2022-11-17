@@ -53,6 +53,7 @@ func (r *RequestError) Error() string {
 	return r.Err.Error()
 }
 
+var logger = stderrLogger{stderr: os.Stderr}
 var rootArgs = NewRootFlags()
 var kubeconfigArgs = genericclioptions.NewConfigFlags(false)
 var kubeclientOptions = new(Options)

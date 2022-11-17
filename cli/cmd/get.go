@@ -52,7 +52,7 @@ func addGetFlags(getCmd *cobra.Command) {
 
 // Create the Scheme, methods for serializing and deserializing API objects
 // which can be shared by tests.
-func NewScheme() *runtime.Scheme {
+func newScheme() *runtime.Scheme {
 	scheme := runtime.NewScheme()
 	_ = corev1alpha1.AddToScheme(scheme)
 
@@ -97,9 +97,9 @@ func (get getCommand) getClient() (*rest.RESTClient, error) {
 	}
 
 	cfg.GroupVersion = &get.groupVersion
-	var Scheme = NewScheme()
-	var Codecs = serializer.NewCodecFactory(Scheme)
-	cfg.NegotiatedSerializer = Codecs.WithoutConversion()
+	var Scheme = newScheme()
+	var codecs = serializer.NewCodecFactory(Scheme)
+	cfg.NegotiatedSerializer = codecs.WithoutConversion()
 	cfg.APIPath = "/apis"
 
 	return rest.RESTClientFor(cfg)

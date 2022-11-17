@@ -1,3 +1,5 @@
+// Note: Most parts of this package have been borrowed from flux2, https://github.com/fluxcd/flux2. Thanks!
+
 package status
 
 import (
@@ -8,7 +10,6 @@ import (
 	"time"
 
 	"k8s.io/client-go/rest"
-	"k8s.io/klog/v2"
 	"sigs.k8s.io/cli-utils/pkg/kstatus/polling"
 	"sigs.k8s.io/cli-utils/pkg/kstatus/polling/aggregator"
 	"sigs.k8s.io/cli-utils/pkg/kstatus/polling/collector"
@@ -17,6 +18,8 @@ import (
 	"sigs.k8s.io/cli-utils/pkg/object"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/client/apiutil"
+
+	"github.com/raffis/kjournal/cli/pkg/log"
 )
 
 type StatusChecker struct {
@@ -24,9 +27,10 @@ type StatusChecker struct {
 	timeout      time.Duration
 	client       client.Client
 	statusPoller *polling.StatusPoller
+	logger       log.Logger
 }
 
-func NewStatusChecker(kubeConfig *rest.Config, pollInterval time.Duration, timeout time.Duration) (*StatusChecker, error) {
+func NewStatusChecker(kubeConfig *rest.Config, pollInterval time.Duration, timeout time.Duration, log log.Logger) (*StatusChecker, error) {
 	restMapper, err := apiutil.NewDynamicRESTMapper(kubeConfig)
 	if err != nil {
 		return nil, err
@@ -41,6 +45,7 @@ func NewStatusChecker(kubeConfig *rest.Config, pollInterval time.Duration, timeo
 		timeout:      timeout,
 		client:       c,
 		statusPoller: polling.NewStatusPoller(c, restMapper, polling.Options{}),
+		logger:       log,
 	}, nil
 }
 
@@ -61,15 +66,16 @@ func (sc *StatusChecker) Assess(identifiers ...object.ObjMetadata) error {
 	sort.SliceStable(identifiers, func(i, j int) bool {
 		return strings.Compare(identifiers[i].Name, identifiers[j].Name) < 0
 	})
+
 	for _, id := range identifiers {
 		rs := coll.ResourceStatuses[id]
 		switch rs.Status {
 		case status.CurrentStatus:
-			klog.InfoS("read", "name", rs.Identifier.Name, "kind", strings.ToLower(rs.Identifier.GroupKind.Kind))
+			sc.logger.Successf("%s: %s ready", rs.Identifier.Name, strings.ToLower(rs.Identifier.GroupKind.Kind))
 		case status.NotFoundStatus:
-			klog.Error(status.NotFoundStatus, "not found", "name", rs.Identifier.Name, "kind", strings.ToLower(rs.Identifier.GroupKind.Kind))
+			sc.logger.Failuref("%s: %s not found", rs.Identifier.Name, strings.ToLower(rs.Identifier.GroupKind.Kind))
 		default:
-			klog.Error(rs.Status, "not ready", "name", rs.Identifier.Name, "kind", strings.ToLower(rs.Identifier.GroupKind.Kind))
+			sc.logger.Failuref("%s: %s not ready", rs.Identifier.Name, strings.ToLower(rs.Identifier.GroupKind.Kind))
 		}
 	}
 

@@ -62,7 +62,7 @@ func init() {
 		"Enable prometheus-operator support (Deploys a ServiceMonitor)")
 	installCmd.PersistentFlags().BoolVarP(&installArgs.export, "export", "", false,
 		"write the install manifests to stdout and exit")
-	installCmd.PersistentFlags().StringVarP(&installArgs.version, "version", "", defaults.Version,
+	installCmd.PersistentFlags().StringVarP(&installArgs.version, "version", "", version,
 		"specify a specific kjournal version to install (by default the latest version is used)")
 	installCmd.PersistentFlags().BoolVarP(&installArgs.asKustomization, "as-kustomization", "k", defaults.AsKustomization,
 		"Print kustomization to stdout and exit")
@@ -90,7 +90,7 @@ func installCmdRun(cmd *cobra.Command, args []string) error {
 	defer os.RemoveAll(tmpDir)
 
 	installVersion := installArgs.version
-	if installVersion == "" {
+	if installVersion == "latest" {
 		latest, err := install.GetLatestVersion()
 		if err != nil {
 			return err
@@ -149,37 +149,35 @@ func installCmdRun(cmd *cobra.Command, args []string) error {
 		klog.V(2).InfoS("build manifests", "manifests", manifest.Content)
 	}
 
-	klog.InfoS("manifests build completed")
-	klog.InfoS("installing components", "namespace", *kubeconfigArgs.Namespace)
+	logger.Successf("manifests build completed")
+	logger.Infof("installing components in %s namespace", opts.Namespace)
 
 	kubeConfig, err := kubeconfigArgs.ToRESTConfig()
 	if err != nil {
 		return fmt.Errorf("install failed: %w", err)
 	}
 
-	applyOutput, err := utils.Apply(ctx, kubeConfig, tmpDir, filepath.Join(tmpDir, manifest.Path))
+	_, err = utils.Apply(ctx, kubeConfig, tmpDir, filepath.Join(tmpDir, manifest.Path))
 	if err != nil {
 		return fmt.Errorf("install failed: %w", err)
 	}
 
-	fmt.Fprintln(os.Stderr, applyOutput)
-
-	statusChecker, err := status.NewStatusChecker(kubeConfig, 5*time.Second, rootArgs.timeout)
+	statusChecker, err := status.NewStatusChecker(kubeConfig, 5*time.Second, rootArgs.timeout, logger)
 	if err != nil {
 		return fmt.Errorf("install failed: %w", err)
 	}
 
 	apiserver := object.ObjMetadata{
-		Namespace: *kubeconfigArgs.Namespace,
+		Namespace: opts.Namespace,
 		Name:      "kjournal-apiserver",
 		GroupKind: schema.GroupKind{Group: "apps", Kind: "Deployment"},
 	}
 
-	klog.InfoS("verifying installation")
+	logger.Waitingf("verifying installation")
 	if err := statusChecker.Assess(apiserver); err != nil {
 		return fmt.Errorf("install failed")
 	}
 
-	klog.InfoS("install finished")
+	logger.Successf("install finished")
 	return nil
 }

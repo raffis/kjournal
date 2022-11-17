@@ -22,7 +22,7 @@ type Options struct {
 
 func MakeDefaultOptions() Options {
 	return Options{
-		Version:         "latest",
+		Version:         "",
 		Namespace:       "kjournal-system",
 		Registry:        "ghcr.io/raffis/kjournal",
 		ImagePullSecret: "",

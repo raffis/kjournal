@@ -63,7 +63,6 @@ sboms:
 dockers:
 - image_templates:
   - ghcr.io/raffis/{{ .ProjectName }}/cli:{{ .Version }}-amd64
-  - ghcr.io/raffis/{{ .ProjectName }}/cli:{{ .Version }}
   dockerfile: cli/Dockerfile.release
   use: buildx
   ids:

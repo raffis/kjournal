@@ -21,7 +21,7 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-go-
       - name: make
-        run: make configs fmt vet lint test -C cli
+        run: make configs fmt vet lint test build -C cli
       - name: Send go coverage report
         uses: shogo82148/actions-goveralls@v1
         with:
@@ -40,12 +40,17 @@ jobs:
             --cache-to=type=local,dest=/tmp/.buildx-cache-new,mode=max"
       - name: Create image tarball
         run: |
-          docker save --output cli.tar kjournal/cli:latest
-      - name: Upload image
+          docker save --output cli-container.tar kjournal/cli:latest
+      - name: Upload container
+        uses: actions/upload-artifact@83fd05a356d7e2593de66fc9913b3002723633cb #v3.1.1
+        with:
+          name: cli-container
+          path: cli-container.tar        
+      - name: Upload cli
         uses: actions/upload-artifact@83fd05a356d7e2593de66fc9913b3002723633cb #v3.1.1
         with:
           name: cli
-          path: cli.tar        
+          path: cli/bin/kjournal
 
   apiserver:
     runs-on: ubuntu-latest
@@ -85,12 +90,12 @@ jobs:
             --cache-to=type=local,dest=/tmp/.buildx-cache-new,mode=max"
       - name: Create image tarball
         run: |
-          docker save --output apiserver.tar kjournal/apiserver:latest
+          docker save --output apiserver-container.tar kjournal/apiserver:latest
       - name: Upload image
         uses: actions/upload-artifact@83fd05a356d7e2593de66fc9913b3002723633cb #v3.1.1
         with:
           name: apiserver
-          path: apiserver.tar        
+          path: apiserver-container.tar        
       - id: profiles
         name: Determine test profiles
         run: |
@@ -98,7 +103,7 @@ jobs:
           echo $profiles
           echo "::set-output name=matrix::$profiles"
 
-  tests:
+  e2e-tests:
     runs-on: ubuntu-latest
     needs: [apiserver,cli]
     strategy:
@@ -117,10 +122,15 @@ jobs:
           name: kjournal
           version: v0.11.1
           image: kindest/node:v1.21.1@sha256:69860bda5563ac81e3c0057d654b5253219618a22ec3a346306239bba8cfa1a6
-      - name: Download apiserver
+      - name: Download apiserver container
         uses: actions/download-artifact@9782bd6a9848b53b110e712e20e42d89988822b7 #v3.0.1
         with:
-          name: apiserver
+          name: apiserver-container
+          path: /tmp
+      - name: Download cli container
+        uses: actions/download-artifact@9782bd6a9848b53b110e712e20e42d89988822b7 #v3.0.1
+        with:
+          name: cli-container
           path: /tmp
       - name: Download cli
         uses: actions/download-artifact@9782bd6a9848b53b110e712e20e42d89988822b7 #v3.0.1
@@ -129,13 +139,20 @@ jobs:
           path: /tmp
       - name: Load images
         run: |
-          docker load --input /tmp/apiserver.tar
-          docker load --input /tmp/cli.tar
+          docker load --input /tmp/apiserver-container.tar
+          docker load --input /tmp/cli-container.tar
           docker image ls -a
       - name: Setup Kustomize
         uses: imranismail/setup-kustomize@6691bdeb1b0a3286fb7f70fd1423c10e81e5375f # v2.0.0
-      - name: Deploy
-        run: make kind-deploy KIND_TEST_PROFILE=${{ matrix.profile }}
+      - name: Deploy dependencies
+        run: |
+          make kind-deploy-deps KIND_TEST_PROFILE=$(echo "${{ matrix.profile }}" | cut -d '_' -f 2)
+      - name: Deploy kjournal
+        run: |
+          /tmp/kjournal install --with-config-template=$(echo "${{ matrix.profile }}" | cut -d '_' -f 2)
+      - name: Run validation tests
+        run: |
+          make kind-deploy-validate KIND_TEST_PROFILE=$(echo "${{ matrix.profile }}" | cut -d '_' -f 2)
       - name: Debug failure
         if: failure()
         run: |

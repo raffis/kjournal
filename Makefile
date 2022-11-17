@@ -6,7 +6,7 @@ ENVTEST_K8S_VERSION = 1.23
 
 BINARY_NAME=mybinary
 
-TEST_PROFILE=elasticsearchv7-fluentbit-kjournal-structured
+TEST_PROFILE=elasticsearchv7-fluentbit_elasticsearch-kjournal-structured
 
 # Get the currently used golang install path (in GOPATH/bin, unless GOBIN is set)
 ifeq (,$(shell go env GOBIN))
@@ -70,15 +70,23 @@ lint: golangci-lint ## Run golangci-lint against code.
 test:
 	KUBEBUILDER_ASSETS="$(shell $(ENVTEST) use $(ENVTEST_K8S_VERSION) -p path)" go test ./... -v -coverprofile coverage.out
 
-.PHONY: kind-deploy
-kind-deploy: ## Deploy to kind.
+.PHONY: kind-deploy-deps
+kind-deploy-deps: ## Deploy dependencies to kind.
 	kind load docker-image ${IMG} --name kjournal
 	make kind-load -C cli
-	kustomize build config/tests/${TEST_PROFILE} --enable-helm | kubectl apply -f -	
-	kubectl -n kjournal-system wait --for=condition=complete --timeout=250s job/validation
+	kustomize build config/tests/${TEST_PROFILE}/dependencies --enable-helm | kubectl apply -f -	
+
+.PHONY: kind-deploy-apiserver
+kind-deploy-apiserver: ## Deploy apiserver to kind.
+	kustomize build config/tests/${TEST_PROFILE}/kjournal | kubectl apply -f -	
+
+.PHONY: kind-deploy-validate
+kind-deploy-validate: ## Validate kjournal.
+	kustomize build config/tests/${TEST_PROFILE}/validation | kubectl apply -f -	
+	kubectl -n kjournal-system wait --for=condition=complete --timeout=300s job/validation
 
 .PHONY: kind-debug
-kind-debug: docker-build kind-deploy ## Deploy to kind and tail log
+kind-debug: docker-build kind-deploy-deps kind-deploy-apiserver ## Deploy to kind and tail log
 	kubectl -n kjournal-system rollout restart deployment/kjournal-apiserver
 	kubectl -n kjournal-system rollout status deployment/kjournal-apiserver
 	kubectl -n kjournal-system logs -l api=kjournal -f

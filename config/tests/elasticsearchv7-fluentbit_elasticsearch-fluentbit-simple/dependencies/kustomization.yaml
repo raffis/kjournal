@@ -3,11 +3,6 @@ kind: Kustomization
 namespace: kjournal-system
 
 resources: 
-- ../../default
-- ../../tests-base
 - ./fluent-bit
 - ./elasticsearch
 - ./kubernetes-event-exporter
-
-components:
-- ../../base/components/config-templates/elasticsearch-kjournal-structured
