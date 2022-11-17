@@ -147,14 +147,14 @@ jobs:
       - name: Deploy dependencies
         run: |
           kubectl create ns kjournal-system
-          make kind-deploy-deps TEST_PROFILE=$(echo "${{ matrix.profile }}" | cut -d '_' -f 2)
+          make kind-deploy-deps TEST_PROFILE=${{ matrix.profile }}
       - name: Deploy kjournal
         run: |
           chmod +x /tmp/kjournal
           /tmp/kjournal install --with-config-template=$(echo "${{ matrix.profile }}" | cut -d '_' -f 2)
       - name: Run validation tests
         run: |
-          make kind-deploy-validate TEST_PROFILE=$(echo "${{ matrix.profile }}" | cut -d '_' -f 2)
+          make kind-deploy-validate TEST_PROFILE=${{ matrix.profile }}
       - name: Debug failure
         if: failure()
         run: |
