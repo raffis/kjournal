@@ -147,14 +147,14 @@ jobs:
       - name: Deploy dependencies
         run: |
           kubectl create ns kjournal-system
-          make kind-deploy-deps KIND_TEST_PROFILE=$(echo "${{ matrix.profile }}" | cut -d '_' -f 2)
+          make kind-deploy-deps TEST_PROFILE=$(echo "${{ matrix.profile }}" | cut -d '_' -f 2)
       - name: Deploy kjournal
         run: |
           chmod +x /tmp/kjournal
           /tmp/kjournal install --with-config-template=$(echo "${{ matrix.profile }}" | cut -d '_' -f 2)
       - name: Run validation tests
         run: |
-          make kind-deploy-validate KIND_TEST_PROFILE=$(echo "${{ matrix.profile }}" | cut -d '_' -f 2)
+          make kind-deploy-validate TEST_PROFILE=$(echo "${{ matrix.profile }}" | cut -d '_' -f 2)
       - name: Debug failure
         if: failure()
         run: |
@@ -179,9 +179,3 @@ jobs:
           kubectl -n kjournal-system logs ds/fluent-bit
           echo "ELASTICSEARCH ==================================="
           kubectl -n kjournal-system logs sts/elasticsearch-master
-
-          echo "------"
-          kubectl -n kjournal-system port-forward svc/elasticsearch-master 9200 & 
-          sleep 2
-          curl http://localhost:9200/
-          curl http://localhost:9200/container-*/_search?pretty
