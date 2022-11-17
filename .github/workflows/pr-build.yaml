@@ -179,3 +179,9 @@ jobs:
           kubectl -n kjournal-system logs ds/fluent-bit
           echo "ELASTICSEARCH ==================================="
           kubectl -n kjournal-system logs sts/elasticsearch-master
+
+          echo "------"
+          kubectl -n kjournal-system port-forward svc/elasticsearch-master 9200 & 
+          sleep 2
+          curl http://localhost:9200/
+          curl http://localhost:9200/container-*/_search?pretty
