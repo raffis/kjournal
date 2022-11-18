@@ -5,40 +5,43 @@
 class Kjournal < Formula
   desc ""
   homepage ""
-  version "0.0.8"
+  version "0.0.12"
   license "Apache-2.0"
 
   on_macos do
-    if Hardware::CPU.arm?
-      url "https://github.com/raffis/kjournal/releases/download/v0.0.8/kjournal_cli_0.0.8_darwin_arm64.tar.gz"
-      sha256 "36a4be60495adfe74367f1bfdf234db080d57bb744f6b5132d1f1bdd15253f66"
+    if Hardware::CPU.intel?
+      url "https://github.com/raffis/kjournal/releases/download/v0.0.12/kjournal_cli_0.0.12_darwin_amd64.tar.gz"
+      sha256 "1bd62686305ed88999a878c6366f6edc0ddb0b208583577559d7881b355f8963"
 
       def install
-        bin.install "kjournal"
+        bin.install "kjournal-cli" => "kjournal"
+        generate_completions_from_executable(bin/"kjournal", "completion", base_name: "kjournal")
       end
     end
-    if Hardware::CPU.intel?
-      url "https://github.com/raffis/kjournal/releases/download/v0.0.8/kjournal_cli_0.0.8_darwin_amd64.tar.gz"
-      sha256 "a96b26a6b7e6f03863ba58b4f1a23bbec559f53cdd8994fdb6a1c81f8e31de5b"
+    if Hardware::CPU.arm?
+      url "https://github.com/raffis/kjournal/releases/download/v0.0.12/kjournal_cli_0.0.12_darwin_arm64.tar.gz"
+      sha256 "9a762862d41dbd5cea178691c911bc010c6600a5c6c4a7797eba89b9dc6612dd"
 
       def install
-        bin.install "kjournal"
+        bin.install "kjournal-cli" => "kjournal"
+        generate_completions_from_executable(bin/"kjournal", "completion", base_name: "kjournal")
       end
     end
   end
 
   on_linux do
     if Hardware::CPU.arm? && Hardware::CPU.is_64_bit?
-      url "https://github.com/raffis/kjournal/releases/download/v0.0.8/kjournal_cli_0.0.8_linux_arm64.tar.gz"
-      sha256 "ef314f776cd01e17534b22b65c0415e1fb226204a2f63b9bee3a3d4dd67edc73"
+      url "https://github.com/raffis/kjournal/releases/download/v0.0.12/kjournal_cli_0.0.12_linux_arm64.tar.gz"
+      sha256 "0a99950be835c465233a9c4f0e2a78c4c80c97f81fa84f7333e0c1a7d71df6d9"
 
       def install
-        bin.install "kjournal"
+        bin.install "kjournal-cli" => "kjournal"
+        generate_completions_from_executable(bin/"kjournal", "completion", base_name: "kjournal")
       end
     end
     if Hardware::CPU.intel?
-      url "https://github.com/raffis/kjournal/releases/download/v0.0.8/kjournal_cli_0.0.8_linux_amd64.tar.gz"
-      sha256 "4c0d2e3ceb046627c93fe1f787f63766ad273a0e61a538094d0547deea7460fb"
+      url "https://github.com/raffis/kjournal/releases/download/v0.0.12/kjournal_cli_0.0.12_linux_amd64.tar.gz"
+      sha256 "f5bc44a05464611d6fd652cdc590dc3a245f7b1ece33973b0cfaab2e9615788f"
 
       def install
         bin.install "kjournal-cli" => "kjournal"
