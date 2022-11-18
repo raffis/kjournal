@@ -13,20 +13,21 @@ apis:
     metadata.namespace: [metadata.namespace.keyword]
   backend:
     elasticsearch:
-      index: "*"
+      index: "container-*"
       timestampFields: ["metadata.creationTimestamp"]
       uidFields: [metadata.uid.keyword]
 
 - resource: events
   backend:
     elasticsearch:
-      index: "*"
+      index: "events-*"
       timestampFields: ["metadata.creationTimestamp"]
 
 - resource: auditevents
+  filter: kind=Event
   backend:
     elasticsearch:
-      index: "*"
+      index: "audit-*"
       timestampFields: ["stageTimestamp"]
 
 - resource: logs

@@ -12,8 +12,8 @@ var completionFishCmd = &cobra.Command{
 	Example: `To configure your fish shell to load completions for each session write this script to your completions dir:
 kjournal completion fish > ~/.config/fish/completions/kjournal.fish
 See http://fishshell.com/docs/current/index.html#completion-own for more details`,
-	Run: func(cmd *cobra.Command, args []string) {
-		rootCmd.GenFishCompletion(os.Stdout, true)
+	RunE: func(cmd *cobra.Command, args []string) error {
+		return rootCmd.GenFishCompletion(os.Stdout, true)
 	},
 }
 

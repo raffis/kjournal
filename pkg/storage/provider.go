@@ -82,9 +82,5 @@ func getType(conf configv1alpha1.Backend) (string, error) {
 		return "elasticsearch", nil
 	}
 
-	if conf.GCloud != nil {
-		return "gcloud", nil
-	}
-
 	return "", ErrUnsupportedBackend
 }

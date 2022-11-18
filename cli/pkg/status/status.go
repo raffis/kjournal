@@ -1,3 +1,5 @@
+// Note: Most parts of this package have been borrowed from flux2, https://github.com/fluxcd/flux2. Thanks!
+
 package status
 
 import (
@@ -64,6 +66,7 @@ func (sc *StatusChecker) Assess(identifiers ...object.ObjMetadata) error {
 	sort.SliceStable(identifiers, func(i, j int) bool {
 		return strings.Compare(identifiers[i].Name, identifiers[j].Name) < 0
 	})
+
 	for _, id := range identifiers {
 		rs := coll.ResourceStatuses[id]
 		switch rs.Status {

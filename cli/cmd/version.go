@@ -11,12 +11,12 @@ import (
 	"k8s.io/client-go/discovery"
 )
 
-type versionFlags struct {
-	client bool
-	output string
-}
+//type versionFlags struct {
+//	client bool
+//	output string
+//}
 
-var versionArgs versionFlags
+//var versionArgs versionFlags
 
 var versionCmd = &cobra.Command{
 	Use:   "version",

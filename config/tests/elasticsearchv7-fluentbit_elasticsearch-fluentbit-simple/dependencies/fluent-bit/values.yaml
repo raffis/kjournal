@@ -1,3 +1,6 @@
+testFramework:
+  enabled: false
+
 config:
   inputs: |
     [INPUT]

@@ -25,13 +25,13 @@ apis:
 
   backend:
     elasticsearch:
-      index: "*"
+      index: "container-*"
       timestampFields: ["@timestamp"]
 
 - resource: events
   backend:
     elasticsearch:
-      index: "*"
+      index: "events-*"
       timestampFields: ["metadata.creationTimestamp"]
 
 - resource: auditevents
@@ -47,4 +47,4 @@ apis:
   backend:
     elasticsearch:
       timestampFields: ["@timestamp", "metadata.creationTimestamp", "stageTimestamp"]
-      index: "*"
+      index: "audit-*"

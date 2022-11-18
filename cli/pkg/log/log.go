@@ -1,10 +1,8 @@
 package log
 
 type Logger interface {
-	// Debugf logs a formatted action message.
+	// Infof logs a formatted action message.
 	Infof(format string, a ...interface{})
-	// Debugf logs a formatted action message.
-	Debugf(format string, a ...interface{})
 	// Generatef logs a formatted generate message.
 	Generatef(format string, a ...interface{})
 	// Waitingf logs a formatted waiting message.

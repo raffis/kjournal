@@ -7,6 +7,7 @@ import (
 	"strings"
 
 	metainternalversion "k8s.io/apimachinery/pkg/apis/meta/internalversion"
+	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/selection"
 	"k8s.io/apiserver/pkg/endpoints/request"
 )
@@ -48,7 +49,16 @@ func queryFromListOptions(ctx context.Context, options *metainternalversion.List
 		},
 	}
 
-	builders := []queryBuilderFunc{q.continueToken, q.sortByTimestampFields, q.fieldSelectors, q.namespaceFilter}
+	req, _ := options.LabelSelector.Requirements()
+
+	builders := []queryBuilderFunc{
+		q.continueToken,
+		q.sortByTimestampFields,
+		q.fieldSelectors(req),
+		q.fieldSelectors(rest.opts.Filter),
+		q.defaultRange,
+		q.namespaceFilter,
+	}
 
 	for _, builder := range builders {
 		if err := builder(); err != nil {
@@ -104,14 +114,88 @@ func (b *queryBuilder) sortByTimestampFields() error {
 	return nil
 }
 
-func (b *queryBuilder) fieldSelectors() error {
+func (b *queryBuilder) fieldSelectors(requirements labels.Requirements) queryBuilderFunc {
+	return func() error {
+		for _, req := range requirements {
+			operator, ok := operatorMap[req.Operator()]
+			if !ok {
+				return fmt.Errorf("invalid selector operator %s", operator)
+			}
+
+			q := b.query["query"].(map[string]interface{})["bool"].(map[string]interface{})[operator[0]].([]map[string]interface{})
+			fieldsMap := []string{req.Key()}
+
+			for field, fieldsTo := range b.rest.opts.FieldMap {
+				for k, fieldTo := range fieldsTo {
+					lookupKey := strings.TrimLeft(strings.Replace(req.Key(), field, fieldTo, -1), ".")
+					if lookupKey != req.Key() {
+						fieldsMap[k] = lookupKey
+						break
+					}
+				}
+			}
+
+			var should []map[string]interface{}
+			for _, fieldTo := range fieldsMap {
+				var shouldCondition map[string]interface{}
+				switch req.Operator() {
+				case selection.LessThan:
+					shouldCondition = map[string]interface{}{
+						operator[1]: map[string]interface{}{
+							fieldTo: map[string]interface{}{
+								"lt": req.Values().UnsortedList()[0],
+							},
+						},
+					}
+				case selection.GreaterThan:
+					shouldCondition = map[string]interface{}{
+						operator[1]: map[string]interface{}{
+							fieldTo: map[string]interface{}{
+								"gt": req.Values().UnsortedList()[0],
+							},
+						},
+					}
+				case selection.Exists:
+				case selection.DoesNotExist:
+					shouldCondition = map[string]interface{}{
+						operator[1]: map[string]interface{}{
+							"field": fieldTo,
+						},
+					}
+				default:
+					shouldCondition = map[string]interface{}{
+						operator[1]: map[string]interface{}{
+							fieldTo: req.Values().UnsortedList()[0],
+						},
+					}
+				}
+
+				should = append(should, shouldCondition)
+			}
+
+			q = append(q, map[string]interface{}{
+				"bool": map[string]interface{}{
+					"should": should,
+				},
+			})
+
+			b.query["query"].(map[string]interface{})["bool"].(map[string]interface{})[operator[0]] = q
+		}
+
+		return nil
+	}
+}
+
+func (b *queryBuilder) defaultRange() error {
 	var skipTimestampFilter bool
 	requirements, _ := b.options.LabelSelector.Requirements()
 
 	for _, req := range requirements {
-		operator := operatorMap[req.Operator()]
+		operator, ok := operatorMap[req.Operator()]
+		if !ok {
+			return fmt.Errorf("invalid selector operator %s", operator)
+		}
 
-		q := b.query["query"].(map[string]interface{})["bool"].(map[string]interface{})[operator[0]].([]map[string]interface{})
 		fieldsMap := []string{req.Key()}
 
 		for field, fieldsTo := range b.rest.opts.FieldMap {
@@ -124,57 +208,13 @@ func (b *queryBuilder) fieldSelectors() error {
 			}
 		}
 
-		var should []map[string]interface{}
 		for _, fieldTo := range fieldsMap {
-			var shouldCondition map[string]interface{}
-			switch req.Operator() {
-			case selection.LessThan:
-				shouldCondition = map[string]interface{}{
-					operator[1]: map[string]interface{}{
-						fieldTo: map[string]interface{}{
-							"lt": req.Values().UnsortedList()[0],
-						},
-					},
-				}
-			case selection.GreaterThan:
-				shouldCondition = map[string]interface{}{
-					operator[1]: map[string]interface{}{
-						fieldTo: map[string]interface{}{
-							"gt": req.Values().UnsortedList()[0],
-						},
-					},
-				}
-			case selection.Exists:
-			case selection.DoesNotExist:
-				shouldCondition = map[string]interface{}{
-					operator[1]: map[string]interface{}{
-						"field": fieldTo,
-					},
-				}
-			default:
-				shouldCondition = map[string]interface{}{
-					operator[1]: map[string]interface{}{
-						fieldTo: req.Values().UnsortedList()[0],
-					},
-				}
-			}
-
-			should = append(should, shouldCondition)
-
 			for _, tsField := range b.rest.opts.Backend.TimestampFields {
 				if !skipTimestampFilter && fieldTo == tsField {
 					skipTimestampFilter = true
 				}
 			}
 		}
-
-		q = append(q, map[string]interface{}{
-			"bool": map[string]interface{}{
-				"should": should,
-			},
-		})
-
-		b.query["query"].(map[string]interface{})["bool"].(map[string]interface{})[operator[0]] = q
 	}
 
 	if !skipTimestampFilter {

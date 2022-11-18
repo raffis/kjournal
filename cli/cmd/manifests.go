@@ -6,6 +6,8 @@ import (
 	"io/fs"
 	"os"
 	"path"
+
+	"k8s.io/klog/v2"
 )
 
 //go:embed config/base
@@ -16,7 +18,8 @@ func writeEmbeddedManifests(dir string) error {
 		if err != nil {
 			return err
 		}
-		fmt.Printf("read: %v\n", p)
+
+		klog.V(5).Info("walk embedded manifests", "path", p)
 		if d.IsDir() {
 			return nil
 		}
@@ -27,9 +30,12 @@ func writeEmbeddedManifests(dir string) error {
 		}
 
 		parent := path.Join(dir, path.Dir(p))
-		fmt.Printf("create folder %#v\n", parent)
+		klog.V(5).Info("create folder", "path", parent)
+
 		if _, err := os.Stat(parent); os.IsNotExist(err) {
-			os.MkdirAll(parent, 0750)
+			if err := os.MkdirAll(parent, 0750); err != nil {
+				return err
+			}
 		}
 
 		err = os.WriteFile(path.Join(dir, p), data, 0666)

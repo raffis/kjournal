@@ -19,6 +19,7 @@ spec:
   - port: {{ .Values.service.port }}
     protocol: TCP
     targetPort: https
+    name: https
   selector:
     {{- include "kjournal.selectorLabels" . | indent 4 }}
   type: {{ .Values.service.type }}

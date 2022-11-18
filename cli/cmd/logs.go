@@ -1,19 +1,3 @@
-/*
-Copyright 2020 The Flux authors
-
-Licensed under the Apache License, Version 2.0 (the "License");
-you may not use this file except in compliance with the License.
-You may obtain a copy of the License at
-
-    http://www.apache.org/licenses/LICENSE-2.0
-
-Unless required by applicable law or agreed to in writing, software
-distributed under the License is distributed on an "AS IS" BASIS,
-WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-See the License for the specific language governing permissions and
-limitations under the License.
-*/
-
 package main
 
 import (
@@ -34,8 +18,8 @@ import (
 )
 
 type logsFlags struct {
-	log       string
-	noColor   bool
+	log string
+	//	noColor   bool
 	timestamp bool
 }
 
@@ -121,18 +105,20 @@ func (cmd *logsCommand) defaultPrinter(obj runtime.Object) error {
 	}
 
 	for _, item := range list.Items {
-		printLog(item)
+		if err := printLog(item); err != nil {
+			return err
+		}
 	}
 	return nil
 }
 
 // Print prints a color coded log message with the pod and container names
-func printLog(log corev1alpha1.Log) {
+func printLog(log corev1alpha1.Log) error {
 	vm := Log{
 		Message: string(log.Payload),
 	}
 
-	t := "{{.Message}}\n"
+	t := "{{.Message}}"
 
 	funs := map[string]interface{}{
 		"json": func(in interface{}) (string, error) {
@@ -155,16 +141,16 @@ func printLog(log corev1alpha1.Log) {
 	}
 	template, err := template.New("log").Funcs(funs).Parse(t)
 	if err != nil {
-		//return nil, errors.Wrap(err, "unable to parse template")
+		return fmt.Errorf("failed to parse log template: %w", err)
 	}
 
 	var buf bytes.Buffer
 	if err := template.Execute(&buf, vm); err != nil {
-		//fmt.Fprintf(t.errOut, "expanding template failed: %s\n", err)
-		return
+		return fmt.Errorf("failed to execute log template: %w", err)
 	}
 
-	fmt.Printf(buf.String())
+	fmt.Println(buf.String())
+	return nil
 }
 
 var logAdapterType = apiType{

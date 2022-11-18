@@ -2,7 +2,7 @@
 apiVersion: {{ include "kjournal.pdb.apiVersion" . }}
 kind: PodDisruptionBudget
 metadata:
-  name: {{ template "kjournal.fullname" . }}
+  name: {{ template "kjournal.fullname" . }}-apiserver
   namespace: {{ include "kjournal.namespace" . }}
   {{- if .Values.customAnnotations }}
   annotations:

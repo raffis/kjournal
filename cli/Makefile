@@ -25,13 +25,14 @@ vet:
 test:
 	go test ./... -v -coverprofile coverage.out
 
+GOLANGCI_LINT = $(GOBIN)/golangci-lint
 .PHONY: golangci-lint
-golint: ## Download golint locally if necessary.
-	$(call go-install-tool,$(CONTROLLER_GEN),github.com/golangci/golangci-lint/cmd/golangci-lint@v1.49.0)
+golangci-lint: ## Download golint locally if necessary.
+	$(call go-install-tool,$(GOLANGCI_LINT),github.com/golangci/golangci-lint/cmd/golangci-lint@v1.49.0)
 
 .PHONY: lint
 lint: golangci-lint ## Run golangci-lint against code.
-	golangci-lint run ./...
+	$(GOLANGCI_LINT) run ./...
 
 configs:
 	rm -rfv cmd/config
@@ -63,7 +64,6 @@ install-dev:
 	CGO_ENABLED=0 go build -o /usr/local/bin ./cmd
 
 # go-install-tool will 'go install' any package $2 and install it to $1.
-PROJECT_DIR := $(shell dirname $(abspath $(lastword $(MAKEFILE_LIST))))
 define go-install-tool
 @[ -f $(1) ] || { \
 set -e ;\
@@ -71,7 +71,7 @@ TMP_DIR=$$(mktemp -d) ;\
 cd $$TMP_DIR ;\
 go mod init tmp ;\
 echo "Downloading $(2)" ;\
-GOBIN=$(PROJECT_DIR)/bin go install $(2) ;\
+env -i bash -c "GOBIN=$(GOBIN) PATH=$(PATH) GOPATH=$(shell go env GOPATH) GOCACHE=$(shell go env GOCACHE) go install $(2)" ;\
 rm -rf $$TMP_DIR ;\
 }
 endef

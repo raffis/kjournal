@@ -20,10 +20,12 @@ echo "${fpath// /\n}" | grep -i completion
 kjournal completion zsh > _kjournal
 mv _kjournal ~/.oh-my-zsh/completions  # oh-my-zsh
 mv _kjournal ~/.zprezto/modules/completion/external/src/  # zprezto`,
-	Run: func(cmd *cobra.Command, args []string) {
-		rootCmd.GenZshCompletion(os.Stdout)
+	RunE: func(cmd *cobra.Command, args []string) error {
+		err := rootCmd.GenZshCompletion(os.Stdout)
 		// Cobra doesn't source zsh completion file, explicitly doing it here
 		fmt.Println("compdef _kjournal kjournal")
+
+		return err
 	},
 }
 
