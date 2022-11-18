@@ -152,6 +152,7 @@ brews:
   tap:
     owner: raffis
     name: kjournal
+    token: "{{ .Env.REPO_TOKEN }}"
   folder: Formula
   test: |
     system "#{bin}/kjournal help"      
