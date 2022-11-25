@@ -9,8 +9,8 @@ require (
 	github.com/pyroscope-io/client v0.4.0
 	github.com/spf13/cobra v1.6.0
 	gotest.tools/v3 v3.4.0
-	k8s.io/api v0.25.3
-	k8s.io/apimachinery v0.25.3
+	k8s.io/api v0.25.4
+	k8s.io/apimachinery v0.25.4
 	k8s.io/apiserver v0.25.3
 	k8s.io/klog/v2 v2.80.1
 	sigs.k8s.io/apiserver-runtime v1.1.2-0.20221102045245-fb656940062f
