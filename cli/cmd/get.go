@@ -111,13 +111,8 @@ func (get getCommand) prepareRequest(args []string) (*rest.Request, error) {
 	}
 
 	var opts metav1.ListOptions
-	/*selector, err := labels.Parse(getArgs.fieldSelector)
-	if err != nil {
-		return nil, err
-	}
+	opts.FieldSelector = getArgs.fieldSelector
 
-	opts.FieldSelector = selector.String()
-	*/
 	err = get.command.filter(args, &opts)
 	if err != nil {
 		return nil, err
@@ -126,7 +121,7 @@ func (get getCommand) prepareRequest(args []string) (*rest.Request, error) {
 	r := c.
 		Get().
 		Resource(get.resource).
-		Param("fieldSelector", getArgs.fieldSelector)
+		Param("fieldSelector", opts.FieldSelector)
 
 	if get.apiType.namespaced {
 		r.Namespace(*kubeconfigArgs.Namespace)
