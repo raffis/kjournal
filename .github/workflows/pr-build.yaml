@@ -81,15 +81,15 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-go-
       - name: configs
-        run: make configs -C cli
+        run: make configs
       - name: fmt
-        run: make fmt -C cli
+        run: make fmt
       - name: vet
-        run: make vet -C cli
+        run: make vet
       - name: lint
-        run: make lint -C cli
+        run: make lint
       - name: test
-        run: make test -C cli
+        run: make test
       - name: Send go coverage report
         uses: shogo82148/actions-goveralls@v1
         with:
