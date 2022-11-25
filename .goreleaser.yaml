@@ -9,6 +9,8 @@ builds:
   - linux
   - darwin
   - windows    
+  env:
+  - CGO_ENABLED=0
 - id: apiserver
   main: ./cmd
   binary: kjournal-apiserver
