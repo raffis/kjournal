@@ -17,6 +17,7 @@ limitations under the License.
 package main
 
 import (
+	"flag"
 	"fmt"
 	"net/http"
 	_ "net/http/pprof"
@@ -26,13 +27,17 @@ import (
 
 	"github.com/Masterminds/semver"
 	"github.com/pyroscope-io/client/pyroscope"
-	"github.com/spf13/cobra"
-	k8sversion "k8s.io/apimachinery/pkg/version"
-	"k8s.io/klog/v2"
-	"sigs.k8s.io/apiserver-runtime/pkg/builder"
-
 	adapterv1alpha1 "github.com/raffis/kjournal/internal/apis/core/v1alpha1"
 	"github.com/raffis/kjournal/pkg/apis/core/v1alpha1"
+	"github.com/raffis/kjournal/pkg/apiserver"
+	"github.com/spf13/cobra"
+	k8sruntime "k8s.io/apimachinery/pkg/runtime"
+	k8sversion "k8s.io/apimachinery/pkg/version"
+	"k8s.io/apiserver/pkg/registry/generic"
+	"k8s.io/apiserver/pkg/registry/rest"
+	genericapiserver "k8s.io/apiserver/pkg/server"
+	"k8s.io/klog/v2"
+	"sigs.k8s.io/apiserver-runtime/pkg/builder/resource"
 )
 
 const (
@@ -66,6 +71,12 @@ func (m *httpWrap) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	m.w.ServeHTTP(w, r)
 }
 
+func storageMapper(obj resource.Object) apiserver.StorageProvider {
+	return func(scheme *k8sruntime.Scheme, getter generic.RESTOptionsGetter) (rest.Storage, error) {
+		return provider.Provide(obj, scheme, getter)
+	}
+}
+
 func main() {
 	if profilingEnabled, ok := os.LookupEnv("PYROSCOPE_START_PROFILING"); ok && profilingEnabled == "true" {
 		runtime.SetMutexProfileFraction(5)
@@ -76,54 +87,45 @@ func main() {
 		}
 	}
 
-	cmd, err := builder.APIServer.
-		// +kubebuilder:scaffold:resource-register
-		WithResourceAndHandler(&v1alpha1.Log{}, storageMapper(&v1alpha1.Log{})).
-		WithResourceAndHandler(&v1alpha1.ContainerLog{}, storageMapper(&v1alpha1.ContainerLog{})).
-		WithResourceAndHandler(&adapterv1alpha1.AuditEvent{}, storageMapper(&adapterv1alpha1.AuditEvent{})).
-		WithResourceAndHandler(&adapterv1alpha1.Event{}, storageMapper(&adapterv1alpha1.Event{})).
-		WithLocalDebugExtension().
-		WithoutEtcd().
-		WithServerFns(func(server *builder.GenericAPIServer) *builder.GenericAPIServer {
-			wrap := server.Handler.FullHandlerChain
+	withResourceAndHandler(&v1alpha1.Log{}, storageMapper(&v1alpha1.Log{}))
+	withResourceAndHandler(&v1alpha1.ContainerLog{}, storageMapper(&v1alpha1.ContainerLog{}))
+	withResourceAndHandler(&adapterv1alpha1.AuditEvent{}, storageMapper(&adapterv1alpha1.AuditEvent{}))
+	withResourceAndHandler(&adapterv1alpha1.Event{}, storageMapper(&adapterv1alpha1.Event{}))
 
-			server.Handler.FullHandlerChain = &httpWrap{
-				w: wrap,
-			}
+	/*
+		cmd, err := builder.APIServer.
+			// +kubebuilder:scaffold:resource-register
+			WithResourceAndHandler(&v1alpha1.Log{}, storageMapper(&v1alpha1.Log{})).
+			WithResourceAndHandler(&v1alpha1.ContainerLog{}, storageMapper(&v1alpha1.ContainerLog{})).
+			WithResourceAndHandler(&adapterv1alpha1.AuditEvent{}, storageMapper(&adapterv1alpha1.AuditEvent{})).
+			WithResourceAndHandler(&adapterv1alpha1.Event{}, storageMapper(&adapterv1alpha1.Event{})).
+			WithLocalDebugExtension().
+			WithoutEtcd().
+			WithServerFns(func(server *builder.GenericAPIServer) *builder.GenericAPIServer {
+				wrap := server.Handler.FullHandlerChain
 
-			return server
-		}).
-		WithServerFns(func(server *builder.GenericAPIServer) *builder.GenericAPIServer {
-			server.Version = getVersion()
-			return server
-		}).
-		Build()
-	if err != nil {
-		klog.Fatal(err)
-	}
+				server.Handler.FullHandlerChain = &httpWrap{
+					w: wrap,
+				}
 
-	cmd.Flags().StringVar(&apiServerArgs.configFile, "config", "", "Path to kjournal config")
+				return server
+			}).
+			WithServerFns(func(server *builder.GenericAPIServer) *builder.GenericAPIServer {
+				server.Version = getVersion()
+				return server
+			}).
+			Build()*/
 
-	rootCmd = cmd
-	rootCmd.Use = "kjournal-apiserver"
-	rootCmd.Short = "Launches the kjournal kubernetes apiserver"
+	o := NewServerOptions(os.Stdout, os.Stderr) //, a.orderedGroupVersions...)
+	cmd := NewCommandStartServer(o, genericapiserver.SetupSignalHandler())
+	cmd.Flags().AddGoFlagSet(flag.CommandLine)
+	/*	cmd.Flags().StringVar(&apiServerArgs.configFile, "config", "", "Path to kjournal config")
 
-	// TODO: workaorund for removing etcd related flags. Apparently WithoutEtcd() does not work.
-	_ = rootCmd.Flags().MarkHidden("etcd-cafile")
-	_ = rootCmd.Flags().MarkHidden("etcd-certfile")
-	_ = rootCmd.Flags().MarkHidden("etcd-compaction-interval")
-	_ = rootCmd.Flags().MarkHidden("etcd-count-metric-poll-period")
-	_ = rootCmd.Flags().MarkHidden("etcd-db-metric-poll-interval")
-	_ = rootCmd.Flags().MarkHidden("etcd-healthcheck-timeout")
-	_ = rootCmd.Flags().MarkHidden("etcd-keyfile")
-	_ = rootCmd.Flags().MarkHidden("etcd-prefix")
-	_ = rootCmd.Flags().MarkHidden("etcd-servers")
-	_ = rootCmd.Flags().MarkHidden("etcd-servers-overrides")
 
-	cmd.AddCommand(cmdMan)
-	cmd.AddCommand(cmdRef)
-
-	err = cmd.Execute()
+		cmd.AddCommand(cmdMan)
+		cmd.AddCommand(cmdRef)
+	*/
+	err := cmd.Execute()
 	if err != nil {
 		klog.Fatal(err)
 	}
