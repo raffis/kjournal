@@ -3,16 +3,11 @@ package elasticsearch
 import (
 	"context"
 	"encoding/json"
-	"io"
 	"time"
 
 	statuserr "k8s.io/apimachinery/pkg/api/errors"
 	metainternalversion "k8s.io/apimachinery/pkg/apis/meta/internalversion"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/runtime"
-	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/apimachinery/pkg/watch"
-	"k8s.io/apiserver/pkg/registry/rest"
 	"k8s.io/klog/v2"
 )
 
@@ -124,75 +119,4 @@ func (s *stream) Stop() {
 
 func (s *stream) ResultChan() <-chan watch.Event {
 	return s.ch
-}
-
-type pitStream struct {
-	rest    *elasticsearchREST
-	options *metainternalversion.ListOptions
-	context context.Context
-}
-
-var _ rest.ResourceStreamer = &pitStream{}
-
-func (obj *pitStream) GetObjectKind() schema.ObjectKind {
-	return schema.EmptyObjectKind
-}
-
-func (obj *pitStream) DeepCopyObject() runtime.Object {
-	panic("rest.PITStream does not implement DeepCopyObject")
-}
-
-func (s *pitStream) InputStream(ctx context.Context, apiVersion, acceptHeader string) (io.ReadCloser, bool, string, error) {
-	stream := &stream{
-		usePIT:      true,
-		refreshRate: 0,
-		rest:        s.rest,
-		ch:          make(chan watch.Event, int(s.rest.opts.Backend.BulkSize)),
-		done:        make(chan bool),
-	}
-
-	r := &streamReader{
-		stream: stream,
-	}
-
-	go func() {
-		s.options.Limit = s.rest.opts.Backend.BulkSize
-		stream.Start(s.context, s.options)
-	}()
-
-	return r, false, "application/json", nil
-}
-
-type streamReader struct {
-	stream *stream
-}
-
-func (r *streamReader) Read(dst []byte) (n int, err error) {
-	read := func(doc watch.Event) (int, error) {
-		b, err := json.Marshal(metav1.WatchEvent{
-			Type:   string(doc.Type),
-			Object: runtime.RawExtension{Object: doc.Object},
-		})
-
-		s := copy(dst, b)
-		return s, err
-	}
-
-	select {
-	case doc, ok := <-r.stream.ResultChan():
-		if ok {
-			return read(doc)
-		}
-
-		return 0, io.EOF
-	case <-r.stream.done:
-		close(r.stream.ch)
-	}
-
-	return 0, nil
-}
-
-func (r *streamReader) Close() error {
-	r.stream.Stop()
-	return nil
 }

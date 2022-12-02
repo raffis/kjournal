@@ -26,7 +26,6 @@ import (
 type GetFlags struct {
 	fieldSelector string
 	watch         bool
-	noStream      bool
 	chunkSize     string
 	since         string
 	timeRange     string
@@ -43,8 +42,7 @@ func addGetFlags(getCmd *cobra.Command) {
 	getCmd.Flags().StringVarP(printFlags.OutputFormat, "output", "o", *printFlags.OutputFormat, fmt.Sprintf(`Output format. One of: (%s). See custom columns [https://kubernetes.io/docs/reference/kubectl/overview/#custom-columns], golang template [http://golang.org/pkg/text/template/#pkg-overview] and jsonpath template [https://kubernetes.io/docs/reference/kubectl/jsonpath/].`, strings.Join(printFlags.AllowedFormats(), ", ")))
 	getCmd.PersistentFlags().StringVarP(&getArgs.since, "since", "", "", "Change the time range from which logs are received. (e.g. `--since=24h`)")
 	getCmd.PersistentFlags().StringVarP(&getArgs.timeRange, "range", "", "", "Change the time range from which logs are received. (e.g. `--range=20h-24h`)")
-	getCmd.PersistentFlags().BoolVarP(&getArgs.noStream, "no-stream", "", false, "By default all logs are streamed. This behaviour can be disabled. Be mindful that this can lead to an increased memory usage and no output while logs are beeing gathered")
-	getCmd.PersistentFlags().BoolVarP(&getArgs.watch, "watch", "w", false, "After dumping all existing logs keep watching for newly added ones")
+	getCmd.PersistentFlags().BoolVarP(&getArgs.watch, "watch", "w", true, "After dumping all existing logs keep watching for newly added ones")
 	getCmd.PersistentFlags().StringVar(&getArgs.fieldSelector, "field-selector", "", "Selector (field query) to filter on, supports '=', '==', '!=', '!=', '>' and '<'. (e.g. --field-selector key1=value1,key2=value2).")
 	getCmd.PersistentFlags().StringVarP(&getArgs.chunkSize, "chunk-size", "", "500", "Return large lists in chunks rather than all at once. Pass 0 to disable. This has no impact as long as --no-stream is not set.")
 }
@@ -82,7 +80,7 @@ type getCommand struct {
 }
 
 func (get getCommand) run(cmd *cobra.Command, args []string) error {
-	if getArgs.noStream {
+	if !getArgs.watch {
 		return get.listObjects(cmd, args)
 	}
 

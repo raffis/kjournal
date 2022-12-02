@@ -133,16 +133,6 @@ func (r *elasticsearchREST) List(
 		return nil, err
 	}
 
-	if options.Limit == -1 {
-		stream := &pitStream{
-			rest:    r,
-			options: options,
-			context: ctx,
-		}
-
-		return stream, nil
-	}
-
 	query, err := queryFromListOptions(ctx, options, r)
 	if err != nil {
 		return newListObj, err

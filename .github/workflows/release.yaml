@@ -3,11 +3,6 @@ on:
   push:
     tags:
       - 'v*'
-  workflow_dispatch:
-    inputs:
-      tag:
-        description: 'image tag prefix'
-        required: true
 
 permissions:
   contents: write # needed to write releases

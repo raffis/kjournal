@@ -47,7 +47,7 @@ patches:
       template: 
         spec:
           containers:
-          - name: apiserver
+          - name: kjournal-apiserver
             volumeMounts:
             - mountPath: certificates
               name: apiserver-certs

@@ -5,13 +5,20 @@ import (
 	"io"
 	"io/ioutil"
 	"net"
+	"net/http"
 	"os"
+	"runtime"
+	"strconv"
 
+	"github.com/Masterminds/semver"
 	"github.com/spf13/cobra"
-	"k8s.io/apimachinery/pkg/runtime"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	k8sruntime "k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/apimachinery/pkg/runtime/serializer"
 	utilerrors "k8s.io/apimachinery/pkg/util/errors"
+	"k8s.io/apimachinery/pkg/util/sets"
+	k8sversion "k8s.io/apimachinery/pkg/version"
 	"k8s.io/apiserver/pkg/admission"
 	"k8s.io/apiserver/pkg/server"
 	genericapiserver "k8s.io/apiserver/pkg/server"
@@ -23,10 +30,12 @@ import (
 	configv1alpha1 "github.com/raffis/kjournal/pkg/apis/config/v1alpha1"
 	"github.com/raffis/kjournal/pkg/apiserver"
 	"github.com/raffis/kjournal/pkg/storage"
+	_ "github.com/raffis/kjournal/pkg/storage/elasticsearch"
 )
 
 var (
-	schemeBuilder        runtime.SchemeBuilder
+	schemes              []*k8sruntime.Scheme
+	schemeBuilder        k8sruntime.SchemeBuilder
 	storageProvider      map[schema.GroupResource]*storage.SingletonProvider
 	groupVersions        map[schema.GroupVersion]bool
 	orderedGroupVersions []schema.GroupVersion
@@ -71,6 +80,43 @@ func withGroupVersions(versions ...schema.GroupVersion) {
 		}
 		groupVersions[gv] = true
 		orderedGroupVersions = append(orderedGroupVersions, gv)
+	}
+}
+
+func build() {
+	schemes = append(schemes, apiserver.Scheme)
+	schemeBuilder.Register(
+		func(scheme *k8sruntime.Scheme) error {
+			groupVersions := make(map[string]sets.String)
+			for gvr := range apiserver.APIs {
+				if groupVersions[gvr.Group] == nil {
+					groupVersions[gvr.Group] = sets.NewString()
+				}
+				groupVersions[gvr.Group].Insert(gvr.Version)
+			}
+			for g, versions := range groupVersions {
+				gvs := []schema.GroupVersion{}
+				for _, v := range versions.List() {
+					gvs = append(gvs, schema.GroupVersion{
+						Group:   g,
+						Version: v,
+					})
+				}
+				err := scheme.SetVersionPriority(gvs...)
+				if err != nil {
+					return err
+				}
+			}
+			for i := range orderedGroupVersions {
+				metav1.AddToGroupVersion(scheme, orderedGroupVersions[i])
+			}
+			return nil
+		},
+	)
+	for i := range schemes {
+		if err := schemeBuilder.AddToScheme(schemes[i]); err != nil {
+			panic(err)
+		}
 	}
 }
 
@@ -151,7 +197,33 @@ func NewCommandStartServer(defaults *ServerOptions, stopCh <-chan struct{}) *cob
 	o.RecommendedOptions.AddFlags(flags)
 	utilfeature.DefaultMutableFeatureGate.AddFlag(flags)
 
+	cmd.AddCommand(cmdMan)
+	cmd.AddCommand(cmdRef)
+
+	build()
+
 	return cmd
+}
+
+func getVersion() *k8sversion.Info {
+	v := &k8sversion.Info{
+		GitVersion:   version,
+		GitCommit:    commit,
+		GitTreeState: "clean",
+		BuildDate:    date,
+		GoVersion:    runtime.Version(),
+		Compiler:     runtime.Compiler,
+		Platform:     fmt.Sprintf("%s/%s", runtime.GOOS, runtime.GOARCH),
+	}
+
+	srvSemantic, err := semver.NewVersion(version)
+	if err != nil {
+		return v
+	}
+
+	v.Major = strconv.Itoa(int(srvSemantic.Major()))
+	v.Minor = strconv.Itoa(int(srvSemantic.Minor()))
+	return v
 }
 
 func initConfig() (conf configv1alpha1.APIServerConfig, err error) {
@@ -162,7 +234,7 @@ func initConfig() (conf configv1alpha1.APIServerConfig, err error) {
 
 	expand := os.ExpandEnv(string(b))
 
-	scheme := runtime.NewScheme()
+	scheme := k8sruntime.NewScheme()
 	_ = configv1alpha1.AddToScheme(scheme)
 	codec := serializer.NewCodecFactory(scheme)
 	decoder := codec.UniversalDeserializer()
@@ -184,7 +256,6 @@ func (o ServerOptions) Validate(args []string) error {
 
 // Config returns config for the api server given ServerOptions
 func (o *ServerOptions) Config() (*apiserver.Config, error) {
-	// TODO have a "real" external address
 	if err := o.RecommendedOptions.SecureServing.MaybeDefaultWithSelfSignedCerts("localhost", nil, []net.IP{net.ParseIP("127.0.0.1")}); err != nil {
 		return nil, fmt.Errorf("error creating self-signed certificates: %v", err)
 	}
@@ -199,7 +270,23 @@ func (o *ServerOptions) Config() (*apiserver.Config, error) {
 		GenericConfig: serverConfig,
 		ExtraConfig:   apiserver.ExtraConfig{},
 	}
+
+	config.GenericConfig.Config.Version = getVersion()
+
 	return config, nil
+}
+
+type httpWrap struct {
+	w http.Handler
+}
+
+func (m *httpWrap) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+	q := r.URL.Query()
+	fieldSelector := q.Get("fieldSelector")
+	q.Set("labelSelector", fieldSelector)
+	q.Del("fieldSelector")
+	r.URL.RawQuery = q.Encode()
+	m.w.ServeHTTP(w, r)
 }
 
 // RunServer starts a new Server given ServerOptions
@@ -212,6 +299,11 @@ func (o ServerOptions) RunServer(stopCh <-chan struct{}) error {
 	server, err := config.Complete().New()
 	if err != nil {
 		return err
+	}
+
+	wrap := server.GenericAPIServer.Handler.FullHandlerChain
+	server.GenericAPIServer.Handler.FullHandlerChain = &httpWrap{
+		w: wrap,
 	}
 
 	server.GenericAPIServer.AddPostStartHookOrDie("start-server-informers", func(context genericapiserver.PostStartHookContext) error {
