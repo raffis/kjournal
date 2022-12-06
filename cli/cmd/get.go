@@ -6,8 +6,10 @@ import (
 	"fmt"
 	"os"
 	"strings"
+	"time"
 
 	"github.com/spf13/cobra"
+	"github.com/xhit/go-str2duration/v2"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/schema"
@@ -126,6 +128,44 @@ func (get getCommand) prepareRequest(args []string) (*rest.Request, error) {
 	}
 
 	return r, nil
+}
+
+func parseTimestamp(ts string) (int64, error) {
+	duration, err := str2duration.ParseDuration(ts)
+	if err != nil {
+		return 0, err
+	}
+
+	return time.Now().Unix()*1000 - duration.Milliseconds(), nil
+}
+
+func timeRange(getArgs GetFlags) (selectors []string, err error) {
+	if getArgs.since != "" {
+		ts, err := parseTimestamp(getArgs.since)
+		if err != nil {
+			return selectors, err
+		}
+
+		return []string{fmt.Sprintf("metadata.creationTimestamp>%d", ts)}, nil
+	} else if getArgs.timeRange != "" {
+		parts := strings.Split(getArgs.timeRange, "-")
+
+		fromTimestamp, err := parseTimestamp(parts[0])
+		if err != nil {
+			return selectors, err
+		}
+		toTimestamp, err := parseTimestamp(parts[1])
+		if err != nil {
+			return selectors, err
+		}
+
+		return []string{
+			fmt.Sprintf("metadata.creationTimestamp<%d", fromTimestamp),
+			fmt.Sprintf("metadata.creationTimestamp>%d", toTimestamp),
+		}, nil
+	}
+
+	return selectors, nil
 }
 
 func (get getCommand) listObjects(cmd *cobra.Command, args []string) error {
