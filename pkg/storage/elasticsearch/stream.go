@@ -3,6 +3,7 @@ package elasticsearch
 import (
 	"context"
 	"encoding/json"
+	"sync"
 	"time"
 
 	statuserr "k8s.io/apimachinery/pkg/api/errors"
@@ -46,25 +47,71 @@ func (s *stream) Start(ctx context.Context, options *metainternalversion.ListOpt
 		}
 	}
 
-	for {
-		query, err := queryFromListOptions(ctx, options, s.rest)
-		if err != nil {
-			return
-		}
+	var wg sync.WaitGroup
+	wg.Add(1)
+	batchResults := make(chan esResults, 2)
 
-		if s.pit.ID != "" {
-			query["pit"] = map[string]interface{}{
-				"id":         s.pit.ID,
-				"keep_alive": "5m",
+	// read ahead buffer
+	go func() {
+		for {
+			klog.Info("start list query", "options", options)
+			query, err := queryFromListOptions(ctx, options, s.rest)
+			if err != nil {
+				return
+			}
+
+			if s.pit.ID != "" {
+				query["pit"] = map[string]interface{}{
+					"id":         s.pit.ID,
+					"keep_alive": "5m",
+				}
+			}
+
+			esResults, err := s.rest.fetch(ctx, query, options)
+			if err != nil {
+				s.errorAndAbort(err)
+				return
+			}
+
+			batchResults <- esResults
+
+			if len(esResults.Hits.Hits) != int(s.rest.opts.Backend.BulkSize) && s.refreshRate == 0 {
+				klog.Info("All objects consumed from stream")
+				s.done <- true
+				wg.Done()
+				break
+			}
+
+			if len(esResults.Hits.Hits) != int(s.rest.opts.Backend.BulkSize) {
+				klog.InfoS("wait for next check", "sleep", s.refreshRate.String())
+				time.Sleep(s.refreshRate)
+			}
+
+			// The continue token represents the last sort value from the last hit.
+			// Which itself gets used in the next es query as search_after
+			// If there is no hit there will be no continue token as this means we reached the end of available results
+			if len(esResults.Hits.Hits) > 0 {
+				hit := esResults.Hits.Hits[len(esResults.Hits.Hits)-1]
+				if len(hit.Sort) > 0 {
+					b, err := json.Marshal(hit.Sort)
+					if err != nil {
+						s.errorAndAbort(err)
+						return
+					}
+
+					options.Continue = string(b)
+				}
+			}
+
+			// For the next search request the PIT from the previous search response needs to be taken as it can change over time
+			if s.pit.ID != "" {
+				s.pit.ID = esResults.PitID
 			}
 		}
+	}()
 
-		esResults, err := s.rest.fetch(ctx, query, options)
-		if err != nil {
-			s.errorAndAbort(err)
-			return
-		}
-
+	// loop over batched results
+	for esResults := range batchResults {
 		var hit esHit
 		for _, hit = range esResults.Hits.Hits {
 			decodedObj, err := s.rest.decodeFrom(hit)
@@ -77,36 +124,9 @@ func (s *stream) Start(ctx context.Context, options *metainternalversion.ListOpt
 				Object: decodedObj,
 			}
 		}
-
-		if len(esResults.Hits.Hits) != int(s.rest.opts.Backend.BulkSize) && s.refreshRate == 0 {
-			klog.Info("All objects consumed from stream")
-			s.done <- true
-			break
-		}
-
-		if len(esResults.Hits.Hits) != int(s.rest.opts.Backend.BulkSize) {
-			klog.InfoS("wait for next check", "sleep", s.refreshRate.String())
-			time.Sleep(s.refreshRate)
-		}
-
-		// The continue token represents the last sort value from the last hit.
-		// Which itself gets used in the next es query as search_after
-		// If there is no hit there will be no continue token as this means we reached the end of available results
-		if len(hit.Sort) > 0 {
-			b, err := json.Marshal(hit.Sort)
-			if err != nil {
-				s.errorAndAbort(err)
-				return
-			}
-
-			options.Continue = string(b)
-		}
-
-		// For the next search request the PIT from the previous search response needs to be taken as it can change over time
-		if s.pit.ID != "" {
-			s.pit.ID = esResults.PitID
-		}
 	}
+
+	wg.Wait()
 }
 
 func (s *stream) Stop() {
