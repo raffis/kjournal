@@ -48,7 +48,7 @@ func NewProvider(conf configv1alpha1.APIServerConfig) (Provider, error) {
 
 	provider, err := Providers.Get(t)
 	if err != nil {
-		return nil, fmt.Errorf("%w: unsupported provder", err)
+		return nil, fmt.Errorf("%w: unsupported provider", err)
 	}
 
 	p.restProvider = provider

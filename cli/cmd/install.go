@@ -111,19 +111,18 @@ func installCmdRun(cmd *cobra.Command, args []string) error {
 		manifestsBase = tmpDir
 	}
 
-	opts := install.Options{
-		Base:            installArgs.base,
-		AsKustomization: installArgs.asKustomization,
-		Version:         installVersion,
-		Namespace:       *kubeconfigArgs.Namespace,
-		Registry:        installArgs.registry,
-		ImagePullSecret: installArgs.imagePullSecret,
-		NetworkPolicy:   installArgs.withNetworkPolicies,
-		CertManager:     installArgs.withCertManager,
-		ServiceMonitor:  installArgs.withServiceMonitor,
-		ConfigTemplate:  installArgs.withConfigTemplate,
-		ManifestFile:    fmt.Sprintf("%s.yaml", *kubeconfigArgs.Namespace),
-	}
+	opts := defaults
+	opts.Base = installArgs.base
+	opts.AsKustomization = installArgs.asKustomization
+	opts.Version = installVersion
+	opts.Namespace = *kubeconfigArgs.Namespace
+	opts.Registry = installArgs.registry
+	opts.ImagePullSecret = installArgs.imagePullSecret
+	opts.NetworkPolicy = installArgs.withNetworkPolicies
+	opts.CertManager = installArgs.withCertManager
+	opts.ServiceMonitor = installArgs.withServiceMonitor
+	opts.ConfigTemplate = installArgs.withConfigTemplate
+	opts.ManifestFile = fmt.Sprintf("%s.yaml", *kubeconfigArgs.Namespace)
 
 	if opts.Namespace == "" {
 		opts.Namespace = defaults.Namespace
