@@ -58,7 +58,7 @@ map[string][]string
 <td>
 <code>filter</code><br>
 <em>
-map[string]string
+string
 </em>
 </td>
 <td>
@@ -253,18 +253,6 @@ BackendElasticsearch
 <td>
 </td>
 </tr>
-<tr>
-<td>
-<code>gcloud</code><br>
-<em>
-<a href="#config.kjournal/v1alpha1.BackendGCloud">
-BackendGCloud
-</a>
-</em>
-</td>
-<td>
-</td>
-</tr>
 </tbody>
 </table>
 </div>
@@ -297,19 +285,11 @@ BackendGCloud
 </tr>
 <tr>
 <td>
-<code>allowInsecureTLS</code><br>
+<code>tls</code><br>
 <em>
-bool
-</em>
-</td>
-<td>
-</td>
-</tr>
-<tr>
-<td>
-<code>cacert</code><br>
-<em>
-string
+<a href="#config.kjournal/v1alpha1.TLS">
+TLS
+</a>
 </em>
 </td>
 <td>
@@ -319,11 +299,11 @@ string
 </table>
 </div>
 </div>
-<h3 id="config.kjournal/v1alpha1.BackendGCloud">BackendGCloud
+<h3 id="config.kjournal/v1alpha1.TLS">TLS
 </h3>
 <p>
 (<em>Appears on:</em>
-<a href="#config.kjournal/v1alpha1.Backend">Backend</a>)
+<a href="#config.kjournal/v1alpha1.BackendElasticsearch">BackendElasticsearch</a>)
 </p>
 <div class="md-typeset__scrollwrap">
 <div class="md-typeset__table">
@@ -337,7 +317,27 @@ string
 <tbody>
 <tr>
 <td>
-<code>apiKey</code><br>
+<code>allowInsecure</code><br>
+<em>
+bool
+</em>
+</td>
+<td>
+</td>
+</tr>
+<tr>
+<td>
+<code>caCert</code><br>
+<em>
+string
+</em>
+</td>
+<td>
+</td>
+</tr>
+<tr>
+<td>
+<code>serverName</code><br>
 <em>
 string
 </em>

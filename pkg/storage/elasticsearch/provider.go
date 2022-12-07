@@ -51,8 +51,8 @@ func getESClient(backend *configv1alpha1.Backend) (*elasticsearch.Client, error)
 	}
 
 	var cert []byte
-	if backend.Elasticsearch.CACert != "" {
-		c, err := os.ReadFile(backend.Elasticsearch.CACert)
+	if backend.Elasticsearch.TLS.CACert != "" {
+		c, err := os.ReadFile(backend.Elasticsearch.TLS.CACert)
 		if err != nil {
 			return nil, fmt.Errorf("%w: failed to load cacert", err)
 		}
@@ -73,8 +73,9 @@ func getESClient(backend *configv1alpha1.Backend) (*elasticsearch.Client, error)
 		Addresses: backend.Elasticsearch.URL,
 		Transport: &http.Transport{
 			TLSClientConfig: &tls.Config{
-				InsecureSkipVerify: backend.Elasticsearch.AllowInsecureTLS,
-				ClientCAs:          pool,
+				InsecureSkipVerify: backend.Elasticsearch.TLS.AllowInsecure,
+				RootCAs:            pool,
+				ServerName:         backend.Elasticsearch.TLS.ServerName,
 			},
 		},
 		Logger: &logger{},

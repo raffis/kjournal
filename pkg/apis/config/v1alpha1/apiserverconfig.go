@@ -16,10 +16,15 @@ type Backend struct {
 	Elasticsearch *BackendElasticsearch `json:"elasticsearch,omitempty"`
 }
 
+type TLS struct {
+	AllowInsecure bool   `json:"allowInsecure,omitempty"`
+	CACert        string `json:"caCert,omitempty"`
+	ServerName    string `json:"serverName,omitempty"`
+}
+
 type BackendElasticsearch struct {
-	URL              []string `json:"url,omitempty"`
-	AllowInsecureTLS bool     `json:"allowInsecureTLS,omitempty"`
-	CACert           string   `json:"cacert,omitempty"`
+	URL []string `json:"url,omitempty"`
+	TLS TLS      `json:"tls,omitempty"`
 }
 
 type API struct {

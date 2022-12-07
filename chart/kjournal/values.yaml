@@ -50,7 +50,7 @@ livenessProbe:
     path: /healthz
     port: https
     scheme: HTTPS
-  initialDelaySeconds: 30
+  initialDelaySeconds: 5
   timeoutSeconds: 5
 
 readinessProbe:
@@ -58,7 +58,7 @@ readinessProbe:
     path: /healthz
     port: https
     scheme: HTTPS
-  initialDelaySeconds: 30
+  initialDelaySeconds: 5
   timeoutSeconds: 5
 
 securityContext:
