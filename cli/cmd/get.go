@@ -46,7 +46,7 @@ func addGetFlags(getCmd *cobra.Command) {
 	getCmd.PersistentFlags().StringVarP(&getArgs.timeRange, "range", "", "", "Change the time range from which logs are received. (e.g. `--range=20h-24h`)")
 	getCmd.PersistentFlags().BoolVarP(&getArgs.watch, "watch", "w", true, "After dumping all existing logs keep watching for newly added ones")
 	getCmd.PersistentFlags().StringVar(&getArgs.fieldSelector, "field-selector", "", "Selector (field query) to filter on, supports '=', '==', '!=', '!=', '>' and '<'. (e.g. --field-selector key1=value1,key2=value2).")
-	getCmd.PersistentFlags().StringVarP(&getArgs.chunkSize, "chunk-size", "", "500", "Return large lists in chunks rather than all at once. Pass 0 to disable. This has no impact as long as --no-stream is not set.")
+	getCmd.PersistentFlags().StringVarP(&getArgs.chunkSize, "chunk-size", "", "500", "Return large lists in chunks rather than all at once. Pass 0 to disable. This has no impact as long as --watch=false is not set.")
 }
 
 // Create the Scheme, methods for serializing and deserializing API objects
