@@ -13,7 +13,7 @@ Summary:
 - Log server which provides historical audit logs
 - Log server which provides histroical generic logs (unstructered log data)
 - Expose these as kubernetes APIS
-- Provider kubernertes API aggregation
+- Provider kubernetes API aggregation
 - Support RBAC (which includes authentication and authorization)
 - Support multiple storage backends. Especially elasticsearch. More backends are considered like Loki.
 
