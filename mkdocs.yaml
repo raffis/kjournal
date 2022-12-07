@@ -9,8 +9,6 @@ edit_uri: edit/main/docs
 theme:
   name: material
   language: en
-  logo: static/avatar.png
-  favicon: static/favicon.ico
   include_search_page: false
   search_index_only: true
   palette:

@@ -1,6 +1,6 @@
 # kjournal
 
-![Version: 1.0.0](https://img.shields.io/badge/Version-1.0.0-informational?style=flat-square) ![AppVersion: 0.0.7](https://img.shields.io/badge/AppVersion-0.0.7-informational?style=flat-square)
+![Version: 1.0.3](https://img.shields.io/badge/Version-1.0.3-informational?style=flat-square) ![AppVersion: 0.0.10](https://img.shields.io/badge/AppVersion-0.0.10-informational?style=flat-square)
 
 A Helm chart for kjournal
 
@@ -23,7 +23,7 @@ A Helm chart for kjournal
 | affinity | object | `{}` |  |
 | apiserverConfig.config | string | `""` |  |
 | apiserverConfig.existingConfigMap | string | `nil` |  |
-| apiserverConfig.templateName | string | `nil` |  |
+| apiserverConfig.templateName | string | `"elasticsearch-kjournal-structured"` |  |
 | certManager.caCertDuration | string | `"43800h"` |  |
 | certManager.certDuration | string | `"8760h"` |  |
 | certManager.enabled | bool | `false` |  |
@@ -42,7 +42,7 @@ A Helm chart for kjournal
 | livenessProbe.httpGet.path | string | `"/healthz"` |  |
 | livenessProbe.httpGet.port | string | `"https"` |  |
 | livenessProbe.httpGet.scheme | string | `"HTTPS"` |  |
-| livenessProbe.initialDelaySeconds | int | `30` |  |
+| livenessProbe.initialDelaySeconds | int | `5` |  |
 | livenessProbe.timeoutSeconds | int | `5` |  |
 | namespaceOverride | string | `""` |  |
 | nodeSelector | object | `{}` |  |
@@ -57,10 +57,13 @@ A Helm chart for kjournal
 | readinessProbe.httpGet.path | string | `"/healthz"` |  |
 | readinessProbe.httpGet.port | string | `"https"` |  |
 | readinessProbe.httpGet.scheme | string | `"HTTPS"` |  |
-| readinessProbe.initialDelaySeconds | int | `30` |  |
+| readinessProbe.initialDelaySeconds | int | `5` |  |
 | readinessProbe.timeoutSeconds | int | `5` |  |
 | replicas | int | `1` |  |
-| resources | object | `{}` |  |
+| resources.limits.cpu | string | `"1"` |  |
+| resources.limits.memory | string | `"200Mi"` |  |
+| resources.requests.cpu | string | `"100m"` |  |
+| resources.requests.memory | string | `"20Mi"` |  |
 | securityContext.allowPrivilegeEscalation | bool | `false` |  |
 | securityContext.capabilities.drop[0] | string | `"ALL"` |  |
 | securityContext.readOnlyRootFilesystem | bool | `true` |  |
