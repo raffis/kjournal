@@ -15,4 +15,4 @@ support for kubernetes audit logs and events.
 
 Want to get started? Please read the documentation [here](https://raffis.github.io/kjournal).
 
-![kjournal cast](docs/cast.gif)
+  ![kjournal cast](docs/cast.gif)

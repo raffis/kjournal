@@ -95,7 +95,7 @@ func MakeDefaultOptions() Options {
 			Index:           "*",
 			RefreshRate:     time.Millisecond * 500,
 			TimestampFields: []string{"@timestamp"},
-			BulkSize:        10000,
+			BulkSize:        1000,
 		},
 		DefaultTimeRange: "now-24h",
 	}
