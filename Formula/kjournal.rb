@@ -5,13 +5,13 @@
 class Kjournal < Formula
   desc ""
   homepage ""
-  version "0.0.15"
+  version "0.0.16"
   license "Apache-2.0"
 
   on_macos do
     if Hardware::CPU.intel?
-      url "https://github.com/raffis/kjournal/releases/download/v0.0.15/kjournal_cli_0.0.15_darwin_amd64.tar.gz"
-      sha256 "105ae5d4805de1bf6583f28673f94dc4f20192bd774e12940e89b32cb3bb07a3"
+      url "https://github.com/raffis/kjournal/releases/download/v0.0.16/kjournal_cli_0.0.16_darwin_amd64.tar.gz"
+      sha256 "b03aacf0a125c5bbf86ce72c5629a6b214caf960eddd96e97e01186d682952f3"
 
       def install
         bin.install "kjournal-cli" => "kjournal"
@@ -19,8 +19,8 @@ class Kjournal < Formula
       end
     end
     if Hardware::CPU.arm?
-      url "https://github.com/raffis/kjournal/releases/download/v0.0.15/kjournal_cli_0.0.15_darwin_arm64.tar.gz"
-      sha256 "1a72e8ab17137e9d04ef9961c75d0141b2e9ef349cf220dd61cc36ab115ce215"
+      url "https://github.com/raffis/kjournal/releases/download/v0.0.16/kjournal_cli_0.0.16_darwin_arm64.tar.gz"
+      sha256 "184426ff14c82189900bc9d644c07d432e4127e4a6bcd41012d4e9ef08ad20a8"
 
       def install
         bin.install "kjournal-cli" => "kjournal"
@@ -31,8 +31,8 @@ class Kjournal < Formula
 
   on_linux do
     if Hardware::CPU.arm? && Hardware::CPU.is_64_bit?
-      url "https://github.com/raffis/kjournal/releases/download/v0.0.15/kjournal_cli_0.0.15_linux_arm64.tar.gz"
-      sha256 "e546b64f467689ada2c616d74897ee9aa2116600f86a91b24987a8d03a22f022"
+      url "https://github.com/raffis/kjournal/releases/download/v0.0.16/kjournal_cli_0.0.16_linux_arm64.tar.gz"
+      sha256 "1e878144b9aa5abe298ace0c37f06329e69a78ebbe9d3d8c787581e41cb12d23"
 
       def install
         bin.install "kjournal-cli" => "kjournal"
@@ -40,8 +40,8 @@ class Kjournal < Formula
       end
     end
     if Hardware::CPU.intel?
-      url "https://github.com/raffis/kjournal/releases/download/v0.0.15/kjournal_cli_0.0.15_linux_amd64.tar.gz"
-      sha256 "cbbf5ae7adba17cd5bcfc6853e71a8283f452c9aba32e027cd83ce9d88ca607c"
+      url "https://github.com/raffis/kjournal/releases/download/v0.0.16/kjournal_cli_0.0.16_linux_amd64.tar.gz"
+      sha256 "4403f39bbb3e9589402451ddc5338d2a1890bdc421e9f4fabbda7858c04ccc69"
 
       def install
         bin.install "kjournal-cli" => "kjournal"
