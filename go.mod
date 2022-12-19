@@ -7,7 +7,7 @@ require (
 	github.com/Masterminds/semver v1.5.0
 	github.com/elastic/elastic-transport-go/v8 v8.1.0
 	github.com/elastic/go-elasticsearch/v8 v8.5.0
-	github.com/pyroscope-io/client v0.4.0
+	github.com/pyroscope-io/client v0.5.0
 	github.com/spf13/cobra v1.6.0
 	gotest.tools/v3 v3.4.0
 	k8s.io/api v0.26.0
@@ -46,6 +46,7 @@ require (
 	github.com/google/gnostic v0.5.7-v3refs // indirect
 	github.com/google/go-cmp v0.5.9 // indirect
 	github.com/google/gofuzz v1.1.0 // indirect
+	github.com/google/pprof v0.0.0-20221118152302-e6195bd50e26 // indirect
 	github.com/google/uuid v1.3.0 // indirect
 	github.com/grpc-ecosystem/go-grpc-prometheus v1.2.0 // indirect
 	github.com/grpc-ecosystem/grpc-gateway/v2 v2.7.0 // indirect
