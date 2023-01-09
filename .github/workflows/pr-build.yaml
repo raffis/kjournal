@@ -145,17 +145,17 @@ jobs:
           version: v0.11.1
           image: kindest/node:v1.21.1@sha256:69860bda5563ac81e3c0057d654b5253219618a22ec3a346306239bba8cfa1a6
       - name: Download apiserver container
-        uses: actions/download-artifact@9782bd6a9848b53b110e712e20e42d89988822b7 #v3.0.1
+        uses: actions/download-artifact@9bc31d5ccc31df68ecc42ccf4149144866c47d8a #v3.0.2
         with:
           name: apiserver-container
           path: /tmp
       - name: Download cli container
-        uses: actions/download-artifact@9782bd6a9848b53b110e712e20e42d89988822b7 #v3.0.1
+        uses: actions/download-artifact@9bc31d5ccc31df68ecc42ccf4149144866c47d8a #v3.0.2
         with:
           name: cli-container
           path: /tmp
       - name: Download cli
-        uses: actions/download-artifact@9782bd6a9848b53b110e712e20e42d89988822b7 #v3.0.1
+        uses: actions/download-artifact@9bc31d5ccc31df68ecc42ccf4149144866c47d8a #v3.0.2
         with:
           name: cli
           path: /tmp
