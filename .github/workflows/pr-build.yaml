@@ -56,12 +56,12 @@ jobs:
         run: |
           docker save --output cli-container.tar kjournal/cli:latest
       - name: Upload container
-        uses: actions/upload-artifact@83fd05a356d7e2593de66fc9913b3002723633cb #v3.1.1
+        uses: actions/upload-artifact@0b7f8abb1508181956e8e162db84b466c27e18ce #v3.1.2
         with:
           name: cli-container
           path: cli-container.tar        
       - name: Upload cli
-        uses: actions/upload-artifact@83fd05a356d7e2593de66fc9913b3002723633cb #v3.1.1
+        uses: actions/upload-artifact@0b7f8abb1508181956e8e162db84b466c27e18ce #v3.1.2
         with:
           name: cli
           path: cli/bin/kjournal
@@ -114,7 +114,7 @@ jobs:
         run: |
           docker save --output apiserver-container.tar kjournal/apiserver:latest
       - name: Upload image
-        uses: actions/upload-artifact@83fd05a356d7e2593de66fc9913b3002723633cb #v3.1.1
+        uses: actions/upload-artifact@0b7f8abb1508181956e8e162db84b466c27e18ce #v3.1.2
         with:
           name: apiserver-container
           path: apiserver-container.tar        
