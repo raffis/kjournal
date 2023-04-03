@@ -5,8 +5,8 @@ go 1.18
 require (
 	github.com/Jeffail/gabs v1.4.0
 	github.com/Masterminds/semver v1.5.0
-	github.com/elastic/elastic-transport-go/v8 v8.1.0
-	github.com/elastic/go-elasticsearch/v8 v8.5.0
+	github.com/elastic/elastic-transport-go/v8 v8.2.0
+	github.com/elastic/go-elasticsearch/v8 v8.7.0
 	github.com/pyroscope-io/client v0.4.0
 	github.com/spf13/cobra v1.6.0
 	gotest.tools/v3 v3.4.0
